@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+MANIFEST
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Pytest
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Cursor / Claude
+.claude/
+.cursor/
+
+# LaTeX build artifacts
+continuousmeasurementslatex/
+continuousmeasurementslatex/*.aux
+continuousmeasurementslatex/*.bbl
+continuousmeasurementslatex/*.blg
+continuousmeasurementslatex/*.fdb_latexmk
+continuousmeasurementslatex/*.fls
+continuousmeasurementslatex/*.log
+continuousmeasurementslatex/*.out
+continuousmeasurementslatex/*.pdf
+continuousmeasurementslatex/*.synctex.gz
+continuousmeasurementslatex/*.toc
+continuousmeasurementslatex/**/*.aux
+continuousmeasurementslatex/**/*.log
+
+# Secrets / local config
+.env
+.env.*
+secrets.toml
