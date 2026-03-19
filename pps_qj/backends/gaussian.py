@@ -210,9 +210,17 @@ class GaussianStateBackend(StateBackend):
         G_new[b, :] = 0.0
         G_new[:, b] = 0.0
 
-        # Fix pair block: Γ'_{ab} = +1, Γ'_{ba} = -1 (empty mode after annihilation)
-        G_new[a, b] = 1.0
-        G_new[b, a] = -1.0
+        # Fix pair block: Γ'_{ab} = -1, Γ'_{ba} = +1 (mode occupied after d†d jump)
+        G_new[a, b] = -1.0
+        G_new[b, a] = 1.0
+
+        q_post = 0.5 * (1.0 - G_new[a, b])
+        if abs(q_post - 1.0) > 1e-8:
+            raise RuntimeError(
+                f"apply_jump: post-jump q={q_post:.6f} for bond j={j}, "
+                f"expected 1.0 (number-operator semantics). "
+                f"Γ'_{{ab}} = {G_new[a, b]:.6f}, expected -1.0."
+            )
 
         self.Gamma = G_new
 
