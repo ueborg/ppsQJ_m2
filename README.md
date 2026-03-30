@@ -1,143 +1,90 @@
 # PPS-QJ
 
-Python implementation of waiting-time Monte Carlo and partial post-selection (PPS) quantum-jump algorithms, with both exact and Gaussian backends.
+Focused implementation of partial post-selection and finite-horizon Doob waiting-time Monte Carlo for the monitored free-fermion chain.
 
-## What is in this repo
+## Active code path
 
-- Waiting-time Monte Carlo (`waiting_time_mc`)
-- PPS Monte Carlo (`pps_mc`, Procedure C)
-- Procedure A and Procedure B reference implementations
-- Exact small-system backend (statevector)
-- Gaussian large-system backend (covariance/orbital representation)
-- Unit tests covering simple limits up to cross-backend checks
+The live package surface is the direct Doob/PPS stack:
 
-Detailed code/theory mapping is in:
+- `pps_qj/exact_backend.py`
+  Exact spin-1/2 reference backend: Jordan-Wigner construction, ordinary WTMC, Procedures A/B/C, Lindblad integration.
+- `pps_qj/gaussian_backend.py`
+  Gaussian covariance/orbital backend for larger systems.
+- `pps_qj/backward_pass.py`
+  Exact and Gaussian backward evolutions for the tilted/Doob construction.
+- `pps_qj/overlaps.py`
+  Gaussian overlap formulas used in the forward Doob rates.
+- `pps_qj/doob_wtmc.py`
+  Exact and Gaussian finite-horizon Doob trajectory samplers.
+- `pps_qj/part6_validation.py`
+  Validation harness for the Part 6 benchmark checklist.
+- `tests/test_doob_wtmc.py`
+  Fast regression checks for the current Doob implementation.
+
+Convenience wrapper modules are kept at the repository root:
+
+- `exact_backend.py`
+- `gaussian_backend.py`
+- `backward_pass.py`
+- `overlaps.py`
+- `doob_wtmc.py`
+
+Archived legacy code, notebooks, and scripts were moved to `trash/`.
+
+## Repository layout
+
+- `pps_qj/`
+  Active package code.
+- `tests/`
+  Active tests for the current code path.
 - `docs/architecture_theory_map.md`
+  Code-to-theory map for the active modules.
+- `notebooks/doob_wtmc_validation.ipynb`
+  Working notebook for the Doob/PPS validation workflow.
+- `trash/`
+  Archived legacy framework, scripts, tests, notebooks, and generated outputs.
 
-## Project layout
-
-- `pps_qj/algorithms/`: trajectory algorithms
-- `pps_qj/backends/`: exact and Gaussian state backends
-- `pps_qj/models/`: model constructors
-- `pps_qj/core/`: numerical helpers and RNG utilities
-- `pps_qj/observables/`: analysis helpers
-- `tests/`: test suite
-- `examples/validation.py`: quick validation script
-- `continuousmeasurementslatex/`: theory notes (LaTeX)
-- `notebooks/quickstart_debug.ipynb`: interactive testing notebook
-
-## Environment setup
-
-## 1) Create and activate a virtual environment
-
-macOS/Linux:
+## Environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-Windows (PowerShell):
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-## 2) Install package dependencies
-
-```bash
 python3 -m pip install --upgrade pip
-python3 -m pip install -e .
+python3 -m pip install -e .[dev]
 ```
 
-This project currently requires:
-- `numpy>=1.24`
+Core runtime dependencies:
 
-## 3) Optional tools for interactive work
+- `numpy>=1.24`
+- `scipy>=1.11`
+
+Optional for plots/notebooks:
 
 ```bash
-python3 -m pip install jupyter matplotlib
+python3 -m pip install matplotlib jupyter
 ```
 
 ## Running tests
 
-Run full suite:
+Current fast regression suite:
 
 ```bash
-python3 -m unittest discover -s tests -v
+./.venv/bin/pytest tests/test_doob_wtmc.py -q
 ```
 
-Run targeted subsets:
+If you want the slower validation harness instead of the fast pytest checks:
 
 ```bash
-python3 -m unittest tests/test_core.py -v
-python3 -m unittest tests/test_algorithms.py -v
-python3 -m unittest tests/test_eq130_and_procedures.py -v
-python3 -m unittest tests/test_gaussian_backend.py -v
+./.venv/bin/python run_part6_validation.py
 ```
 
-## Run a validation script
-
-```bash
-python3 examples/validation.py
-```
-
-## How to run and debug specific parts
-
-## Quick model/algorithm switch
-
-Main control is `SimulationConfig`:
-- `backend`: `"exact"` or `"gaussian"`
-- `method`: `"waiting_time_mc"`, `"pps_mc"`, `"procedure_a"`, `"procedure_b"`
-- `seed`: fixed seed for reproducibility
-
-## Reproducible debugging
-
-Use fixed seeds and single trajectories first:
-
-```python
-cfg = SimulationConfig(T=1.0, zeta=0.6, n_traj=1, seed=123, backend="exact", method="pps_mc")
-```
-
-Then inspect a trajectory record:
-- `times`
-- `candidate_jump_times`
-- `accepted_jump_times`
-- `channels`
-- `n_clicks`
-- `observables["purity_trace"]`
-
-## Step-through debugging with pdb
-
-```bash
-python3 -m pdb -m unittest tests/test_gaussian_backend.py
-```
-
-You can also add `breakpoint()` in `pps_qj/algorithms/waiting_time.py` or backend methods and rerun a targeted test.
-
-## Interactive notebook
-
-Launch Jupyter:
-
-```bash
-jupyter notebook
-```
-
-Open:
-- `notebooks/quickstart_debug.ipynb`
-
-The notebook includes:
-- single-projector sanity checks (`zeta=1` and `zeta=0` limits)
-- Procedure A/B/C comparison
-- acceptance-law check against the analytic expression
-- exact vs Gaussian cross-check on click statistics
+That writes artifacts into `outputs/part6_validation_full/`.
 
 ## Theory notes
 
-Primary theory source is in:
-- `continuousmeasurementslatex/sections/sec5new.tex`
-- `continuousmeasurementslatex/sections/sec5_partial_post_selection.tex`
+Primary implementation references are in:
 
-For code-to-equation references, use:
+- `continuousmeasurementslatex/`
 - `docs/architecture_theory_map.md`
+
+Use equation labels and subsection names from the LaTeX notes rather than hard-coded equation numbers, since the manuscript is still evolving.

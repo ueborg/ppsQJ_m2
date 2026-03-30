@@ -1,0 +1,6 @@
+Requested validation summary
+Doob mean clicks: 0.298750
+Procedure A mean clicks: 0.241250
+Procedure B mean clicks: 0.256250
+Procedure C mean clicks: 0.402500
+Plot: /Users/catlover1337/Documents/ppsQJ_m2/outputs/doob_validation/doob_requested_checks.png

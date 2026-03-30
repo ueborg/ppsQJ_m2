@@ -1,12 +1,5 @@
-"""PPS quantum-jump simulator package."""
+"""Active PPS/Doob quantum-jump implementation surface."""
 
-from .types import ModelSpec, SimulationConfig, TrajectoryRecord, Tolerances
-from .simulator import Simulator
+from .types import JumpTrajectory, Tolerances
 
-__all__ = [
-    "ModelSpec",
-    "SimulationConfig",
-    "TrajectoryRecord",
-    "Tolerances",
-    "Simulator",
-]
+__all__ = ["JumpTrajectory", "Tolerances"]

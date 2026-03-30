@@ -1,0 +1,2 @@
+./.venv/bin/pytest -q
+23 passed in 94.73s (0:01:34)

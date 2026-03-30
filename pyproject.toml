@@ -10,10 +10,16 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
+  "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
 ]
 
 [tool.setuptools]
-packages = ["pps_qj"]
+packages = ["pps_qj", "pps_qj.core", "pps_qj.observables"]
 
 [tool.setuptools.package-dir]
 pps_qj = "pps_qj"
