@@ -1,0 +1,373 @@
+{
+  "all_passed": false,
+  "config": {
+    "output_dir": "outputs/part6_validation_full",
+    "plot_dpi": 160,
+    "seed": 20260330,
+    "test1_n_traj": 2000,
+    "test1_obs_points": 17,
+    "test2_born_n": 400,
+    "test2_doob_n": 400,
+    "test2_proc_c_n": 400,
+    "test2_zeta": 0.1,
+    "test3_n_traj": 500,
+    "test4_born_n": 300,
+    "test4_doob_n": 300,
+    "test5_born_n": 600,
+    "test5_doob_n": 300,
+    "test6_born_n": 600,
+    "test6_doob_n": 600,
+    "test6_proc_c_n": 600,
+    "test7_exact_n": 10,
+    "test7_large_n": 20,
+    "test7_obs_points": 17,
+    "test8_survival_grid_points": 33,
+    "test9_born_n": 600,
+    "test9_doob_n": 600,
+    "test9_proc_b_n": 200,
+    "test9_proc_c_n": 600
+  },
+  "notes": [
+    "Trajectory observables under Q_s are estimated from exact ordinary trajectories with weights zeta^N_T where appropriate.",
+    "That weighted-Born estimator is mathematically identical to Procedure A for ensemble averages and histograms, but much cheaper than rejection sampling."
+  ],
+  "tests": {
+    "test_1_zeta1_recovery": {
+      "artifacts": {
+        "entropy_plot": "outputs/part6_validation_full/test1_zeta1_entropy.png"
+      },
+      "metrics": {
+        "entropy_rms_difference": 0.008398576233872487,
+        "max_abs_C": 0.0,
+        "max_abs_z_minus_1": 0.0,
+        "max_density_fro_error": 0.028023753752404925,
+        "max_ensemble_density_fro_error": 0.028023753752404925,
+        "mean_clicks_doob": 2.9425,
+        "mean_clicks_exact": 2.911,
+        "mean_clicks_sem": 0.08084494002201735,
+        "mean_density_fro_error": 0.020855507504796783,
+        "mean_ensemble_density_fro_error": 0.020855507504796783,
+        "pmf_total_variation": 0.018999999999999993
+      },
+      "parameters": {
+        "L": 4,
+        "T": 2.0,
+        "gamma_m": 1.0,
+        "n_traj": 2000,
+        "w": 0.5,
+        "zeta": 1.0
+      },
+      "passed": false
+    },
+    "test_2_small_zeta_concentration": {
+      "metrics": {
+        "mean_clicks_doob": 0.0975,
+        "mean_clicks_exact_weighted": 0.07526961983600702,
+        "p0_analytic_s_over_z": 0.9302331290190391,
+        "p0_doob": 0.9175,
+        "p0_exact_weighted": 0.9302331290190391,
+        "p0_procedure_c": 0.9225,
+        "survival_born": 0.36,
+        "weighted_born_ess": 165.25353947849192,
+        "z_partition_from_born": 0.3869997625
+      },
+      "parameters": {
+        "L": 4,
+        "T": 1.0,
+        "born_n": 400,
+        "doob_n": 400,
+        "gamma_m": 1.0,
+        "procedure_c_n": 400,
+        "w": 0.5,
+        "zeta": 0.1
+      },
+      "passed": true
+    },
+    "test_3_single_mode_exact_case": {
+      "metrics": {
+        "analytic_Q_no_click": 0.8299965984314521,
+        "analytic_R_no_click": 0.7534372181000262,
+        "analytic_Z": 0.6839397205857212,
+        "doob_no_click": 0.826,
+        "exact_Z": 0.6839397205857211,
+        "gaussian_Z": 0.6839397205921911,
+        "max_backward_covariance_error": 2.678700594671568e-10,
+        "procedure_c_no_click": 0.77,
+        "q0": 0.5
+      },
+      "parameters": {
+        "L": 2,
+        "T": 2.0,
+        "gamma_m": 1.0,
+        "n_traj": 500,
+        "w": 0.0,
+        "zeta": 0.5
+      },
+      "passed": true
+    },
+    "test_4_commuting_case": {
+      "metrics": {
+        "L=4": {
+          "max_covariance_error": 2.678697264002494e-10,
+          "max_generator_alpha_error": 6.517496542457479e-10,
+          "max_generator_block_diagonal_error": 0.0,
+          "mean_clicks_doob": 0.9166666666666666,
+          "mean_clicks_exact_weighted": 0.7921411894250672,
+          "mean_clicks_from_partition_derivative": 0.8068424348795011,
+          "passed": true,
+          "weighted_born_ess": 131.62179890201176
+        },
+        "L=6": {
+          "max_covariance_error": 2.6787028151176173e-10,
+          "max_generator_alpha_error": 6.517509865133775e-10,
+          "max_generator_block_diagonal_error": 0.0,
+          "mean_clicks_doob": 1.3866666666666667,
+          "mean_clicks_exact_weighted": 1.4240352871878468,
+          "mean_clicks_from_partition_derivative": 1.3447373914658,
+          "passed": true,
+          "weighted_born_ess": 82.645679419607
+        }
+      },
+      "parameters": {
+        "L_values": [
+          4,
+          6
+        ],
+        "T": 2.0,
+        "gamma_m": 1.0,
+        "w": 0.0,
+        "zeta": 0.5
+      },
+      "passed": true
+    },
+    "test_5_partition_and_moments": {
+      "metrics": {
+        "0.3": {
+          "Z_doob_overlap": 0.2649714827120175,
+          "Z_exact_weighted": 0.2702897708187555,
+          "mean_clicks_doob": 0.37,
+          "mean_clicks_exact_weighted": 0.3141930864003443,
+          "passed": true
+        },
+        "0.5": {
+          "Z_doob_overlap": 0.337172741123126,
+          "Z_exact_weighted": 0.3454872639973958,
+          "mean_clicks_doob": 0.61,
+          "mean_clicks_exact_weighted": 0.7136689046067488,
+          "passed": true
+        },
+        "0.7": {
+          "Z_doob_overlap": 0.47393890072734685,
+          "Z_exact_weighted": 0.48264176752076954,
+          "mean_clicks_doob": 1.6166666666666667,
+          "mean_clicks_exact_weighted": 1.3577010954435673,
+          "passed": true
+        },
+        "0.9": {
+          "Z_doob_overlap": 0.7536612229303956,
+          "Z_exact_weighted": 0.7576991652569566,
+          "mean_clicks_doob": 2.2933333333333334,
+          "mean_clicks_exact_weighted": 2.333211442780283,
+          "passed": true
+        }
+      },
+      "parameters": {
+        "L": 4,
+        "T": 2.0,
+        "gamma_m": 1.0,
+        "w": 0.5,
+        "zetas": [
+          0.9,
+          0.7,
+          0.5,
+          0.3
+        ]
+      },
+      "passed": true
+    },
+    "test_6_click_count_distribution": {
+      "artifacts": {
+        "pmf_plot": "outputs/part6_validation_full/test6_click_count_pmf.png"
+      },
+      "metrics": {
+        "pmf_born": [
+          0.21833333333333332,
+          0.12833333333333333,
+          0.11166666666666666,
+          0.14333333333333334,
+          0.12833333333333333,
+          0.105,
+          0.07,
+          0.041666666666666664,
+          0.025,
+          0.02,
+          0.0033333333333333335,
+          0.0,
+          0.005
+        ],
+        "pmf_doob": [
+          0.6433333333333333,
+          0.15833333333333333,
+          0.08166666666666667,
+          0.06833333333333333,
+          0.02666666666666667,
+          0.015,
+          0.0,
+          0.006666666666666667,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pmf_exact_weighted": [
+          0.6399061206430832,
+          0.18806401255540994,
+          0.08182005741047055,
+          0.052511380129107964,
+          0.023508001569426243,
+          0.009616909732947099,
+          0.0032056365776490328,
+          0.0009540585052526884,
+          0.00028621755157580653,
+          0.00011448702063032261,
+          9.540585052526883e-06,
+          0.0,
+          3.5777193946975815e-06
+        ],
+        "pmf_procedure_c": [
+          0.43833333333333335,
+          0.235,
+          0.165,
+          0.08666666666666667,
+          0.043333333333333335,
+          0.02,
+          0.006666666666666667,
+          0.005,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "tv_doob_vs_exact_weighted": 0.03350352942018285,
+        "tv_doob_vs_procedure_c": 0.20666666666666667
+      },
+      "parameters": {
+        "L": 4,
+        "T": 2.0,
+        "born_n": 600,
+        "doob_n": 600,
+        "gamma_m": 1.0,
+        "procedure_c_n": 600,
+        "w": 0.5,
+        "zeta": 0.5
+      },
+      "passed": true
+    },
+    "test_7_entanglement_scaling": {
+      "artifacts": {
+        "entropy_scaling_plot": "outputs/part6_validation_full/test7_entropy_scaling.png"
+      },
+      "metrics": {
+        "benchmark_L8": {
+          "0.1": {
+            "absolute_difference": 1.6676329084308605e-07,
+            "exact_weighted_timeavg_entropy_L8": 0.9951203086008479,
+            "gaussian_doob_timeavg_entropy_L8": 0.995120141837557,
+            "passed": true
+          },
+          "0.3": {
+            "absolute_difference": 0.1466657829182204,
+            "exact_weighted_timeavg_entropy_L8": 1.1385981465613784,
+            "gaussian_doob_timeavg_entropy_L8": 0.991932363643158,
+            "passed": true
+          },
+          "0.5": {
+            "absolute_difference": 0.09173439852274001,
+            "exact_weighted_timeavg_entropy_L8": 1.0881106288965485,
+            "gaussian_doob_timeavg_entropy_L8": 0.9963762303738085,
+            "passed": true
+          },
+          "0.7": {
+            "absolute_difference": 0.05096780827418601,
+            "exact_weighted_timeavg_entropy_L8": 1.0132165527242039,
+            "gaussian_doob_timeavg_entropy_L8": 1.0641843609983899,
+            "passed": true
+          },
+          "1.0": {
+            "absolute_difference": 0.013167375123613656,
+            "exact_weighted_timeavg_entropy_L8": 1.0375982265679342,
+            "gaussian_doob_timeavg_entropy_L8": 1.0507656016915479,
+            "passed": true
+          }
+        },
+        "large_system_timeavg_entropy": {
+          "0.1": 0.9840088787317731,
+          "0.3": 0.988595348487719,
+          "0.5": 1.0187934291980816,
+          "0.7": 1.1224938861514462,
+          "1.0": 1.1301766229234889
+        },
+        "monotone_nonincreasing": true
+      },
+      "parameters": {
+        "L_benchmark": 8,
+        "L_large": 12,
+        "T": 5.0,
+        "benchmark_n": 10,
+        "gamma_m": 1.0,
+        "large_n": 20,
+        "w": 0.5,
+        "zetas": [
+          1.0,
+          0.7,
+          0.5,
+          0.3,
+          0.1
+        ]
+      },
+      "passed": true
+    },
+    "test_8_conditioned_survival_monotonicity": {
+      "metrics": {
+        "final_normalized_overlap_at_T": 1.0,
+        "max_positive_diff_in_raw_overlap": -0.001162846021555558,
+        "min_raw_overlap": 0.2109116757553127,
+        "n_segments": 1
+      },
+      "parameters": {
+        "L": 4,
+        "T": 2.0,
+        "gamma_m": 1.0,
+        "w": 0.5,
+        "zeta": 0.5
+      },
+      "passed": true
+    },
+    "test_9_qs_vs_rzeta": {
+      "metrics": {
+        "doob_mean_clicks": 0.7666666666666667,
+        "doob_p0": 0.5816666666666667,
+        "exact_weighted_mean_clicks": 0.8192691439506519,
+        "exact_weighted_p0": 0.5640977884921847,
+        "procedure_b_mean_clicks": 0.645,
+        "procedure_b_p0": 0.645,
+        "procedure_c_mean_clicks": 1.3,
+        "procedure_c_p0": 0.4066666666666667
+      },
+      "parameters": {
+        "L": 4,
+        "T": 2.0,
+        "born_n": 600,
+        "doob_n": 600,
+        "gamma_m": 1.0,
+        "procedure_b_n": 200,
+        "procedure_c_n": 600,
+        "w": 0.0,
+        "zeta": 0.5
+      },
+      "passed": true
+    }
+  }
+}

@@ -18,6 +18,8 @@ The live package surface is the direct Doob/PPS stack:
   Exact and Gaussian finite-horizon Doob trajectory samplers.
 - `pps_qj/part6_validation.py`
   Validation harness for the Part 6 benchmark checklist.
+- `pps_qj/extended_validation.py`
+  Extended validation harness for the compensator, martingale, observable, entropy, scaling, and report-plot checks.
 - `tests/test_doob_wtmc.py`
   Fast regression checks for the current Doob implementation.
 
@@ -79,6 +81,14 @@ If you want the slower validation harness instead of the fast pytest checks:
 ```
 
 That writes artifacts into `outputs/part6_validation_full/`.
+
+For the heavier post-Part-6 benchmark and report plots:
+
+```bash
+./.venv/bin/python run_extended_validation.py
+```
+
+That writes artifacts into `outputs/extended_validation/`.
 
 ## Theory notes
 

@@ -108,24 +108,34 @@ def doob_exact_trajectory(
             denominator=denominator,
         )
 
+        segment_info = {
+            "t_start": float(t),
+            "denominator": float(denominator),
+            "uniform_threshold": float(r),
+            "max_dt": float(max_dt),
+        }
+        terminal_survival = float(survival_fn(max_dt))
+        segment_info["terminal_survival"] = terminal_survival
         if survival_grid_points > 1:
             grid = np.linspace(0.0, max_dt, survival_grid_points)
-            diagnostics["conditioned_survival_segments"].append(
-                {
-                    "t_start": t,
-                    "denominator": float(denominator),
-                    "times": list(t + grid),
-                    "values": [survival_fn(float(dt)) for dt in grid],
-                }
-            )
+            segment_info["times"] = list(t + grid)
+            segment_info["values"] = [survival_fn(float(dt)) for dt in grid]
 
-        if survival_fn(max_dt) > r:
+        if terminal_survival > r:
+            segment_info["realized_dt"] = float(max_dt)
+            segment_info["realized_survival"] = terminal_survival
+            segment_info["jumped"] = False
+            diagnostics["conditioned_survival_segments"].append(segment_info)
             state = _propagate_unnormalized(model, state, max_dt)
             state = state / np.linalg.norm(state)
             t = T
             break
 
         dt = _bounded_bisection(survival_fn, r, 0.0, max_dt, tol)
+        segment_info["realized_dt"] = float(dt)
+        segment_info["realized_survival"] = float(survival_fn(dt))
+        segment_info["jumped"] = True
+        diagnostics["conditioned_survival_segments"].append(segment_info)
         psi_tilde = _propagate_unnormalized(model, state, dt)
         pre_state = psi_tilde / np.linalg.norm(psi_tilde)
         t += dt
@@ -199,18 +209,24 @@ def doob_gaussian_trajectory(
             denominator=denominator,
         )
 
+        segment_info = {
+            "t_start": float(t),
+            "denominator": float(denominator),
+            "uniform_threshold": float(r),
+            "max_dt": float(max_dt),
+        }
+        terminal_survival = float(survival_fn(max_dt))
+        segment_info["terminal_survival"] = terminal_survival
         if survival_grid_points > 1:
             grid = np.linspace(0.0, max_dt, survival_grid_points)
-            diagnostics["conditioned_survival_segments"].append(
-                {
-                    "t_start": t,
-                    "denominator": float(denominator),
-                    "times": list(t + grid),
-                    "values": [survival_fn(float(dt)) for dt in grid],
-                }
-            )
+            segment_info["times"] = list(t + grid)
+            segment_info["values"] = [survival_fn(float(dt)) for dt in grid]
 
-        if survival_fn(max_dt) > r:
+        if terminal_survival > r:
+            segment_info["realized_dt"] = float(max_dt)
+            segment_info["realized_survival"] = terminal_survival
+            segment_info["jumped"] = False
+            diagnostics["conditioned_survival_segments"].append(segment_info)
             evolution = propagate_no_click_orbitals(
                 orbitals,
                 model.h_effective,
@@ -223,6 +239,10 @@ def doob_gaussian_trajectory(
             break
 
         dt = _bounded_bisection(survival_fn, r, 0.0, max_dt, tol)
+        segment_info["realized_dt"] = float(dt)
+        segment_info["realized_survival"] = float(survival_fn(dt))
+        segment_info["jumped"] = True
+        diagnostics["conditioned_survival_segments"].append(segment_info)
         evolution = propagate_no_click_orbitals(
             orbitals,
             model.h_effective,

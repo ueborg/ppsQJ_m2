@@ -1,0 +1,129 @@
+Part 6 Doob WTMC validation
+all_passed: False
+
+test_1_zeta1_recovery: FAIL
+  max_abs_C: 0.0
+  max_abs_z_minus_1: 0.0
+  mean_clicks_exact: 2.911
+  mean_clicks_doob: 2.9425
+  mean_clicks_sem: 0.08084494002201735
+  pmf_total_variation: 0.018999999999999993
+  entropy_rms_difference: 0.008398576233872487
+  max_ensemble_density_fro_error: 0.028023753752404925
+  mean_ensemble_density_fro_error: 0.020855507504796783
+  max_density_fro_error: 0.028023753752404925
+  mean_density_fro_error: 0.020855507504796783
+  entropy_plot: outputs/part6_validation_full/test1_zeta1_entropy.png
+
+test_2_small_zeta_concentration: PASS
+  mean_clicks_exact_weighted: 0.07526961983600702
+  mean_clicks_doob: 0.0975
+  p0_exact_weighted: 0.9302331290190391
+  p0_doob: 0.9175
+  p0_procedure_c: 0.9225
+  p0_analytic_s_over_z: 0.9302331290190391
+  z_partition_from_born: 0.3869997625
+  survival_born: 0.36
+  weighted_born_ess: 165.25353947849192
+
+test_3_single_mode_exact_case: PASS
+  q0: 0.5
+  analytic_Z: 0.6839397205857212
+  gaussian_Z: 0.6839397205921911
+  exact_Z: 0.6839397205857211
+  analytic_Q_no_click: 0.8299965984314521
+  analytic_R_no_click: 0.7534372181000262
+  doob_no_click: 0.826
+  procedure_c_no_click: 0.77
+  max_backward_covariance_error: 2.678700594671568e-10
+
+test_4_commuting_case: PASS
+  L=4:
+    passed: True
+    mean_clicks_exact_weighted: 0.7921411894250672
+    mean_clicks_doob: 0.9166666666666666
+    mean_clicks_from_partition_derivative: 0.8068424348795011
+    max_covariance_error: 2.678697264002494e-10
+    max_generator_alpha_error: 6.517496542457479e-10
+    max_generator_block_diagonal_error: 0.0
+    weighted_born_ess: 131.62179890201176
+  L=6:
+    passed: True
+    mean_clicks_exact_weighted: 1.4240352871878468
+    mean_clicks_doob: 1.3866666666666667
+    mean_clicks_from_partition_derivative: 1.3447373914658
+    max_covariance_error: 2.6787028151176173e-10
+    max_generator_alpha_error: 6.517509865133775e-10
+    max_generator_block_diagonal_error: 0.0
+    weighted_born_ess: 82.645679419607
+
+test_5_partition_and_moments: PASS
+  0.9:
+    passed: True
+    Z_exact_weighted: 0.7576991652569566
+    Z_doob_overlap: 0.7536612229303956
+    mean_clicks_exact_weighted: 2.333211442780283
+    mean_clicks_doob: 2.2933333333333334
+  0.7:
+    passed: True
+    Z_exact_weighted: 0.48264176752076954
+    Z_doob_overlap: 0.47393890072734685
+    mean_clicks_exact_weighted: 1.3577010954435673
+    mean_clicks_doob: 1.6166666666666667
+  0.5:
+    passed: True
+    Z_exact_weighted: 0.3454872639973958
+    Z_doob_overlap: 0.337172741123126
+    mean_clicks_exact_weighted: 0.7136689046067488
+    mean_clicks_doob: 0.61
+  0.3:
+    passed: True
+    Z_exact_weighted: 0.2702897708187555
+    Z_doob_overlap: 0.2649714827120175
+    mean_clicks_exact_weighted: 0.3141930864003443
+    mean_clicks_doob: 0.37
+
+test_6_click_count_distribution: PASS
+  tv_doob_vs_exact_weighted: 0.03350352942018285
+  tv_doob_vs_procedure_c: 0.20666666666666667
+  pmf_exact_weighted: [0.6399061206430832, 0.18806401255540994, 0.08182005741047055, 0.052511380129107964, 0.023508001569426243, 0.009616909732947099, 0.0032056365776490328, 0.0009540585052526884, 0.00028621755157580653, 0.00011448702063032261, 9.540585052526883e-06, 0.0, 3.5777193946975815e-06]
+  pmf_doob: [0.6433333333333333, 0.15833333333333333, 0.08166666666666667, 0.06833333333333333, 0.02666666666666667, 0.015, 0.0, 0.006666666666666667, 0.0, 0.0, 0.0, 0.0, 0.0]
+  pmf_born: [0.21833333333333332, 0.12833333333333333, 0.11166666666666666, 0.14333333333333334, 0.12833333333333333, 0.105, 0.07, 0.041666666666666664, 0.025, 0.02, 0.0033333333333333335, 0.0, 0.005]
+  pmf_procedure_c: [0.43833333333333335, 0.235, 0.165, 0.08666666666666667, 0.043333333333333335, 0.02, 0.006666666666666667, 0.005, 0.0, 0.0, 0.0, 0.0, 0.0]
+  pmf_plot: outputs/part6_validation_full/test6_click_count_pmf.png
+
+test_7_entanglement_scaling: PASS
+  large_system_timeavg_entropy:
+    1.0: 1.1301766229234889
+    0.7: 1.1224938861514462
+    0.5: 1.0187934291980816
+    0.3: 0.988595348487719
+    0.1: 0.9840088787317731
+  monotone_nonincreasing: True
+  benchmark_L8:
+    1.0: {'passed': True, 'exact_weighted_timeavg_entropy_L8': 1.0375982265679342, 'gaussian_doob_timeavg_entropy_L8': 1.0507656016915479, 'absolute_difference': 0.013167375123613656}
+    0.7: {'passed': True, 'exact_weighted_timeavg_entropy_L8': 1.0132165527242039, 'gaussian_doob_timeavg_entropy_L8': 1.0641843609983899, 'absolute_difference': 0.05096780827418601}
+    0.5: {'passed': True, 'exact_weighted_timeavg_entropy_L8': 1.0881106288965485, 'gaussian_doob_timeavg_entropy_L8': 0.9963762303738085, 'absolute_difference': 0.09173439852274001}
+    0.3: {'passed': True, 'exact_weighted_timeavg_entropy_L8': 1.1385981465613784, 'gaussian_doob_timeavg_entropy_L8': 0.991932363643158, 'absolute_difference': 0.1466657829182204}
+    0.1: {'passed': True, 'exact_weighted_timeavg_entropy_L8': 0.9951203086008479, 'gaussian_doob_timeavg_entropy_L8': 0.995120141837557, 'absolute_difference': 1.6676329084308605e-07}
+  entropy_scaling_plot: outputs/part6_validation_full/test7_entropy_scaling.png
+
+test_8_conditioned_survival_monotonicity: PASS
+  n_segments: 1
+  max_positive_diff_in_raw_overlap: -0.001162846021555558
+  min_raw_overlap: 0.2109116757553127
+  final_normalized_overlap_at_T: 1.0
+
+test_9_qs_vs_rzeta: PASS
+  exact_weighted_p0: 0.5640977884921847
+  doob_p0: 0.5816666666666667
+  procedure_b_p0: 0.645
+  procedure_c_p0: 0.4066666666666667
+  exact_weighted_mean_clicks: 0.8192691439506519
+  doob_mean_clicks: 0.7666666666666667
+  procedure_b_mean_clicks: 0.645
+  procedure_c_mean_clicks: 1.3
+
+notes:
+  - Trajectory observables under Q_s are estimated from exact ordinary trajectories with weights zeta^N_T where appropriate.
+  - That weighted-Born estimator is mathematically identical to Procedure A for ensemble averages and histograms, but much cheaper than rejection sampling.

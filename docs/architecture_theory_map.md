@@ -94,6 +94,30 @@ Slow validation harness for the benchmark checklist in Part 6.
 - Conditioned-survival monotonicity
 - `Q_s` vs `R_\zeta` comparison
 
+### `pps_qj/extended_validation.py`
+
+Slow post-Part-6 benchmark and report generator.
+
+- overlap micro-test for `Tr(G_t rho_t)`
+- compensator / Radon-Nikodym comparison between `Q_s` and `R_\zeta`
+- martingale check for the backward weight process
+- finite-horizon waiting-time transform check
+- backward-pass stability and convergence
+- look-ahead rate comparison at fixed instantaneous `q_j`
+- occupation-profile and density-correlator benchmarks
+- entropy benchmark with confidence bands
+- system-size scaling checks
+- click-time statistics and report plots A-D
+
+Theory anchors:
+
+- compensator identity for `dR_\zeta / dP`
+- martingale structure of `Tr(G_t \rho_t) \zeta^{N_t}`
+- finite-horizon truncated waiting-time law
+- Gaussian closure convergence and commuting-case analytic solution
+- look-ahead structure of Doob rates
+- observable equivalence under weighted Born averages vs Doob sampling
+
 ### `tests/test_doob_wtmc.py`
 
 Fast regression tests for the current Doob/PPS code path. These are not the full benchmark suite; they are the lightweight CI-facing checks.

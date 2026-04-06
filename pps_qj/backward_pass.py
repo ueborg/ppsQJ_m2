@@ -138,6 +138,7 @@ def run_gaussian_backward_pass(
     atol: float = 1e-10,
     sample_points: int = 257,
     clip_epsilon: float = 1e-9,
+    max_step: float | None = None,
 ) -> GaussianBackwardData:
     n = 2 * model.L
     y0 = np.zeros(n * n + 1, dtype=np.float64)
@@ -156,6 +157,7 @@ def run_gaussian_backward_pass(
         dense_output=True,
         rtol=rtol,
         atol=atol,
+        max_step=max_step if max_step is not None else np.inf,
     )
     if not solution.success:
         raise RuntimeError(f"Gaussian backward pass failed: {solution.message}")

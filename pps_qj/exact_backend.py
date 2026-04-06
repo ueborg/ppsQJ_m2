@@ -146,6 +146,8 @@ def _sample_waiting_time(
     state: np.ndarray,
     rng: np.random.Generator,
     tol: Tolerances | None = None,
+    *,
+    T_horizon: float | None = None,
 ) -> float:
     tolerances = tol or Tolerances()
     target = float(rng.uniform(0.0, 1.0))
@@ -161,13 +163,25 @@ def _sample_waiting_time(
         return float(-(1.0 / model.gamma_m) * np.log(argument))
 
     survival = lambda dt: _survival_probability(model, state, dt)
+
+    # If a time horizon is given, check for no-jump outcome first (one cheap
+    # expm call) and use it as the upper bracket so the expansion loop in
+    # bracket_and_bisect never runs — fixing the catastrophic blow-up that
+    # occurs when S(∞) > target (e.g. commuting case with a no-click sector).
+    if T_horizon is not None:
+        if survival(T_horizon) > target:
+            return float("inf")
+        x1 = T_horizon
+    else:
+        x1 = 1.0
+
     try:
         return float(
             bracket_and_bisect(
                 fn=survival,
                 target=target,
                 x0=0.0,
-                x1=1.0,
+                x1=x1,
                 tol=tolerances,
             )
         )
@@ -200,7 +214,7 @@ def ordinary_quantum_jump_trajectory(
     channels: list[int] = []
 
     while t < T:
-        dt = _sample_waiting_time(model, state, rng, tol=tol)
+        dt = _sample_waiting_time(model, state, rng, tol=tol, T_horizon=T - t)
         if not np.isfinite(dt) or t + dt >= T:
             state = safe_normalize(_propagate_unnormalized(model, state, T - t))
             t = T
@@ -262,7 +276,7 @@ def procedure_b_trajectory(
         accepted = True
 
         while t < T:
-            dt = _sample_waiting_time(model, state, rng, tol=tol)
+            dt = _sample_waiting_time(model, state, rng, tol=tol, T_horizon=T - t)
             if not np.isfinite(dt) or t + dt >= T:
                 state = safe_normalize(_propagate_unnormalized(model, state, T - t))
                 t = T
@@ -307,7 +321,7 @@ def procedure_c_local_trajectory(
     candidate_jump_times: list[float] = []
 
     while t < T:
-        dt = _sample_waiting_time(model, state, rng, tol=tol)
+        dt = _sample_waiting_time(model, state, rng, tol=tol, T_horizon=T - t)
         if not np.isfinite(dt) or t + dt >= T:
             state = safe_normalize(_propagate_unnormalized(model, state, T - t))
             t = T
