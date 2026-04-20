@@ -1,0 +1,279 @@
+"""Population-dynamics (cloning) algorithm for the tilted path measure.
+
+Implements P_zeta(Traj) \\propto zeta^{N_T} P_Born(Traj) by evolving a population
+of N_c Gaussian (covariance-matrix) clones in parallel, tilting trajectory
+weights by zeta^{n_jumps} per resampling window, and performing systematic
+resampling between windows. Estimates the scaled-cumulant generating function
+theta(zeta) = lim_{T -> inf} (1/T) log <zeta^{N_T}>_Born, together with the
+ensemble-averaged half-chain entanglement S_zeta.
+
+The Born-rule trajectory driver is ``gaussian_born_rule_trajectory`` from
+``pps_qj.gaussian_backend`` (exact bisection-based QJ unraveling).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
+
+from .gaussian_backend import (
+    GaussianChainModel,
+    entanglement_entropy,
+    gaussian_born_rule_trajectory,
+)
+
+
+__all__ = [
+    "CloningCollapse",
+    "CloningResult",
+    "run_cloning",
+    "sweep_zeta",
+    "_systematic_resample",
+]
+
+
+class CloningCollapse(RuntimeError):
+    """Raised when the entire clone population is killed in a single step."""
+
+
+@dataclass
+class CloningResult:
+    theta_hat: float
+    S_mean: float
+    S_std: float
+    S_history: np.ndarray
+    log_Z_history: np.ndarray
+    W_history: np.ndarray
+    n_collapses: int
+    n_burnin_steps: int
+    eff_sample_size: float
+    zeta: float
+    L: int
+    alpha: float
+    w: float
+    N_c: int
+    T_total: float
+    delta_tau: float
+
+
+def _systematic_resample(
+    covs: list[np.ndarray],
+    weights: np.ndarray,
+    rng: np.random.Generator,
+) -> list[np.ndarray]:
+    """Systematic resampling of a covariance population.
+
+    At equal weights this is deterministic: returns one copy per clone.
+    """
+    weights = np.asarray(weights, dtype=np.float64)
+    total = float(weights.sum())
+    if total <= 0.0:
+        raise CloningCollapse("Cannot resample: all weights zero.")
+    probs = weights / total
+    N_c = len(covs)
+    F = np.cumsum(probs)
+    F[-1] = 1.0  # guard against floating drift
+    U = float(rng.uniform(0.0, 1.0 / N_c))
+    positions = U + np.arange(N_c) / N_c
+    # searchsorted with side='right' gives index i such that F[i-1] < pos <= F[i]
+    indices = np.searchsorted(F, positions, side="left")
+    indices = np.clip(indices, 0, N_c - 1)
+    return [covs[int(i)].copy() for i in indices]
+
+
+def _step_log_weight(n_jumps: int, zeta: float) -> float:
+    """Per-clone trajectory weight w[i] under the tilt zeta^{n_jumps}."""
+    if zeta == 0.0:
+        return 1.0 if n_jumps == 0 else 0.0
+    if zeta == 1.0:
+        return 1.0
+    return float(np.exp(n_jumps * np.log(zeta)))
+
+
+def run_cloning(
+    model: GaussianChainModel,
+    zeta: float,
+    T_total: float,
+    N_c: int,
+    rng: np.random.Generator,
+    delta_tau: Optional[float] = None,
+    n_burnin_frac: float = 0.25,
+    record_entropy: bool = True,
+) -> CloningResult:
+    """Population-dynamics estimator of theta(zeta) and S_zeta.
+
+    Each of N_c clones carries a Majorana covariance matrix; during each
+    resampling window of length delta_tau, clones evolve independently under
+    the exact Born-rule unraveling (``gaussian_born_rule_trajectory``). After
+    the window, trajectory weights w_i = zeta^{n_jumps,i} are accumulated into
+    log Z, the weighted half-chain entropy is recorded (BEFORE resampling),
+    and the population is systematically resampled (skipped at zeta==1 since
+    uniform weights make resampling a no-op but bias-free).
+
+    Implementation notes
+    --------------------
+    * A fresh sub-rng is spawned per clone per step from the master rng so that
+      seeds never repeat across steps.
+    * Initialisation copies ``model.gamma0`` into each clone; the trajectory
+      driver reads its initial state from ``model.gamma0``/``model.orbitals0``,
+      so we pass a shallow-copy ``GaussianChainModel`` with gamma0 set to the
+      current clone covariance for the sub-step.
+    """
+    if zeta < 0.0:
+        raise ValueError("zeta must be non-negative")
+    if T_total <= 0.0:
+        raise ValueError("T_total must be positive")
+    if N_c < 1:
+        raise ValueError("N_c must be >= 1")
+
+    L = model.L
+    alpha = model.alpha
+    w = model.w
+
+    if delta_tau is None:
+        delta_tau = 1.0 / max(2.0 * alpha * (L - 1), 1e-6)
+
+    n_steps = max(1, int(np.ceil(T_total / delta_tau)))
+    # Recompute effective delta_tau so n_steps * delta_tau == T_total exactly
+    delta_tau_eff = T_total / n_steps
+
+    # Per-clone covariances (independent copies of gamma0)
+    covs: list[np.ndarray] = [model.gamma0.copy() for _ in range(N_c)]
+
+    log_Z_acc = 0.0
+    log_Z_history: list[float] = []
+    W_history: list[float] = []
+    S_history: list[float] = []
+    n_collapses = 0
+    final_weights = np.ones(N_c, dtype=np.float64)
+
+    # Lazy import to avoid circular; reuse dataclasses.replace pattern
+    from dataclasses import replace
+
+    for _k in range(n_steps):
+        # Spawn sub-rngs for this step (one per clone). Using rng.spawn keeps
+        # streams reproducible and non-overlapping.
+        sub_rngs = rng.spawn(N_c)
+        n_jumps = np.zeros(N_c, dtype=np.int64)
+        for i in range(N_c):
+            # Build a sub-model view whose initial state is clone i's cov.
+            # We must also supply orbitals consistent with this covariance.
+            # gaussian_born_rule_trajectory reads model.gamma0 and
+            # model.orbitals0; constructing orbitals fresh from the covariance.
+            from .gaussian_backend import orbitals_from_covariance
+
+            orbs = orbitals_from_covariance(covs[i])
+            sub_model = replace(model, gamma0=covs[i].copy(), orbitals0=orbs)
+            result = gaussian_born_rule_trajectory(
+                sub_model, T=delta_tau_eff, rng=sub_rngs[i]
+            )
+            covs[i] = np.asarray(result.final_covariance, dtype=np.float64)
+            n_jumps[i] = int(result.n_jumps)
+
+        # Compute weights (explicit zeta==0/zeta==1 branches)
+        if zeta == 0.0:
+            weights = (n_jumps == 0).astype(np.float64)
+        elif zeta == 1.0:
+            weights = np.ones(N_c, dtype=np.float64)
+        else:
+            # Overflow-safe via log-space for large n_jumps
+            log_w = n_jumps * np.log(zeta)
+            # Shift for numerical stability, but keep absolute scale for W_k
+            weights = np.exp(log_w)
+
+        W_k = float(np.mean(weights))
+        W_history.append(W_k)
+        if W_k <= 0.0:
+            n_collapses += 1
+            raise CloningCollapse(
+                f"Population collapsed at step {_k + 1}/{n_steps} "
+                f"(zeta={zeta}, n_jumps min={int(n_jumps.min())})."
+            )
+        log_Z_acc += float(np.log(W_k))
+        log_Z_history.append(log_Z_acc)
+
+        if record_entropy:
+            S_vals = np.array(
+                [entanglement_entropy(c, L // 2) for c in covs], dtype=np.float64
+            )
+            w_sum = float(weights.sum())
+            if w_sum > 0.0:
+                S_zeta_k = float(np.sum(weights * S_vals) / w_sum)
+            else:
+                S_zeta_k = float(np.mean(S_vals))
+            S_history.append(S_zeta_k)
+
+        final_weights = weights.copy()
+
+        # Resampling step (skip at zeta==1: uniform weights -> trivial no-op,
+        # keeps streams identical to independent evolution).
+        if zeta != 1.0:
+            covs = _systematic_resample(covs, weights, rng)
+        # else: leave covs untouched (all weights equal anyway)
+
+    log_Z_arr = np.asarray(log_Z_history, dtype=np.float64)
+    W_arr = np.asarray(W_history, dtype=np.float64)
+    S_arr = np.asarray(S_history, dtype=np.float64) if record_entropy else np.asarray([])
+
+    theta_hat = log_Z_acc / T_total
+
+    n_burnin_steps = int(n_steps * n_burnin_frac)
+    if record_entropy and len(S_arr) > n_burnin_steps:
+        S_mean = float(np.mean(S_arr[n_burnin_steps:]))
+        S_std = float(np.std(S_arr[n_burnin_steps:]))
+    else:
+        S_mean = float("nan")
+        S_std = float("nan")
+
+    fw_sum = float(final_weights.sum())
+    fw_sq = float(np.sum(final_weights ** 2))
+    eff_sample_size = (fw_sum ** 2) / fw_sq if fw_sq > 0 else 0.0
+
+    return CloningResult(
+        theta_hat=theta_hat,
+        S_mean=S_mean,
+        S_std=S_std,
+        S_history=S_arr,
+        log_Z_history=log_Z_arr,
+        W_history=W_arr,
+        n_collapses=n_collapses,
+        n_burnin_steps=n_burnin_steps,
+        eff_sample_size=eff_sample_size,
+        zeta=float(zeta),
+        L=int(L),
+        alpha=float(alpha),
+        w=float(w),
+        N_c=int(N_c),
+        T_total=float(T_total),
+        delta_tau=float(delta_tau_eff),
+    )
+
+
+def sweep_zeta(
+    model: GaussianChainModel,
+    zeta_vals,
+    T_total: float,
+    N_c: int,
+    rng: np.random.Generator,
+    **kwargs,
+) -> list[CloningResult]:
+    """Run ``run_cloning`` over an array of zeta values, one sub-rng each.
+
+    On CloningCollapse we re-raise with a message indicating which zeta
+    failed; the caller can catch per-zeta if partial sweeps are desired.
+    """
+    sub_rngs = rng.spawn(len(zeta_vals))
+    out: list[CloningResult] = []
+    for idx, z in enumerate(zeta_vals):
+        try:
+            out.append(
+                run_cloning(model, float(z), T_total, N_c, sub_rngs[idx], **kwargs)
+            )
+        except CloningCollapse as exc:
+            raise CloningCollapse(
+                f"sweep_zeta collapsed at zeta={float(z):.4f} "
+                f"(index {idx}): {exc}"
+            ) from exc
+    return out

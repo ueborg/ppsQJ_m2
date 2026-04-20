@@ -23,14 +23,6 @@ The live package surface is the direct Doob/PPS stack:
 - `tests/test_doob_wtmc.py`
   Fast regression checks for the current Doob implementation.
 
-Convenience wrapper modules are kept at the repository root:
-
-- `exact_backend.py`
-- `gaussian_backend.py`
-- `backward_pass.py`
-- `overlaps.py`
-- `doob_wtmc.py`
-
 Archived legacy code, notebooks, and scripts were moved to `trash/`.
 
 ## Repository layout

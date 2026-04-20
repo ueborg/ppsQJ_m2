@@ -3,7 +3,21 @@ from __future__ import annotations
 import numpy as np
 
 
-def entanglement_entropy_statevector(psi: np.ndarray, L: int, l_sub: int) -> float:
+def entanglement_entropy_statevector(
+    psi: np.ndarray,
+    L: int,
+    l_sub: int | None = None,
+) -> float:
+    psi = np.asarray(psi)
+    if l_sub is None:
+        l_sub = int(L)
+        psi_size = int(psi.size)
+        if psi_size <= 0 or psi_size & (psi_size - 1):
+            raise ValueError(
+                "Statevector length must be a positive power of two when L is omitted."
+            )
+        L = psi_size.bit_length() - 1
+
     if l_sub <= 0 or l_sub >= L:
         return 0.0
     dim_a = 2**l_sub

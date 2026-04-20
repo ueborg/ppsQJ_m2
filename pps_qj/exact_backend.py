@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+"""Exact spin-chain benchmark for the monitored free-fermion endpoints.
+
+The trusted endpoint APIs in this module are:
+
+- ``ordinary_quantum_jump_trajectory`` for the Born-rule monitored dynamics
+- ``postselected_no_click_trajectory`` for the deterministic no-click branch
+
+The legacy ``procedure_*`` and ``lindbladian_superoperator(zeta=...)`` helpers
+remain because other parts of the repository still import them, but they are
+not the endpoint benchmark surface.
+"""
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -8,12 +20,16 @@ from scipy.integrate import solve_ivp
 from scipy.sparse.linalg import expm_multiply
 
 from pps_qj.core.numerics import bracket_and_bisect, safe_probs, safe_normalize
+from pps_qj.observables.basic import entanglement_entropy_statevector
 from pps_qj.types import JumpTrajectory, Tolerances
 
 I2 = sp.csr_matrix(np.eye(2, dtype=np.complex128))
 SZ = sp.csr_matrix(np.array([[1, 0], [0, -1]], dtype=np.complex128))
 SP = sp.csr_matrix(np.array([[0, 1], [0, 0]], dtype=np.complex128))
 SM = sp.csr_matrix(np.array([[0, 0], [1, 0]], dtype=np.complex128))
+# The local basis is ordered as |1>, |0> = |occupied>, |empty>, so the fermion
+# parity operator is (-1)^n = diag(-1, +1) = -sigma^z rather than sigma^z.
+PARITY = (-SZ).tocsr()
 
 
 def _kron_many_sparse(operators: list[sp.spmatrix]) -> sp.csr_matrix:
@@ -31,8 +47,8 @@ def build_jordan_wigner_operators(L: int) -> tuple[tuple[sp.csr_matrix, ...], tu
         ops_cd: list[sp.spmatrix] = []
         for idx in range(L):
             if idx < site:
-                ops_c.append(SZ)
-                ops_cd.append(SZ)
+                ops_c.append(PARITY)
+                ops_cd.append(PARITY)
             elif idx == site:
                 ops_c.append(SM)
                 ops_cd.append(SP)
@@ -45,6 +61,7 @@ def build_jordan_wigner_operators(L: int) -> tuple[tuple[sp.csr_matrix, ...], tu
 
 
 def neel_state(L: int) -> np.ndarray:
+    """Return |1,0,1,0,...> in the local |occupied>,|empty> basis."""
     up = np.array([1.0, 0.0], dtype=np.complex128)
     down = np.array([0.0, 1.0], dtype=np.complex128)
     factors = [up if site % 2 == 0 else down for site in range(L)]
@@ -58,7 +75,8 @@ def neel_state(L: int) -> np.ndarray:
 class ExactSpinChainModel:
     L: int
     w: float
-    gamma_m: float
+    # alpha: measurement rate in Kells et al. (2023), Eq. (1); jump rate = 2*alpha
+    alpha: float
     c_ops: tuple[sp.csr_matrix, ...]
     cd_ops: tuple[sp.csr_matrix, ...]
     hamiltonian: sp.csr_matrix
@@ -71,7 +89,7 @@ class ExactSpinChainModel:
         return 2**self.L
 
 
-def build_exact_spin_chain_model(L: int, w: float, gamma_m: float) -> ExactSpinChainModel:
+def build_exact_spin_chain_model(L: int, w: float, alpha: float) -> ExactSpinChainModel:
     c_ops, cd_ops = build_jordan_wigner_operators(L)
     dim = 2**L
     H = sp.csr_matrix((dim, dim), dtype=np.complex128)
@@ -81,19 +99,19 @@ def build_exact_spin_chain_model(L: int, w: float, gamma_m: float) -> ExactSpinC
         left = bond
         right = bond + 1
         H = H + w * (cd_ops[left] @ c_ops[right] + cd_ops[right] @ c_ops[left])
-        d_op = 0.5 * (cd_ops[left] + c_ops[left] + cd_ops[right] - c_ops[right])
+        d_op = 0.5 * (cd_ops[left] + c_ops[left] + c_ops[right] - cd_ops[right])
         P = (d_op.getH() @ d_op).tocsr()
         projectors.append(P)
 
     jump_sum = sp.csr_matrix((dim, dim), dtype=np.complex128)
     for projector in projectors:
         jump_sum = jump_sum + projector
-    h_eff = (H - 0.5j * gamma_m * jump_sum).tocsr()
+    h_eff = (H - 1j * alpha * jump_sum).tocsr()
 
     return ExactSpinChainModel(
         L=L,
         w=w,
-        gamma_m=gamma_m,
+        alpha=alpha,
         c_ops=c_ops,
         cd_ops=cd_ops,
         hamiltonian=H.tocsr(),
@@ -160,7 +178,7 @@ def _sample_waiting_time(
             return float("inf")
         argument = (target - s_inf) / q
         argument = float(np.clip(argument, 1e-15, 1.0))
-        return float(-(1.0 / model.gamma_m) * np.log(argument))
+        return float(-(1.0 / (2.0 * model.alpha)) * np.log(argument))
 
     survival = lambda dt: _survival_probability(model, state, dt)
 
@@ -235,6 +253,55 @@ def ordinary_quantum_jump_trajectory(
         final_state=state,
         candidate_jump_times=jump_times.copy(),
     )
+
+
+def _stable_postselected_no_click_state(
+    model: ExactSpinChainModel,
+    T: float,
+    state: np.ndarray,
+    *,
+    max_step: float = 4.0,
+) -> tuple[np.ndarray, float]:
+    psi = safe_normalize(np.asarray(state, dtype=np.complex128))
+    t = 0.0
+    log_survival = 0.0
+    while t < T - 1e-15:
+        dt = min(max_step, T - t)
+        psi_tilde = _propagate_unnormalized(model, psi, dt)
+        norm = float(np.linalg.norm(psi_tilde))
+        if norm <= 1e-300:
+            raise ValueError("No-click branch norm underflowed during segmented propagation")
+        log_survival += 2.0 * np.log(norm)
+        psi = np.asarray(psi_tilde, dtype=np.complex128) / norm
+        t += dt
+    min_log = np.log(np.finfo(np.float64).tiny)
+    survival_probability = 0.0 if log_survival < min_log else float(np.exp(log_survival))
+    return psi, survival_probability
+
+
+def postselected_no_click_trajectory(
+    model: ExactSpinChainModel,
+    T: float,
+    state: np.ndarray | None = None,
+) -> JumpTrajectory:
+    """Return the strictly conditioned no-click branch up to time ``T``."""
+    psi0 = model.initial_state if state is None else np.asarray(state, dtype=np.complex128)
+    final_state, survival_probability = _stable_postselected_no_click_state(model, T, psi0)
+    return JumpTrajectory(
+        jump_times=[],
+        channels=[],
+        final_time=float(T),
+        final_state=final_state,
+        candidate_jump_times=[],
+        diagnostics={"survival_probability": survival_probability},
+    )
+
+
+def half_chain_entanglement_entropy(
+    state: np.ndarray,
+    L: int,
+) -> float:
+    return float(entanglement_entropy_statevector(np.asarray(state, dtype=np.complex128), L, L // 2))
 
 
 def procedure_a_trajectory(
@@ -363,7 +430,7 @@ def lindbladian_superoperator(
 
     for projector in model.jump_projectors:
         P = projector.tocsr()
-        superop = superop + model.gamma_m * (
+        superop = superop + 2.0 * model.alpha * (
             zeta * sp.kron(P.T, P, format="csr")
             - 0.5 * sp.kron(identity, P, format="csr")
             - 0.5 * sp.kron(P.T, identity, format="csr")

@@ -64,12 +64,12 @@ def majorana_hamiltonian_generator(L: int, w: float) -> np.ndarray:
     return h
 
 
-def effective_generator(L: int, w: float, gamma_m: float) -> np.ndarray:
+def effective_generator(L: int, w: float, alpha: float) -> np.ndarray:
     h_eff = np.asarray(majorana_hamiltonian_generator(L, w), dtype=np.complex128)
     for bond in range(L - 1):
         a, b = bond_jump_pair(bond)
-        h_eff[a, b] -= 0.5j * gamma_m
-        h_eff[b, a] += 0.5j * gamma_m
+        h_eff[a, b] -= 1j * alpha
+        h_eff[b, a] += 1j * alpha
     return h_eff
 
 
@@ -77,7 +77,8 @@ def effective_generator(L: int, w: float, gamma_m: float) -> np.ndarray:
 class GaussianChainModel:
     L: int
     w: float
-    gamma_m: float
+    # alpha: measurement rate in Kells et al. (2023), Eq. (1); jump rate = 2*alpha
+    alpha: float
     h_hamiltonian: np.ndarray
     h_effective: np.ndarray
     jump_pairs: tuple[tuple[int, int], ...]
@@ -85,14 +86,14 @@ class GaussianChainModel:
     orbitals0: np.ndarray
 
 
-def build_gaussian_chain_model(L: int, w: float, gamma_m: float) -> GaussianChainModel:
+def build_gaussian_chain_model(L: int, w: float, alpha: float) -> GaussianChainModel:
     gamma0 = neel_covariance(L)
     return GaussianChainModel(
         L=L,
         w=w,
-        gamma_m=gamma_m,
+        alpha=alpha,
         h_hamiltonian=majorana_hamiltonian_generator(L, w),
-        h_effective=effective_generator(L, w, gamma_m),
+        h_effective=effective_generator(L, w, alpha),
         jump_pairs=tuple(bond_jump_pair(bond) for bond in range(L - 1)),
         gamma0=gamma0,
         orbitals0=orbitals_from_covariance(gamma0),
@@ -118,7 +119,7 @@ def propagate_no_click_orbitals(
     h_effective: np.ndarray,
     dt: float,
     *,
-    gamma_m: float = 0.0,
+    alpha: float = 0.0,
     n_monitored: int = 0,
 ) -> GaussianNoClickEvolution:
     if dt < 0.0:
@@ -140,7 +141,7 @@ def propagate_no_click_orbitals(
         branch_norm = 0.0
     else:
         log_abs_det_r = float(np.sum(np.log(diag_abs)))
-        branch_norm = float(np.exp(log_abs_det_r - 0.5 * gamma_m * n_monitored * dt))
+        branch_norm = float(np.exp(log_abs_det_r - alpha * n_monitored * dt))
     gamma = covariance_from_orbitals(q_matrix)
     return GaussianNoClickEvolution(
         orbitals_unnormalized=orbitals_tilde,
@@ -205,3 +206,202 @@ def entanglement_entropy(covariance: np.ndarray, ell: int, base: float = 2.0) ->
             term -= p_minus * log_fn(p_minus)
         entropy += term
     return float(entropy)
+
+
+@dataclass(frozen=True)
+class GaussianTrajectoryResult:
+    """Result of a Born-rule quantum-jump trajectory in the Gaussian backend."""
+    final_covariance: np.ndarray
+    n_jumps: int
+    jump_times: list[float]
+    jump_channels: list[int]
+
+
+def gaussian_born_rule_trajectory(
+    model: GaussianChainModel,
+    T: float,
+    rng: np.random.Generator,
+    bisection_tol: float = 1e-10,
+) -> GaussianTrajectoryResult:
+    """Exact Born-rule quantum-jump trajectory using bisection on survival probability.
+
+    Uses the fact that ``propagate_no_click_orbitals`` computes
+    ``branch_norm = exp(-∫₀ᵗ R(s) ds)``, the exact survival probability of the
+    no-click segment.  The waiting time to the next jump is found by bisection
+    on ``branch_norm(dt) = U`` where ``U ~ Uniform(0, 1)``.
+
+    The eigendecomposition of ``h_effective`` is cached so that each bisection
+    step avoids a full matrix exponential, reducing the per-step cost from
+    O(L³) (Padé) to O(L² · L) (matrix–vector products).
+    """
+    n_monitored = len(model.jump_pairs)
+    n = 2 * model.L
+
+    # Pre-diagonalise h_effective once: M(dt) = V diag(exp(λ dt)) V⁻¹
+    h_eff = np.asarray(model.h_effective, dtype=np.complex128)
+    evals, V = np.linalg.eig(h_eff)
+    V_inv = np.linalg.inv(V)
+
+    orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
+    cov = np.asarray(model.gamma0, dtype=np.float64).copy()
+    t = 0.0
+    jump_times: list[float] = []
+    jump_channels: list[int] = []
+
+    while t < T:
+        U = float(rng.uniform(0.0, 1.0))
+        T_rem = T - t
+
+        # Coefficients for the current orbital set in the eigenbasis
+        coeffs = V_inv @ orbitals  # (2L, L)
+
+        def _fast_branch_norm(dt: float) -> float:
+            """Evaluate branch_norm at *dt* using cached eigendecomposition."""
+            if dt <= 0.0:
+                return 1.0
+            exp_d = np.exp(evals * dt)
+            orbs_tilde = V @ (exp_d[:, None] * coeffs)
+            _, R_mat = np.linalg.qr(orbs_tilde, mode="reduced")
+            diag_abs = np.abs(np.diag(R_mat))
+            if np.any(diag_abs <= 1e-300):
+                return 0.0
+            log_abs_det = float(np.sum(np.log(diag_abs)))
+            return float(np.exp(log_abs_det - model.alpha * n_monitored * dt))
+
+        # Check whether a jump occurs before the horizon
+        bn_end = _fast_branch_norm(T_rem)
+        if bn_end >= U:
+            # No jump in remaining time — propagate to end
+            evo = propagate_no_click_orbitals(
+                orbitals, model.h_effective, T_rem,
+                alpha=model.alpha, n_monitored=n_monitored,
+            )
+            cov = evo.covariance
+            break
+
+        # Bisect for dt* in (0, T_rem) where branch_norm(dt*) = U
+        lo, hi = 0.0, T_rem
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if _fast_branch_norm(mid) > U:
+                lo = mid
+            else:
+                hi = mid
+            if hi - lo < bisection_tol:
+                break
+
+        dt_star = 0.5 * (lo + hi)
+
+        # Propagate to jump time (standard function for correct covariance)
+        evo = propagate_no_click_orbitals(
+            orbitals, model.h_effective, dt_star,
+            alpha=model.alpha, n_monitored=n_monitored,
+        )
+        orbitals = evo.orbitals_normalized
+        cov = evo.covariance
+        t += dt_star
+
+        # Select jump channel proportional to q_j
+        probs = np.array(
+            [jump_probability(cov, pair) for pair in model.jump_pairs],
+            dtype=np.float64,
+        )
+        total = probs.sum()
+        if total < 1e-15:
+            break
+        probs /= total
+        channel = int(rng.choice(n_monitored, p=probs))
+
+        # Apply jump
+        _, cov = apply_projective_jump(cov, model.jump_pairs[channel])
+        orbitals = orbitals_from_covariance(cov)
+
+        jump_times.append(t)
+        jump_channels.append(channel)
+
+    return GaussianTrajectoryResult(
+        final_covariance=cov,
+        n_jumps=len(jump_times),
+        jump_times=jump_times,
+        jump_channels=jump_channels,
+    )
+
+
+def topological_entanglement_entropy(covariance: np.ndarray) -> float:
+    """Topological entanglement entropy from the ABDC partition.
+
+    Accepts a 2L x 2L real antisymmetric Majorana covariance matrix and returns
+    S_top = S_AB + S_BC - S_B - S_D, where the ABDC partition divides L sites
+    into four equal quarters: A=[0,L/4), B=[L/4,L/2), D=[3L/4,L), C=[L/2,3L/4).
+
+    In the large-alpha, small-w limit (topological phase) the steady-state
+    average approaches 1; in the small-alpha, large-w limit (critical phase)
+    it remains O(1) but the product B_L = S_top * S_L diverges with L.
+
+    Parameters
+    ----------
+    covariance : (2L, 2L) ndarray
+        Majorana covariance matrix.
+
+    Returns
+    -------
+    float
+        The topological entanglement entropy.
+
+    Raises
+    ------
+    ValueError
+        If L is not divisible by 4.
+    """
+    n = covariance.shape[0]
+    if n % 8 != 0:
+        raise ValueError(
+            f"topological_entanglement_entropy requires L divisible by 4, "
+            f"got covariance shape {n}x{n} implying L={n//2}"
+        )
+    L = n // 2
+    q = L // 4
+    Gamma = np.asarray(covariance, dtype=np.float64)
+
+    # Convert Majorana covariance -> (G, F) correlation matrices via unitary
+    # c_j = (gamma_{2j} + i*gamma_{2j+1})/2, so <c^dag_j c_k> and <c_j c_k>
+    # are obtained from the Majorana two-point function <gamma_a gamma_b> = delta_{ab} + i*Gamma_{ab}.
+    U_mat = np.zeros((L, n), dtype=np.complex128)
+    for j in range(L):
+        U_mat[j, 2 * j] = 0.5
+        U_mat[j, 2 * j + 1] = 0.5j
+    M = np.eye(n) + 1j * Gamma
+    G = U_mat @ M @ U_mat.conj().T   # G_jk = <c_j^dag c_k>
+    F = U_mat @ M @ U_mat.T          # F_jk = <c_j c_k>
+
+    def _region_entropy(G, F, idx):
+        """Von Neumann entropy of a region from the (G, F) correlation matrix (log2)."""
+        idx = np.asarray(idx)
+        G_X = G[np.ix_(idx, idx)]
+        F_X = F[np.ix_(idx, idx)]
+        n_x = len(idx)
+        C_X = np.block([
+            [G_X, F_X],
+            [-F_X.conj(), np.eye(n_x) - G_X.T]
+        ])
+        eigvals = np.linalg.eigvalsh(C_X)
+        eps = 1e-14
+        eigvals = np.clip(eigvals.real, eps, 1.0 - eps)
+        # BdG eigenvalues come in (lambda, 1-lambda) pairs; divide by 2 to avoid double-counting.
+        return 0.5 * float(-np.sum(eigvals * np.log2(eigvals) + (1.0 - eigvals) * np.log2(1.0 - eigvals)))
+
+    # ABDC partition: A=[0,q), B=[q,2q), C=[2q,3q), D=[3q,4q)
+    A = np.arange(0, q)
+    B = np.arange(q, 2 * q)
+    C = np.arange(2 * q, 3 * q)
+    D = np.arange(3 * q, 4 * q)
+
+    AB = np.concatenate([A, B])
+    BC = np.concatenate([B, C])
+
+    S_AB = _region_entropy(G, F, AB)
+    S_BC = _region_entropy(G, F, BC)
+    S_B = _region_entropy(G, F, B)
+    S_D = _region_entropy(G, F, D)
+
+    return S_AB + S_BC - S_B - S_D

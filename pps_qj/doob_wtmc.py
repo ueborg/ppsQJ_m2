@@ -8,8 +8,11 @@ from pps_qj.gaussian_backend import (
     GaussianChainModel,
     apply_projective_jump,
     covariance_from_orbitals,
+    entanglement_entropy,
+    jump_probability,
     orbitals_from_covariance,
     propagate_no_click_orbitals,
+    topological_entanglement_entropy,
 )
 from pps_qj.overlaps import gaussian_overlap
 from pps_qj.types import JumpTrajectory, Tolerances
@@ -65,7 +68,7 @@ def conditioned_survival_gaussian(
         orbitals,
         model.h_effective,
         dt,
-        gamma_m=model.gamma_m,
+        alpha=model.alpha,
         n_monitored=len(model.jump_pairs),
     )
     C_t, z_t = backward_data.state_at(t_start + dt)
@@ -153,7 +156,7 @@ def doob_exact_trajectory(
             post_state = post_state / np.linalg.norm(post_state)
             post_states.append(post_state)
             overlap_post = backward_data.overlap(t, post_state)
-            rates.append(zeta * model.gamma_m * weight * overlap_post / overlap_pre)
+            rates.append(zeta * 2.0 * model.alpha * weight * overlap_post / overlap_pre)
 
         rates = np.asarray(rates, dtype=np.float64)
         if np.sum(rates) <= 0.0:
@@ -231,7 +234,7 @@ def doob_gaussian_trajectory(
                 orbitals,
                 model.h_effective,
                 max_dt,
-                gamma_m=model.gamma_m,
+                alpha=model.alpha,
                 n_monitored=len(model.jump_pairs),
             )
             orbitals = evolution.orbitals_normalized
@@ -247,7 +250,7 @@ def doob_gaussian_trajectory(
             orbitals,
             model.h_effective,
             dt,
-            gamma_m=model.gamma_m,
+            alpha=model.alpha,
             n_monitored=len(model.jump_pairs),
         )
         pre_orbitals = evolution.orbitals_normalized
@@ -259,9 +262,14 @@ def doob_gaussian_trajectory(
         rates = []
         post_orbitals: list[np.ndarray] = []
         for jump_pair in model.jump_pairs:
-            q, post_covariance = apply_projective_jump(pre_covariance, jump_pair)
+            q = jump_probability(pre_covariance, jump_pair)
+            if q <= 1e-14:
+                rates.append(0.0)
+                post_orbitals.append(pre_orbitals)
+                continue
+            _, post_covariance = apply_projective_jump(pre_covariance, jump_pair)
             overlap_post = gaussian_overlap(C_jump, post_covariance, z_scalar=z_jump)
-            rates.append(zeta * model.gamma_m * q * overlap_post / overlap_pre)
+            rates.append(zeta * 2.0 * model.alpha * q * overlap_post / overlap_pre)
             post_orbitals.append(orbitals_from_covariance(post_covariance))
 
         rates = np.asarray(rates, dtype=np.float64)
@@ -281,3 +289,28 @@ def doob_gaussian_trajectory(
         final_state=orbitals,
         diagnostics=diagnostics,
     )
+
+
+def gaussian_doob_trajectory_observables(
+    model: GaussianChainModel,
+    backward: GaussianBackwardData,
+    T: float,
+    zeta: float,
+    rng: np.random.Generator,
+    **kwargs,
+) -> dict:
+    """Run a Gaussian Doob trajectory and return entropy observables.
+
+    Returns a dict with keys ``"entropy"``, ``"topo_entropy"``, ``"n_clicks"``,
+    and ``"B_L"`` (the product of entanglement and topological entropies).
+    """
+    traj = doob_gaussian_trajectory(model, backward, T, zeta, rng, **kwargs)
+    cov = covariance_from_orbitals(np.asarray(traj.final_state))
+    ent = entanglement_entropy(cov, model.L // 2)
+    topo = topological_entanglement_entropy(cov)
+    return {
+        "entropy": ent,
+        "topo_entropy": topo,
+        "n_clicks": traj.n_jumps,
+        "B_L": ent * topo,
+    }

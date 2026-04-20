@@ -20,6 +20,7 @@ MANIFEST
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
+notebooks/
 
 # Pytest
 .pytest_cache/
@@ -62,3 +63,6 @@ continuousmeasurementslatex/**/*.log
 .env
 .env.*
 secrets.toml
+
+# Outputs 
+outputs/

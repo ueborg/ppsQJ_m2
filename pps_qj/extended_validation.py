@@ -369,7 +369,7 @@ def _observe_gaussian_doob_trajectory(
                 orbitals,
                 model.h_effective,
                 dt,
-                gamma_m=model.gamma_m,
+                alpha=model.alpha,
                 n_monitored=len(model.jump_pairs),
             )
             C_t, z_t = backward.state_at(t + dt)
@@ -415,7 +415,7 @@ def _observe_gaussian_doob_trajectory(
                 orbitals,
                 model.h_effective,
                 float(observe[obs_idx] - t),
-                gamma_m=model.gamma_m,
+                alpha=model.alpha,
                 n_monitored=len(model.jump_pairs),
             )
             record_covariance(evolution_obs.covariance, obs_idx)
@@ -426,7 +426,7 @@ def _observe_gaussian_doob_trajectory(
                 orbitals,
                 model.h_effective,
                 max_dt,
-                gamma_m=model.gamma_m,
+                alpha=model.alpha,
                 n_monitored=len(model.jump_pairs),
             )
             orbitals = evolution.orbitals_normalized
@@ -437,7 +437,7 @@ def _observe_gaussian_doob_trajectory(
             orbitals,
             model.h_effective,
             jump_dt,
-            gamma_m=model.gamma_m,
+            alpha=model.alpha,
             n_monitored=len(model.jump_pairs),
         )
         pre_covariance = evolution.covariance
@@ -451,7 +451,7 @@ def _observe_gaussian_doob_trajectory(
         for idx, jump_pair in enumerate(model.jump_pairs):
             q, post_covariance = apply_projective_jump(pre_covariance, jump_pair)
             overlap_post = gaussian_overlap(C_jump, post_covariance, z_scalar=z_jump)
-            rates[idx] = zeta * model.gamma_m * q * overlap_post / overlap_pre
+            rates[idx] = zeta * 2.0 * model.alpha * q * overlap_post / overlap_pre
             post_covariances.append(post_covariance)
 
         if np.sum(rates) <= 0.0:
@@ -486,11 +486,11 @@ def _run_overlap_microtest(config: ExtendedValidationConfig) -> dict[str, Any]:
     errors: list[float] = []
     examples: list[dict[str, float]] = []
     for L in (2, 4):
-        operator_exact = build_exact_spin_chain_model(L=L, w=0.0, gamma_m=1.0)
-        operator_gauss = build_gaussian_chain_model(L=L, w=0.0, gamma_m=1.0)
+        operator_exact = build_exact_spin_chain_model(L=L, w=0.0, alpha=0.5)
+        operator_gauss = build_gaussian_chain_model(L=L, w=0.0, alpha=0.5)
         backward_exact = run_exact_backward_pass(operator_exact, T=2.0, zeta=0.5)
         backward_gauss = run_gaussian_backward_pass(operator_gauss, T=2.0, zeta=0.5, sample_points=65)
-        state_model = build_exact_spin_chain_model(L=L, w=0.5, gamma_m=1.0)
+        state_model = build_exact_spin_chain_model(L=L, w=0.5, alpha=0.5)
         gamma_ops = _majorana_ops(state_model)
         rng = _rng(config.seed + 10 * L)
         for idx in range(config.overlap_micro_n_states):
@@ -532,12 +532,12 @@ def _run_test_10(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 4
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
 
-    exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
-    gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
+    gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=65)
 
     rng_born = _rng(config.seed + 1001)
@@ -599,7 +599,7 @@ def _run_test_10(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     )
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zeta": zeta},
         "metrics": {
             "Z_qs_hat": z_hat,
             "Z_rzeta_hat": z_r_hat,
@@ -627,12 +627,12 @@ def _run_test_11(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 4
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
     observe_times = np.linspace(0.0, T, config.test11_grid_points)
 
-    exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
     backward = run_exact_backward_pass(exact, T=T, zeta=zeta)
 
     rng = _rng(config.seed + 1101)
@@ -701,7 +701,7 @@ def _run_test_11(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     )
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta, "n_traj": config.test11_born_n},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zeta": zeta, "n_traj": config.test11_born_n},
         "metrics": {
             "Z_exact": z_exact,
             "mean_M_T": float(np.mean(final_values)),
@@ -724,11 +724,11 @@ def _run_test_12(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 4
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
 
-    gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+    gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=65)
     single = doob_gaussian_trajectory(
         gauss,
@@ -800,7 +800,7 @@ def _run_test_12(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     )
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zeta": zeta},
         "metrics": {
             "n_segments_single_traj": len(segments),
             "max_s0_error": float(max(s0_errors, default=0.0)),
@@ -823,13 +823,13 @@ def _run_test_14(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 4
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
     t_mid = T / 2.0
 
-    exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
-    gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
+    gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=65)
     gamma_ops = _majorana_ops(exact)
 
@@ -875,11 +875,11 @@ def _run_test_14(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
         for idx, pair in enumerate(gauss.jump_pairs):
             q_val, post_covariance = apply_projective_jump(covariance, pair)
             overlap_post = gaussian_overlap(C_mid, post_covariance, z_scalar=z_mid)
-            rates[idx] = zeta * gamma_m * q_val * overlap_post / overlap_pre
+            rates[idx] = zeta * 2.0 * alpha * q_val * overlap_post / overlap_pre
         return rates
 
-    r_rates_1 = zeta * gamma_m * state1["q"]
-    r_rates_2 = zeta * gamma_m * state2["q"]
+    r_rates_1 = zeta * 2.0 * alpha * state1["q"]
+    r_rates_2 = zeta * 2.0 * alpha * state2["q"]
     d_rates_1 = doob_rates(state1["covariance"])
     d_rates_2 = doob_rates(state2["covariance"])
 
@@ -902,7 +902,7 @@ def _run_test_14(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     passed = bool(best_q_mismatch < 0.05 and max_r_diff < 0.03 and max_d_diff > 0.01)
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta, "t_mid": t_mid},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zeta": zeta, "t_mid": t_mid},
         "metrics": {
             "selected_pair_q_mismatch": best_q_mismatch,
             "selected_pair_covariance_distance": best_distance,
@@ -924,14 +924,14 @@ def _run_test_13(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     import matplotlib.pyplot as plt
 
     L = 6
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
     w_ref = 0.5
     dts = [0.1, 0.05, 0.02, 0.01]
 
-    exact = build_exact_spin_chain_model(L=L, w=w_ref, gamma_m=gamma_m)
-    gauss = build_gaussian_chain_model(L=L, w=w_ref, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w_ref, alpha=alpha)
+    gauss = build_gaussian_chain_model(L=L, w=w_ref, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=257)
     C_T, z_T = backward.state_at(T)
     C_0, z_0 = backward.state_at(0.0)
@@ -961,7 +961,7 @@ def _run_test_13(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
         eig_max = max(eig_max, float(np.max(spectrum.real)))
         antisym_error = max(antisym_error, float(np.max(np.abs(covariance + covariance.T))))
 
-    gauss_comm = build_gaussian_chain_model(L=L, w=0.0, gamma_m=gamma_m)
+    gauss_comm = build_gaussian_chain_model(L=L, w=0.0, alpha=alpha)
     backward_comm = run_gaussian_backward_pass(gauss_comm, T=T, zeta=zeta, sample_points=257)
     t_comm = T - backward_comm.sample_tau
     order_comm = np.argsort(t_comm)
@@ -969,7 +969,7 @@ def _run_test_13(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     cov_comm = backward_comm.sample_covariances[order_comm]
     alpha_errors: list[float] = []
     offpair_max = np.zeros(t_comm.size, dtype=np.float64)
-    analytic_curve = np.tanh(0.5 * gamma_m * (1.0 - zeta) * (T - t_comm))
+    analytic_curve = np.tanh(alpha * (1.0 - zeta) * (T - t_comm))
     for idx, covariance in enumerate(cov_comm):
         allowed = set()
         for pair in gauss_comm.jump_pairs:
@@ -997,7 +997,7 @@ def _run_test_13(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     comm_path = output_dir / "test13_commuting_backward_covariance.png"
     _save_figure(fig1, comm_path, config.plot_dpi)
 
-    gauss_noncomm = build_gaussian_chain_model(L=L, w=w_ref, gamma_m=gamma_m)
+    gauss_noncomm = build_gaussian_chain_model(L=L, w=w_ref, alpha=alpha)
     backward_noncomm = run_gaussian_backward_pass(gauss_noncomm, T=T, zeta=zeta, sample_points=257)
     t_noncomm = T - backward_noncomm.sample_tau
     order_noncomm = np.argsort(t_noncomm)
@@ -1031,7 +1031,7 @@ def _run_test_13(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     )
     return {
         "passed": passed,
-        "parameters": {"L": L, "gamma_m": gamma_m, "T": T, "zeta": zeta, "w_values": [0.0, w_ref]},
+        "parameters": {"L": L, "alpha": alpha, "T": T, "zeta": zeta, "w_values": [0.0, w_ref]},
         "metrics": {
             "max_abs_C_T": float(np.max(np.abs(C_T))),
             "abs_z_T_minus_1": abs(z_T - 1.0),
@@ -1062,13 +1062,13 @@ def _run_test_15(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 4
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
     observe_times = np.array([0.0, T / 4.0, T / 2.0, 3.0 * T / 4.0, T], dtype=np.float64)
 
-    exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
-    gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
+    gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=65)
     number_ops = _number_ops(exact)
     nn_ops = _nearest_neighbor_number_ops(number_ops)
@@ -1159,7 +1159,7 @@ def _run_test_15(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     passed = bool(max_occ_diff < 0.05 and max_conn_diff < 0.08)
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zeta": zeta},
         "metrics": {
             "max_abs_occupation_difference": max_occ_diff,
             "max_abs_connected_nn_difference": max_conn_diff,
@@ -1180,13 +1180,13 @@ def _run_test_16(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 8
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 5.0
     zetas = [1.0, 0.7, 0.5, 0.3, 0.1]
     observe_times = np.array([T / 4.0, T / 2.0, 3.0 * T / 4.0, T], dtype=np.float64)
 
-    exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
-    gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
+    gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
     benchmark: dict[str, Any] = {}
 
     fig, ax = plt.subplots(figsize=(7.4, 5.0))
@@ -1259,7 +1259,7 @@ def _run_test_16(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     passed = bool(max_in_sigma < 2.0)
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zetas": zetas},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zetas": zetas},
         "metrics": {"benchmark": benchmark, "max_in_sigma": max_in_sigma},
         "artifacts": {"entropy_benchmark_plot": str(plot_path)},
     }
@@ -1273,7 +1273,7 @@ def _run_test_17(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     zeta = 0.5
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     systems = [4, 6, 8]
 
@@ -1283,8 +1283,8 @@ def _run_test_17(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     metrics: dict[str, Any] = {}
 
     for idx, L in enumerate(systems):
-        exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
-        gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+        exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
+        gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
         backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=65)
 
         rng_born = _rng(config.seed + 1700 + idx)
@@ -1367,7 +1367,7 @@ def _run_test_17(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     )
     return {
         "passed": passed,
-        "parameters": {"L_values": systems, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta},
+        "parameters": {"L_values": systems, "w": w, "alpha": alpha, "T": T, "zeta": zeta},
         "metrics": metrics,
         "artifacts": {"scaling_plot": str(plot_path)},
     }
@@ -1381,13 +1381,13 @@ def _run_test_18(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
 
     L = 4
     w = 0.5
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
     bins = np.linspace(0.0, T, 26)
 
-    exact = build_exact_spin_chain_model(L=L, w=w, gamma_m=gamma_m)
-    gauss = build_gaussian_chain_model(L=L, w=w, gamma_m=gamma_m)
+    exact = build_exact_spin_chain_model(L=L, w=w, alpha=alpha)
+    gauss = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=65)
 
     rng_born = _rng(config.seed + 1801)
@@ -1459,7 +1459,7 @@ def _run_test_18(config: ExtendedValidationConfig, output_dir: Path) -> dict[str
     passed = bool(ks_first_click < 0.05)
     return {
         "passed": passed,
-        "parameters": {"L": L, "w": w, "gamma_m": gamma_m, "T": T, "zeta": zeta},
+        "parameters": {"L": L, "w": w, "alpha": alpha, "T": T, "zeta": zeta},
         "metrics": {
             "ks_first_click_weighted_vs_doob": ks_first_click,
             "weighted_born_ess": _effective_sample_size(born_weights),
@@ -1483,8 +1483,8 @@ def _generate_plot_a(config: ExtendedValidationConfig, output_dir: Path) -> str:
     systems = [4, 6, 8]
     fig, ax = plt.subplots(figsize=(7.4, 4.8))
     for idx, L in enumerate(systems):
-        gauss = build_gaussian_chain_model(L=L, w=0.5, gamma_m=1.0)
-        exact = build_exact_spin_chain_model(L=L, w=0.5, gamma_m=1.0)
+        gauss = build_gaussian_chain_model(L=L, w=0.5, alpha=0.5)
+        exact = build_exact_spin_chain_model(L=L, w=0.5, alpha=0.5)
         born_ref_rng = _rng(config.seed + 2000 + idx)
         born_ref = np.asarray(
             [ordinary_quantum_jump_trajectory(exact, 2.0, born_ref_rng).n_jumps for _ in range(config.plotA_n_traj)],
@@ -1523,7 +1523,7 @@ def _generate_plot_b(config: ExtendedValidationConfig, output_dir: Path) -> str:
     systems = [4, 6, 8, 12]
     fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.2), sharex=True)
     for L in systems:
-        gauss = build_gaussian_chain_model(L=L, w=0.5, gamma_m=1.0)
+        gauss = build_gaussian_chain_model(L=L, w=0.5, alpha=0.5)
         cuts = [max(1, L // 4), L // 2, min(L - 1, (3 * L) // 4)]
         curves = {cut: [] for cut in cuts}
         for zeta_idx, zeta in enumerate(zetas):
@@ -1564,7 +1564,7 @@ def _generate_plot_c(config: ExtendedValidationConfig, output_dir: Path) -> str:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    exact = build_exact_spin_chain_model(L=4, w=0.5, gamma_m=1.0)
+    exact = build_exact_spin_chain_model(L=4, w=0.5, alpha=0.5)
     backward = run_exact_backward_pass(exact, T=2.0, zeta=0.5)
     observe_times = np.linspace(0.0, 2.0, config.plotC_grid_points)
     rng = _rng(config.seed + 2301)
@@ -1610,16 +1610,16 @@ def _generate_plot_d(config: ExtendedValidationConfig, output_dir: Path) -> str:
     import matplotlib.pyplot as plt
 
     L = 6
-    gamma_m = 1.0
+    alpha = 0.5
     T = 2.0
     zeta = 0.5
-    gauss = build_gaussian_chain_model(L=L, w=0.5, gamma_m=gamma_m)
+    gauss = build_gaussian_chain_model(L=L, w=0.5, alpha=alpha)
     backward = run_gaussian_backward_pass(gauss, T=T, zeta=zeta, sample_points=257)
     t_vals = T - backward.sample_tau
     order = np.argsort(t_vals)
     t_vals = t_vals[order]
     covariances = backward.sample_covariances[order]
-    analytic = np.tanh(0.5 * gamma_m * (1.0 - zeta) * (T - t_vals))
+    analytic = np.tanh(alpha * (1.0 - zeta) * (T - t_vals))
 
     fig, ax = plt.subplots(figsize=(7.2, 4.8))
     for idx, (a, b) in enumerate(gauss.jump_pairs):

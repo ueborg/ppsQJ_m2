@@ -59,12 +59,12 @@ def gaussian_backward_rhs(
     for pair in model.jump_pairs:
         a, b = pair
         q_sum += 0.5 * (1.0 - C[a, b])
-    scalar_rate = model.gamma_m * (zeta - 1.0) * q_sum
+    scalar_rate = 2.0 * model.alpha * (zeta - 1.0) * q_sum
 
     rhs = model.h_hamiltonian @ C - C @ model.h_hamiltonian
     for pair in model.jump_pairs:
         sandwich, anticommutator = _monitoring_moment_matrices(C, pair)
-        rhs += model.gamma_m * (zeta * sandwich - 0.5 * anticommutator)
+        rhs += 2.0 * model.alpha * (zeta * sandwich - 0.5 * anticommutator)
 
     rhs -= scalar_rate * C
     rhs = 0.5 * (rhs - rhs.T)

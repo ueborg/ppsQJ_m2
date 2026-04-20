@@ -25,9 +25,9 @@ from pps_qj.gaussian_backend import (
 from pps_qj.overlaps import gaussian_overlap
 
 
-def _single_mode_analytics(zeta: float, gamma_m: float = 1.0, T: float = 2.0, q0: float = 0.5) -> dict[str, float]:
-    survival = (1.0 - q0) + q0 * np.exp(-gamma_m * T)
-    partition = (1.0 - q0) + q0 * np.exp(-(1.0 - zeta) * gamma_m * T)
+def _single_mode_analytics(zeta: float, alpha: float = 0.5, T: float = 2.0, q0: float = 0.5) -> dict[str, float]:
+    survival = (1.0 - q0) + q0 * np.exp(-2.0 * alpha * T)
+    partition = (1.0 - q0) + q0 * np.exp(-2.0 * (1.0 - zeta) * alpha * T)
     q_no_click = survival / partition
     r_no_click = survival**zeta
     return {
@@ -50,8 +50,8 @@ def _histogram(counts: np.ndarray, weights: np.ndarray | None = None) -> np.ndar
 
 @lru_cache(maxsize=None)
 def _single_mode_models(zeta: float, T: float = 2.0):
-    exact = build_exact_spin_chain_model(L=2, w=0.0, gamma_m=1.0)
-    gauss = build_gaussian_chain_model(L=2, w=0.0, gamma_m=1.0)
+    exact = build_exact_spin_chain_model(L=2, w=0.0, alpha=0.5)
+    gauss = build_gaussian_chain_model(L=2, w=0.0, alpha=0.5)
     return exact, gauss, run_exact_backward_pass(exact, T, zeta), run_gaussian_backward_pass(gauss, T, zeta, sample_points=65)
 
 
@@ -88,20 +88,20 @@ def _single_mode_algorithm_counts(zeta: float, n_traj: int, seed: int = 123, T: 
 
 @lru_cache(maxsize=None)
 def _single_mode_born_counts(n_traj: int, seed: int = 321, T: float = 2.0) -> np.ndarray:
-    exact = build_exact_spin_chain_model(L=2, w=0.0, gamma_m=1.0)
+    exact = build_exact_spin_chain_model(L=2, w=0.0, alpha=0.5)
     rng = np.random.default_rng(seed)
     return np.array([ordinary_quantum_jump_trajectory(exact, T, rng).n_jumps for _ in range(n_traj)], dtype=int)
 
 
 def test_1_zeta_one_recovery() -> None:
-    model = build_exact_spin_chain_model(L=4, w=0.0, gamma_m=1.0)
+    model = build_exact_spin_chain_model(L=4, w=0.0, alpha=0.5)
     consistency = exact_model_consistency(model)
     assert consistency["hamiltonian_hermiticity_error"] < 1e-12
     assert consistency["max_projector_error"] < 1e-12
     assert consistency["min_jump_sum_eig"] >= -1e-10
     assert consistency["max_jump_sum_eig"] <= model.L - 1 + 1e-10
 
-    exact_small = build_exact_spin_chain_model(L=2, w=0.0, gamma_m=1.0)
+    exact_small = build_exact_spin_chain_model(L=2, w=0.0, alpha=0.5)
     backward_exact = run_exact_backward_pass(exact_small, T=2.0, zeta=1.0)
     rng_doob = np.random.default_rng(7)
     rng_born = np.random.default_rng(7)
@@ -111,7 +111,7 @@ def test_1_zeta_one_recovery() -> None:
     assert doob.channels == born.channels
     np.testing.assert_allclose(doob.jump_times, born.jump_times, atol=1e-10)
 
-    gauss = build_gaussian_chain_model(L=4, w=0.5, gamma_m=1.0)
+    gauss = build_gaussian_chain_model(L=4, w=0.5, alpha=0.5)
     backward_gauss = run_gaussian_backward_pass(gauss, T=2.0, zeta=1.0, sample_points=17)
     for t in (0.0, 1.0, 2.0):
         C_t, z_t = backward_gauss.state_at(t)
@@ -156,8 +156,8 @@ def test_4_commuting_case_backward_pass_and_rates() -> None:
     L = 4
     T = 2.0
     zeta = 0.5
-    model = build_gaussian_chain_model(L=L, w=0.0, gamma_m=1.0)
-    exact = build_exact_spin_chain_model(L=L, w=0.0, gamma_m=1.0)
+    model = build_gaussian_chain_model(L=L, w=0.0, alpha=0.5)
+    exact = build_exact_spin_chain_model(L=L, w=0.0, alpha=0.5)
     backward_exact = run_exact_backward_pass(exact, T=T, zeta=zeta)
     backward = run_gaussian_backward_pass(model, T=T, zeta=zeta, sample_points=17)
     C_0, z_0 = backward.state_at(0.0)
@@ -185,9 +185,9 @@ def test_4_commuting_case_backward_pass_and_rates() -> None:
     for pair, projector in zip(model.jump_pairs, exact.jump_projectors):
         q_j, gamma_post = apply_projective_jump(gamma_state, pair)
         overlap_post = gaussian_overlap(C_0, gamma_post, z_scalar=z_0)
-        rate_gauss = zeta * model.gamma_m * q_j * overlap_post / overlap_pre
+        rate_gauss = zeta * 2.0 * model.alpha * q_j * overlap_post / overlap_pre
         exact_numerator = np.vdot(psi0, projector.toarray() @ G_exact @ projector.toarray() @ psi0)
-        rate_exact = zeta * model.gamma_m * float(np.real(exact_numerator)) / exact_overlap_pre
+        rate_exact = zeta * 2.0 * model.alpha * float(np.real(exact_numerator)) / exact_overlap_pre
         assert rate_gauss == pytest.approx(rate_exact, rel=1e-6, abs=1e-8)
 
 
@@ -233,7 +233,7 @@ def test_7_entanglement_entropy_decreases_with_zeta() -> None:
     means = []
 
     for zeta in zetas:
-        model = build_gaussian_chain_model(L=L, w=0.0, gamma_m=1.0)
+        model = build_gaussian_chain_model(L=L, w=0.0, alpha=0.5)
         backward = run_gaussian_backward_pass(model, T=T, zeta=zeta, sample_points=65)
         rng = np.random.default_rng(1234)
         entropies = []
@@ -246,7 +246,7 @@ def test_7_entanglement_entropy_decreases_with_zeta() -> None:
 
 
 def test_8_conditioned_survival_is_monotone() -> None:
-    model = build_gaussian_chain_model(L=4, w=0.5, gamma_m=1.0)
+    model = build_gaussian_chain_model(L=4, w=0.5, alpha=0.5)
     backward = run_gaussian_backward_pass(model, T=2.0, zeta=0.5, sample_points=65)
     values = [
         conditioned_survival_gaussian(model, backward, model.orbitals0, 0.0, float(dt))
