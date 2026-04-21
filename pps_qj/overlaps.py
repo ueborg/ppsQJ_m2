@@ -42,6 +42,26 @@ def gaussian_overlap(
     return float(z_scalar * det_sqrt)
 
 
+def log_gaussian_overlap(
+    operator_covariance: np.ndarray,
+    state_covariance: np.ndarray,
+    z_scalar: float = 1.0,
+) -> float:
+    """Return log(Tr(G rho)) in log-space to avoid underflow at small z_scalar.
+
+    Equivalent to log(gaussian_overlap(...)) but numerically stable when
+    z_scalar is extremely small (e.g. 10^-100 at small zeta / large L).
+    Returns -inf if the determinant is non-positive.
+    """
+    C = np.asarray(operator_covariance, dtype=np.float64)
+    Gamma = np.asarray(state_covariance, dtype=np.float64)
+    sign, logdet = np.linalg.slogdet(np.eye(C.shape[0]) - C @ Gamma)
+    if sign <= 0:
+        return -np.inf
+    log_z = np.log(z_scalar) if z_scalar > 0.0 else -np.inf
+    return float(log_z + 0.5 * logdet)
+
+
 def gaussian_post_jump_overlap(
     operator_covariance: np.ndarray,
     state_covariance: np.ndarray,
