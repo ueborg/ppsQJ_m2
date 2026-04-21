@@ -287,11 +287,18 @@ def main(argv: Optional[list[str]] = None) -> int:
         pbar_desc = f"L={L} λ={lam:.2f} ζ={zeta:.2f}"
         if len(chunk_args) == 1 or n_workers == 1:
             _log(t_start, f"running {n_traj} trajectories (single process) ...")
+            # Unpack the single chunk and iterate one trajectory at a time so
+            # tqdm updates per trajectory and we can see per-trajectory speed.
+            L_, w_, alpha_, T_, zeta_, bwd_path_, seed_, _ = chunk_args[0]
+            t_first: float | None = None
             with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
-                for args in chunk_args:
-                    chunk_result = _run_doob_chunk(*args)
-                    all_results.extend(chunk_result)
-                    pbar.update(len(chunk_result))
+                for k in range(n_traj):
+                    result = _run_doob_chunk(L_, w_, alpha_, T_, zeta_, bwd_path_, seed_ + k, 1)
+                    all_results.extend(result)
+                    if k == 0:
+                        t_first = time.time() - t_start
+                        pbar.set_postfix({"1st": f"{t_first:.2f}s", "n_j": result[0]["n_jumps"]})
+                    pbar.update(1)
         else:
             import multiprocessing as mp
             n_chunks = len(chunk_args)
