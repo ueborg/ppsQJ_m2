@@ -148,6 +148,12 @@ def _write_summary_atomic(path: Path, payload: dict) -> None:
     tmp.replace(path)
 
 
+def _log(t_start: float, msg: str) -> None:
+    """Print a timestamped progress line, flushed immediately."""
+    elapsed = time.time() - t_start
+    print(f"  [{elapsed:6.1f}s] {msg}", flush=True)
+
+
 # --------------------------------------------------------------------------
 # Main
 # --------------------------------------------------------------------------
@@ -190,6 +196,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     n_traj = int(task["n_traj"])
     seed = int(task["seed"])
 
+    print(
+        f"\n=== task {task_id}: L={L}, λ={lam:.3f} (α={alpha:.3f}, w={w:.3f}), "
+        f"ζ={zeta:.2f}, T={T:.0f}, n_traj={n_traj}, n_workers={n_workers} ===",
+        flush=True,
+    )
+
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "backward_passes").mkdir(parents=True, exist_ok=True)
 
@@ -210,10 +222,12 @@ def main(argv: Optional[list[str]] = None) -> int:
 
         if zeta >= 1.0 - 1e-12:
             # Untilted: Z_T = 1, theta = 0, no backward pass needed.
+            _log(t_start, "ζ=1 — skipping backward pass (Born-rule branch)")
             Z_T = 1.0
             theta_doob = 0.0
             bwd_path_for_workers = None
         else:
+            _log(t_start, f"running backward pass (n_grid={_n_grid_for_bwd(L)}, T={T:.0f}) ...")
             model = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
             n_grid = _n_grid_for_bwd(L)
             bwd = run_gaussian_backward_pass(
@@ -242,6 +256,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             loaded = load_backward_pass(bwd_path_for_workers)
             Z_T = float(loaded.Z_T)
             theta_doob = float(loaded.theta_doob)
+            _log(t_start, f"backward pass done — Z_T={Z_T:.4g}, θ_D={theta_doob:.4f}")
 
         # ------------------- Trajectories --------------------
         # Split n_traj across n_workers.
@@ -260,6 +275,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         all_results: list[dict] = []
         pbar_desc = f"L={L} λ={lam:.2f} ζ={zeta:.2f}"
         if len(chunk_args) == 1 or n_workers == 1:
+            _log(t_start, f"running {n_traj} trajectories (single process) ...")
             with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
                 for args in chunk_args:
                     chunk_result = _run_doob_chunk(*args)
@@ -267,7 +283,12 @@ def main(argv: Optional[list[str]] = None) -> int:
                     pbar.update(len(chunk_result))
         else:
             import multiprocessing as mp
-            with mp.get_context("spawn").Pool(processes=len(chunk_args)) as pool:
+            n_chunks = len(chunk_args)
+            _log(t_start, f"spawning {n_chunks} workers for {n_traj} trajectories ...")
+            # fork is safe on Linux and avoids re-importing numpy/scipy per worker,
+            # which is critical on CVMFS where imports are slow.
+            with mp.get_context("fork").Pool(processes=n_chunks) as pool:
+                _log(t_start, "pool ready — trajectories running ...")
                 with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
                     for chunk_result in pool.imap_unordered(_run_doob_chunk_unpacked, chunk_args):
                         all_results.extend(chunk_result)
