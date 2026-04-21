@@ -91,6 +91,9 @@ def log_gaussian_overlap_from_orbitals(
     if sign == 0:
         return -np.inf
     return float(log_z + L * np.log(4.0) + 2.0 * logdet.real)
+
+
+def gaussian_post_jump_overlap(
     operator_covariance: np.ndarray,
     state_covariance: np.ndarray,
     jump_pair: tuple[int, int],
