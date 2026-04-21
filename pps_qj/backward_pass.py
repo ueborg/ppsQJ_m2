@@ -7,7 +7,7 @@ from scipy.integrate import solve_ivp
 from scipy.sparse.linalg import expm_multiply
 
 from pps_qj.exact_backend import ExactSpinChainModel, lindbladian_superoperator
-from pps_qj.gaussian_backend import GaussianChainModel, project_to_physical_covariance
+from pps_qj.gaussian_backend import GaussianChainModel, orbitals_from_covariance, project_to_physical_covariance
 
 
 def _monitoring_moment_matrices_fast(
@@ -149,27 +149,39 @@ class GaussianBackwardData:
     solution: object
     sample_tau: np.ndarray
     sample_covariances: np.ndarray
+    sample_orbitals: np.ndarray   # (N, 2L, L) complex — for orbital-based overlap
     sample_z: np.ndarray
+    sample_log_z: np.ndarray      # log(z) precomputed — avoids log(~0) in trajectories
     clip_epsilon: float = 1e-9
 
     def state_at(self, t: float) -> tuple[np.ndarray, float]:
         if not (0.0 <= t <= self.T):
             raise ValueError("t must lie in [0, T]")
-        # Use precomputed grid with linear interpolation — much faster than
-        # evaluating the ODE dense output on the full 16385-dim state vector.
-        # sample_tau is in forward-time order (τ = T - t, so t_grid = T - τ).
-        t_grid = self.T - self.sample_tau          # (N,) increasing t values
-        # Clamp to avoid tiny floating-point overshoot.
+        t_grid = self.T - self.sample_tau
         t = float(np.clip(t, t_grid[0], t_grid[-1]))
-        idx = np.searchsorted(t_grid, t)
-        idx = int(np.clip(idx, 1, len(t_grid) - 1))
-        # Linear interpolation weight.
+        idx = int(np.clip(np.searchsorted(t_grid, t), 1, len(t_grid) - 1))
         t0, t1 = t_grid[idx - 1], t_grid[idx]
         w = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
         cov = (1.0 - w) * self.sample_covariances[idx - 1] + w * self.sample_covariances[idx]
         cov = _clip_covariance_inplace(cov, eps=self.clip_epsilon)
         z = float((1.0 - w) * self.sample_z[idx - 1] + w * self.sample_z[idx])
         return cov, z
+
+    def orbitals_at(self, t: float) -> tuple[np.ndarray, float]:
+        """Return (backward_orbitals W, log_z) at time t — for orbital-based overlap."""
+        if not (0.0 <= t <= self.T):
+            raise ValueError("t must lie in [0, T]")
+        t_grid = self.T - self.sample_tau
+        t = float(np.clip(t, t_grid[0], t_grid[-1]))
+        idx = int(np.clip(np.searchsorted(t_grid, t), 1, len(t_grid) - 1))
+        t0, t1 = t_grid[idx - 1], t_grid[idx]
+        w = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
+        # Interpolate in orbital space (approximately correct for small intervals).
+        orbs = (1.0 - w) * self.sample_orbitals[idx - 1] + w * self.sample_orbitals[idx]
+        # Re-orthogonalise to keep columns orthonormal after interpolation.
+        orbs, _ = np.linalg.qr(orbs, mode="reduced")
+        log_z = float((1.0 - w) * self.sample_log_z[idx - 1] + w * self.sample_log_z[idx])
+        return orbs, log_z
 
     def covariance_at(self, t: float) -> np.ndarray:
         return self.state_at(t)[0]
@@ -259,14 +271,17 @@ def run_gaussian_backward_pass(
 
     sample_tau = np.linspace(0.0, T, sample_points)
     samples = solution.sol(sample_tau)
+    L = model.L
     covariances = np.empty((sample_tau.size, n, n), dtype=np.float64)
+    orbitals_arr = np.empty((sample_tau.size, n, L), dtype=np.complex128)
     z_values = np.empty(sample_tau.size, dtype=np.float64)
+    log_z_values = np.empty(sample_tau.size, dtype=np.float64)
     for idx, tau in enumerate(sample_tau):
         flat = samples[:, idx]
-        covariances[idx] = project_to_physical_covariance(
-            flat[:-1].reshape((n, n)),
-            eps=clip_epsilon,
-        )
+        cov = project_to_physical_covariance(flat[:-1].reshape((n, n)), eps=clip_epsilon)
+        covariances[idx] = cov
+        orbitals_arr[idx] = orbitals_from_covariance(cov)
+        log_z_values[idx] = float(flat[-1])          # log(z) directly from ODE state
         z_values[idx] = float(np.exp(flat[-1]))
 
     return GaussianBackwardData(
@@ -276,7 +291,9 @@ def run_gaussian_backward_pass(
         solution=solution,
         sample_tau=sample_tau,
         sample_covariances=covariances,
+        sample_orbitals=orbitals_arr,
         sample_z=z_values,
+        sample_log_z=log_z_values,
         clip_epsilon=clip_epsilon,
     )
 

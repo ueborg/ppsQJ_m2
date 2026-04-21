@@ -14,7 +14,7 @@ from pps_qj.gaussian_backend import (
     propagate_no_click_orbitals,
     topological_entanglement_entropy,
 )
-from pps_qj.overlaps import gaussian_overlap, gaussian_post_jump_overlap, log_gaussian_overlap
+from pps_qj.overlaps import gaussian_overlap, gaussian_post_jump_overlap, log_gaussian_overlap, log_gaussian_overlap_from_orbitals
 from pps_qj.types import JumpTrajectory, Tolerances
 
 
@@ -213,38 +213,35 @@ def doob_gaussian_trajectory(
     diagnostics: dict[str, object] = {"conditioned_survival_segments": []}
 
     while t < T:
-        gamma_now = covariance_from_orbitals(orbitals)
-        C_now, z_now = backward_data.state_at(t)
-
-        # Denominator in log-space — avoids underflow when z ~ 10^-100.
-        log_denom = log_gaussian_overlap(C_now, gamma_now, z_scalar=z_now)
+        # Backward orbitals W and log_z at current time — O(L²) lookup.
+        W_now, log_z_now = backward_data.orbitals_at(t)
+        # log_denom = log(Tr(G rho)) using L×L det instead of 2L×2L det.
+        log_denom = log_gaussian_overlap_from_orbitals(W_now, orbitals, log_z_now)
         if not np.isfinite(log_denom):
             raise RuntimeError(
-                f"Non-finite log-denominator at t={t:.4f}: "
-                f"log_denom={log_denom}, z_now={z_now:.3e}"
+                f"Non-finite log-denominator at t={t:.4f}: log_denom={log_denom}"
             )
 
         r = float(rng.uniform(0.0, 1.0))
         log_r = float(np.log(r)) if r > 0.0 else -np.inf
         max_dt = T - t
-
-        # Coefficients in eigenbasis — reused in survival eval and propagation.
-        coeffs = V_inv @ orbitals  # (2L, L)
+        coeffs = V_inv @ orbitals  # (2L, L) — reused in survival + propagation
 
         def _log_survival(dt: float) -> float:
-            """log(conditioned survival) in log-space — safe for tiny z."""
             if dt <= 0.0:
-                return 0.0  # log(1) = 0
+                return 0.0
             exp_d = np.exp(evals * dt)
             orbs_tilde = V @ (exp_d[:, None] * coeffs)
             q_mat, r_mat = np.linalg.qr(orbs_tilde, mode="reduced")
             diag_abs = np.abs(np.diag(r_mat))
             if np.any(diag_abs <= 1e-300):
                 return -np.inf
+            # log|det M(dt) V₀| from QR R-factor — already computed.
             log_branch = float(np.sum(np.log(diag_abs))) - model.alpha * n_monitored * dt
-            cov_t = covariance_from_orbitals(q_mat)
-            C_t, z_t = backward_data.state_at(t + dt)
-            log_ov_t = log_gaussian_overlap(C_t, cov_t, z_scalar=z_t)
+            # Backward orbitals and log_z at t+dt — O(L²) interpolation.
+            W_t, log_z_t = backward_data.orbitals_at(t + dt)
+            # L×L det replaces 2L×2L det — 8× cheaper at L=64.
+            log_ov_t = log_gaussian_overlap_from_orbitals(W_t, q_mat, log_z_t)
             return log_branch + log_ov_t - log_denom
 
         segment_info: dict[str, object] = {
@@ -293,9 +290,11 @@ def doob_gaussian_trajectory(
         pre_covariance = covariance_from_orbitals(pre_orbitals)
         t += dt_star
 
-        # Channel weights in log-space — avoids underflow in overlap ratios.
-        C_jump, z_jump = backward_data.state_at(t)
-        log_ov_pre = log_gaussian_overlap(C_jump, pre_covariance, z_scalar=z_jump)
+        # Channel weights — orbital-based L×L det for all overlaps.
+        W_jump, log_z_jump = backward_data.orbitals_at(t)
+        log_ov_pre = log_gaussian_overlap_from_orbitals(
+            W_jump, pre_orbitals, log_z_jump
+        )
 
         probs_q = np.clip(0.5 * (1.0 - pre_covariance[_ja, _jb]), 0.0, 1.0)
         log_rates: list[float] = []
@@ -307,11 +306,14 @@ def doob_gaussian_trajectory(
                 post_orbitals_list.append(pre_orbitals)
                 continue
             _, post_covariance = apply_projective_jump(pre_covariance, jump_pair)
-            log_ov_post = log_gaussian_overlap(C_jump, post_covariance, z_scalar=z_jump)
+            post_orbs = orbitals_from_covariance(post_covariance)
+            log_ov_post = log_gaussian_overlap_from_orbitals(
+                W_jump, post_orbs, log_z_jump
+            )
             log_rates.append(
                 np.log(zeta * 2.0 * model.alpha * q) + log_ov_post - log_ov_pre
             )
-            post_orbitals_list.append(orbitals_from_covariance(post_covariance))
+            post_orbitals_list.append(post_orbs)
 
         log_rates_arr = np.asarray(log_rates, dtype=np.float64)
         finite_mask = np.isfinite(log_rates_arr)

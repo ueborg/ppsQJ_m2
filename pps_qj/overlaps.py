@@ -62,7 +62,35 @@ def log_gaussian_overlap(
     return float(log_z + 0.5 * logdet)
 
 
-def gaussian_post_jump_overlap(
+def log_gaussian_overlap_from_orbitals(
+    backward_orbitals: np.ndarray,
+    forward_orbitals: np.ndarray,
+    log_z: float,
+) -> float:
+    """log(Tr(G rho)) using orbital matrices — avoids 2L×2L slogdet.
+
+    For pure Gaussian states with covariance matrices C = i(2WW†-I) and
+    Gamma = i(2VV†-I):
+
+        det(I - C·Gamma) = 4^L |det(W†V)|²
+
+    so log(Tr(G rho)) = log_z + L*log(4) + 2*Re(log|det(W†V)|).
+
+    This replaces an O(n³) slogdet on a 2L×2L matrix with an O(L³) slogdet
+    on an L×L matrix — 8× cheaper at L=64.
+
+    Parameters
+    ----------
+    backward_orbitals : (2L, L) complex — W, the backward Gaussian orbitals
+    forward_orbitals  : (2L, L) complex — V, the forward/state orbitals
+    log_z : float — log of the z_scalar normalisation
+    """
+    L = forward_orbitals.shape[1]
+    WdV = backward_orbitals.conj().T @ forward_orbitals   # (L, L)
+    sign, logdet = np.linalg.slogdet(WdV)
+    if sign == 0:
+        return -np.inf
+    return float(log_z + L * np.log(4.0) + 2.0 * logdet.real)
     operator_covariance: np.ndarray,
     state_covariance: np.ndarray,
     jump_pair: tuple[int, int],
