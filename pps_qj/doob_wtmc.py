@@ -304,8 +304,12 @@ def doob_gaussian_trajectory(
                 0.0, max_dt,
                 xtol=1e-8, maxiter=50, full_output=False,
             )
-        except ValueError:
-            dt_star = 0.5 * max_dt
+        except (ValueError, RuntimeError):
+            # ValueError: bracket invalid (survival non-monotone at endpoints).
+            # RuntimeError: maxiter exceeded (survival non-monotone throughout).
+            # Both indicate Gaussian closure breakdown — mark degenerate.
+            diagnostics["degenerate"] = True
+            break
 
         # Fast degeneracy detector: if dt_star is far below the Born-rule mean
         # inter-jump interval for several consecutive jumps, the Gaussian
