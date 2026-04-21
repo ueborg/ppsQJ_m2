@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from tqdm import tqdm
 
 from pps_qj.cloning import CloningCollapse, run_cloning
 from pps_qj.gaussian_backend import build_gaussian_chain_model
@@ -82,20 +83,34 @@ def main(argv: Optional[list[str]] = None) -> int:
         ESSs = np.full(N_REAL, np.nan, dtype=np.float64)
         n_collapses_total = 0
 
-        for r in range(N_REAL):
-            rng_r = np.random.default_rng(seed + r * 999_983)
-            try:
-                result = run_cloning(
-                    model, zeta=zeta, T_total=T, N_c=N_c, rng=rng_r
-                )
-                S_means[r] = float(result.S_mean)
-                S_stds[r] = float(result.S_std)
-                thetas[r] = float(result.theta_hat)
-                ESSs[r] = float(result.eff_sample_size)
-                n_collapses_total += int(result.n_collapses)
-            except CloningCollapse:
-                n_collapses_total += 1
-                # Leave this realisation as NaN.
+        print(
+            f"\n=== clone task {task_id}: L={L}, λ={lam:.3f} (α={alpha:.3f}, w={w:.3f}), "
+            f"ζ={zeta:.2f}, T={T:.0f}, N_c={N_c}, n_real={N_REAL} ===",
+            flush=True,
+        )
+
+        with tqdm(total=N_REAL, desc=f"L={L} λ={lam:.2f} ζ={zeta:.2f}", unit="real") as pbar:
+            for r in range(N_REAL):
+                rng_r = np.random.default_rng(seed + r * 999_983)
+                try:
+                    result = run_cloning(
+                        model, zeta=zeta, T_total=T, N_c=N_c, rng=rng_r,
+                        show_progress=True,
+                        progress_desc=f"  real {r+1}/{N_REAL}",
+                    )
+                    S_means[r] = float(result.S_mean)
+                    S_stds[r] = float(result.S_std)
+                    thetas[r] = float(result.theta_hat)
+                    ESSs[r] = float(result.eff_sample_size)
+                    n_collapses_total += int(result.n_collapses)
+                    pbar.set_postfix({
+                        "S": f"{result.S_mean:.3f}",
+                        "θ": f"{result.theta_hat:+.3f}",
+                        "ESS": f"{result.eff_sample_size:.0f}",
+                    })
+                except CloningCollapse:
+                    n_collapses_total += 1
+                pbar.update(1)
 
         # Aggregate across realisations.
         def _nanstat(a: np.ndarray) -> tuple[float, float, float, int]:

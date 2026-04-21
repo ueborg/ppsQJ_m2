@@ -101,6 +101,8 @@ def run_cloning(
     delta_tau: Optional[float] = None,
     n_burnin_frac: float = 0.25,
     record_entropy: bool = True,
+    show_progress: bool = False,
+    progress_desc: str = "",
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -152,7 +154,18 @@ def run_cloning(
     # Lazy import to avoid circular; reuse dataclasses.replace pattern
     from dataclasses import replace
 
-    for _k in range(n_steps):
+    if show_progress:
+        from tqdm import tqdm
+        step_iter = tqdm(
+            range(n_steps),
+            desc=progress_desc or f"L={L} ζ={zeta:.2f}",
+            unit="step",
+            leave=False,
+        )
+    else:
+        step_iter = range(n_steps)
+
+    for _k in step_iter:
         # Spawn sub-rngs for this step (one per clone). Using rng.spawn keeps
         # streams reproducible and non-overlapping.
         sub_rngs = rng.spawn(N_c)
@@ -204,6 +217,8 @@ def run_cloning(
             else:
                 S_zeta_k = float(np.mean(S_vals))
             S_history.append(S_zeta_k)
+            if show_progress:
+                step_iter.set_postfix({"S": f"{S_zeta_k:.3f}", "W": f"{W_k:.3e}"})
 
         final_weights = weights.copy()
 
