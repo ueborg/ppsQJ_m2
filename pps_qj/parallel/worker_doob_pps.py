@@ -79,6 +79,11 @@ def _n_grid_for_bwd(L: int) -> int:
 # --------------------------------------------------------------------------
 # Worker chunk function — must be top-level (picklable for Pool).
 # --------------------------------------------------------------------------
+def _run_doob_chunk_unpacked(args: tuple) -> list[dict]:
+    """Single-argument wrapper so imap_unordered can unpack chunk_args tuples."""
+    return _run_doob_chunk(*args)
+
+
 def _run_doob_chunk(
     L: int,
     w: float,
@@ -264,7 +269,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             import multiprocessing as mp
             with mp.get_context("spawn").Pool(processes=len(chunk_args)) as pool:
                 with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
-                    for chunk_result in pool.imap_unordered(_run_doob_chunk, chunk_args):
+                    for chunk_result in pool.imap_unordered(_run_doob_chunk_unpacked, chunk_args):
                         all_results.extend(chunk_result)
                         pbar.update(len(chunk_result))
 
