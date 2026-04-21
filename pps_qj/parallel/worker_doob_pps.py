@@ -289,36 +289,53 @@ def main(argv: Optional[list[str]] = None) -> int:
         pbar_desc = f"L={L} λ={lam:.2f} ζ={zeta:.2f}"
         if len(chunk_args) == 1 or n_workers == 1:
             _log(t_start, f"running {n_traj} trajectories (single process) ...")
-            # Unpack the single chunk and iterate one trajectory at a time so
-            # tqdm updates per trajectory and we can see per-trajectory speed.
-            L_, w_, alpha_, T_, zeta_, bwd_path_, seed_, _ = chunk_args[0]
+            # Load model and backward pass ONCE, then loop over trajectories
+            # so we don't reload ~65 MB from disk on every iteration.
+            model = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
+            jump_pairs_list = list(model.jump_pairs)
+            bwd = None
+            if bwd_path_for_workers is not None:
+                bwd = load_backward_pass(bwd_path_for_workers)
+            base_seed = seed * 100_000
             t_first: float | None = None
             with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
                 for k in range(n_traj):
-                    result = _run_doob_chunk(L_, w_, alpha_, T_, zeta_, bwd_path_, seed_ + k, 1)
-                    all_results.extend(result)
+                    rng = np.random.default_rng(base_seed + k)
+                    if bwd is None:
+                        traj = gaussian_born_rule_trajectory(model, T=T, rng=rng)
+                        gamma = np.asarray(traj.final_covariance, dtype=np.float64)
+                        obs = compute_all_observables(gamma, L, jump_pairs_list)
+                        obs["n_jumps"] = int(traj.n_jumps)
+                    else:
+                        traj = doob_gaussian_trajectory(model, bwd, T, zeta, rng)
+                        if traj.diagnostics.get("degenerate", False):
+                            obs = {k_: float("nan") for k_ in ("S_half", "S_top", "S_top_d", "B_L", "B_L_prime")}
+                            obs["n_jumps"] = int(traj.n_jumps)
+                        else:
+                            final_state = np.asarray(traj.final_state)
+                            if final_state.ndim == 2 and final_state.shape[0] == 2 * L and final_state.shape[1] == L:
+                                gamma = covariance_from_orbitals(final_state)
+                            else:
+                                gamma = np.asarray(final_state, dtype=np.float64)
+                            obs = compute_all_observables(gamma, L, jump_pairs_list)
+                            obs["n_jumps"] = int(traj.n_jumps)
+                    all_results.append(obs)
                     if k == 0:
                         t_first = time.time() - t_start
-                        pbar.set_postfix({"1st": f"{t_first:.2f}s", "n_j": result[0]["n_jumps"]})
+                        pbar.set_postfix({"1st": f"{t_first:.2f}s", "n_j": obs["n_jumps"]})
                     pbar.update(1)
         else:
             import multiprocessing as mp
-            pool_size = min(n_workers, n_traj)
+            pool_size = min(n_workers, len(chunk_args))
             _log(t_start, f"spawning {pool_size} workers for {n_traj} trajectories ...")
-            # One task per trajectory so imap_unordered yields per-trajectory
-            # results and tqdm ticks once per trajectory, not once per chunk.
-            # Pool size stays at n_workers — workers pull from the queue as they
-            # finish, giving better load balancing than pre-assigned chunks too.
-            traj_args = [
-                (L, w, alpha, T, zeta, bwd_path_for_workers, seed * 100_000 + k, 1)
-                for k in range(n_traj)
-            ]
+            # Each worker gets a chunk of trajectories so the model + backward
+            # pass are loaded once per worker, not once per trajectory.
             with mp.get_context("forkserver").Pool(processes=pool_size) as pool:
                 _log(t_start, "pool ready — trajectories running ...")
                 with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
-                    for traj_result in pool.imap_unordered(_run_doob_chunk_unpacked, traj_args):
-                        all_results.extend(traj_result)
-                        pbar.update(1)
+                    for chunk_result in pool.imap_unordered(_run_doob_chunk_unpacked, chunk_args):
+                        all_results.extend(chunk_result)
+                        pbar.update(len(chunk_result))
 
         # Clean up temp backward pass (if we didn't persist).
         if zeta < 1.0 - 1e-12 and bwd_path_for_workers is not None:
