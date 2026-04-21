@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from scipy.linalg import expm
+from scipy.optimize import brentq
 
 
 def bond_jump_pair(bond: int) -> tuple[int, int]:
@@ -223,27 +224,24 @@ def gaussian_born_rule_trajectory(
     rng: np.random.Generator,
     bisection_tol: float = 1e-8,
 ) -> GaussianTrajectoryResult:
-    """Exact Born-rule quantum-jump trajectory using bisection on survival probability.
+    """Exact Born-rule quantum-jump trajectory.
 
-    Uses the fact that ``propagate_no_click_orbitals`` computes
-    ``branch_norm = exp(-∫₀ᵗ R(s) ds)``, the exact survival probability of the
-    no-click segment.  The waiting time to the next jump is found by bisection
-    on ``branch_norm(dt) = U`` where ``U ~ Uniform(0, 1)``.
+    Waiting times are sampled by inverting the survival probability
+    ``branch_norm(dt) = U`` using Brent's method (brentq), which converges
+    in ~5–8 function evaluations vs ~40 for pure bisection.
 
-    The eigendecomposition of ``h_effective`` is cached so that each bisection
-    step avoids a full matrix exponential, reducing the per-step cost from
-    O(L³) (Padé) to O(L²) (Gram-matrix slogdet on an L×L matrix).
+    Per-jump no-click propagation uses the cached eigendecomposition of
+    ``h_effective`` (two matrix multiplies) rather than scipy's Padé expm,
+    and reuses ``coeffs = V⁻¹ @ orbitals`` already computed for the branch-norm
+    evaluation, saving one extra matrix multiply per jump.
     """
     n_monitored = len(model.jump_pairs)
-    L = model.L
 
-    # Pre-diagonalise h_effective once: M(dt) = V diag(exp(λ dt)) V⁻¹
+    # Pre-diagonalise h_effective once for the whole trajectory.
     h_eff = np.asarray(model.h_effective, dtype=np.complex128)
     evals, V = np.linalg.eig(h_eff)
     V_inv = np.linalg.inv(V)
-    # Gram matrix of eigenvectors: VhV[i,j] = (V†V)[i,j].
-    # Allows log|det(M(dt) V₀)| = 0.5*slogdet((exp_d*coeffs)† VhV (exp_d*coeffs))
-    # via an L×L slogdet rather than a 2L×L QR — cheaper LAPACK overhead at small L.
+    # Gram matrix V†V — needed because V is not unitary (h_eff non-Hermitian).
     VhV = V.conj().T @ V
 
     orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
@@ -256,53 +254,50 @@ def gaussian_born_rule_trajectory(
         U = float(rng.uniform(0.0, 1.0))
         T_rem = T - t
 
-        # Coefficients for the current orbital set in the eigenbasis: V⁻¹ V₀
+        # V⁻¹ @ orbitals — reused both in branch-norm and in propagation.
         coeffs = V_inv @ orbitals  # (2L, L)
 
         def _fast_branch_norm(dt: float) -> float:
             """log|det(M(dt) V₀)| via L×L Gram-matrix slogdet."""
             if dt <= 0.0:
                 return 1.0
-            exp_d = np.exp(evals * dt)        # (2L,)
-            A = exp_d[:, None] * coeffs        # (2L, L): diag(exp_d) @ coeffs
-            gram = A.conj().T @ (VhV @ A)      # (L, L) Hermitian: (M(dt)V₀)†(M(dt)V₀)
+            exp_d = np.exp(evals * dt)
+            A = exp_d[:, None] * coeffs
+            gram = A.conj().T @ (VhV @ A)
             sign, logdet = np.linalg.slogdet(gram)
             if sign <= 0:
                 return 0.0
             return float(np.exp(0.5 * logdet - model.alpha * n_monitored * dt))
 
-        # Check whether a jump occurs before the horizon
         bn_end = _fast_branch_norm(T_rem)
         if bn_end >= U:
-            # No jump in remaining time — propagate to end
-            evo = propagate_no_click_orbitals(
-                orbitals, model.h_effective, T_rem,
-                alpha=model.alpha, n_monitored=n_monitored,
-            )
-            cov = evo.covariance
+            # No jump in remaining time — propagate to T using cached eig.
+            exp_d = np.exp(evals * T_rem)
+            orbs_tilde = V @ (exp_d[:, None] * coeffs)
+            q_mat, _ = np.linalg.qr(orbs_tilde, mode="reduced")
+            cov = covariance_from_orbitals(q_mat)
             break
 
-        # Bisect for dt* in (0, T_rem) where branch_norm(dt*) = U.
-        # ~40 iterations suffice for tol=1e-8 with any physical T_rem.
-        lo, hi = 0.0, T_rem
-        for _ in range(60):
-            mid = 0.5 * (lo + hi)
-            if _fast_branch_norm(mid) > U:
-                lo = mid
-            else:
-                hi = mid
-            if hi - lo < bisection_tol:
-                break
+        # Find jump time via Brent's method: ~5–8 evals vs ~40 for bisection.
+        try:
+            dt_star = brentq(
+                lambda dt: _fast_branch_norm(dt) - U,
+                0.0, T_rem,
+                xtol=bisection_tol,
+                maxiter=50,
+                full_output=False,
+            )
+        except ValueError:
+            # Bracketing failure (numerical edge case) — fall back to midpoint.
+            dt_star = 0.5 * T_rem
 
-        dt_star = 0.5 * (lo + hi)
-
-        # Propagate to jump time (standard function for correct covariance)
-        evo = propagate_no_click_orbitals(
-            orbitals, model.h_effective, dt_star,
-            alpha=model.alpha, n_monitored=n_monitored,
-        )
-        orbitals = evo.orbitals_normalized
-        cov = evo.covariance
+        # Propagate to jump time using cached eigendecomposition.
+        # Reuses coeffs already computed above — no extra V_inv multiply.
+        exp_d_star = np.exp(evals * dt_star)
+        orbs_tilde = V @ (exp_d_star[:, None] * coeffs)
+        q_mat, r_mat = np.linalg.qr(orbs_tilde, mode="reduced")
+        orbitals = q_mat
+        cov = covariance_from_orbitals(orbitals)
         t += dt_star
 
         # Select jump channel proportional to q_j
@@ -316,7 +311,7 @@ def gaussian_born_rule_trajectory(
         probs /= total
         channel = int(rng.choice(n_monitored, p=probs))
 
-        # Apply jump
+        # Apply jump and recover orthonormal orbitals.
         _, cov = apply_projective_jump(cov, model.jump_pairs[channel])
         orbitals = orbitals_from_covariance(cov)
 
