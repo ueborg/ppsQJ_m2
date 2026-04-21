@@ -242,7 +242,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             model = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
             n_grid = _n_grid_for_bwd(L)
             bwd = run_gaussian_backward_pass(
-                model, T=T, zeta=zeta, sample_points=n_grid
+                model, T=T, zeta=zeta, sample_points=n_grid, show_progress=True,
             )
 
             do_persist = force_save_bwd or _should_save_full_backward_pass(L, lam, zeta)

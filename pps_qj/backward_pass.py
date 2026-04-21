@@ -139,26 +139,51 @@ def run_gaussian_backward_pass(
     sample_points: int = 257,
     clip_epsilon: float = 1e-9,
     max_step: float | None = None,
+    show_progress: bool = False,
 ) -> GaussianBackwardData:
     n = 2 * model.L
     y0 = np.zeros(n * n + 1, dtype=np.float64)
     y0[-1] = 0.0
-    solution = solve_ivp(
-        fun=lambda tau, y: gaussian_backward_rhs(
-            tau,
-            y,
-            model=model,
-            zeta=zeta,
-            clip_epsilon=clip_epsilon,
-        ),
-        t_span=(0.0, T),
-        y0=y0,
-        method="DOP853",
-        dense_output=True,
-        rtol=rtol,
-        atol=atol,
-        max_step=max_step if max_step is not None else np.inf,
-    )
+
+    def _rhs(tau, y):
+        return gaussian_backward_rhs(tau, y, model=model, zeta=zeta, clip_epsilon=clip_epsilon)
+
+    if show_progress:
+        from tqdm import tqdm
+        pbar = tqdm(
+            total=T, unit="τ", unit_scale=True,
+            desc=f"bwd L={model.L} ζ={zeta:.2f}",
+            bar_format="{desc}: {percentage:3.0f}%|{bar}| {n:.1f}/{total:.1f}τ [{elapsed}<{remaining}]",
+            leave=False,
+        )
+        _last_tau = [0.0]
+
+        def _rhs_tracked(tau, y):
+            if tau > _last_tau[0]:
+                pbar.update(tau - _last_tau[0])
+                _last_tau[0] = tau
+            return _rhs(tau, y)
+
+        rhs_fn = _rhs_tracked
+    else:
+        pbar = None
+        rhs_fn = _rhs
+
+    try:
+        solution = solve_ivp(
+            fun=rhs_fn,
+            t_span=(0.0, T),
+            y0=y0,
+            method="DOP853",
+            dense_output=True,
+            rtol=rtol,
+            atol=atol,
+            max_step=max_step if max_step is not None else np.inf,
+        )
+    finally:
+        if pbar is not None:
+            pbar.close()
+
     if not solution.success:
         raise RuntimeError(f"Gaussian backward pass failed: {solution.message}")
 
