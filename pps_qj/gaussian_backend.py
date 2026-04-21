@@ -221,7 +221,7 @@ def gaussian_born_rule_trajectory(
     model: GaussianChainModel,
     T: float,
     rng: np.random.Generator,
-    bisection_tol: float = 1e-10,
+    bisection_tol: float = 1e-8,
 ) -> GaussianTrajectoryResult:
     """Exact Born-rule quantum-jump trajectory using bisection on survival probability.
 
@@ -232,15 +232,19 @@ def gaussian_born_rule_trajectory(
 
     The eigendecomposition of ``h_effective`` is cached so that each bisection
     step avoids a full matrix exponential, reducing the per-step cost from
-    O(L³) (Padé) to O(L² · L) (matrix–vector products).
+    O(L³) (Padé) to O(L²) (Gram-matrix slogdet on an L×L matrix).
     """
     n_monitored = len(model.jump_pairs)
-    n = 2 * model.L
+    L = model.L
 
     # Pre-diagonalise h_effective once: M(dt) = V diag(exp(λ dt)) V⁻¹
     h_eff = np.asarray(model.h_effective, dtype=np.complex128)
     evals, V = np.linalg.eig(h_eff)
     V_inv = np.linalg.inv(V)
+    # Gram matrix of eigenvectors: VhV[i,j] = (V†V)[i,j].
+    # Allows log|det(M(dt) V₀)| = 0.5*slogdet((exp_d*coeffs)† VhV (exp_d*coeffs))
+    # via an L×L slogdet rather than a 2L×L QR — cheaper LAPACK overhead at small L.
+    VhV = V.conj().T @ V
 
     orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
     cov = np.asarray(model.gamma0, dtype=np.float64).copy()
@@ -252,21 +256,20 @@ def gaussian_born_rule_trajectory(
         U = float(rng.uniform(0.0, 1.0))
         T_rem = T - t
 
-        # Coefficients for the current orbital set in the eigenbasis
+        # Coefficients for the current orbital set in the eigenbasis: V⁻¹ V₀
         coeffs = V_inv @ orbitals  # (2L, L)
 
         def _fast_branch_norm(dt: float) -> float:
-            """Evaluate branch_norm at *dt* using cached eigendecomposition."""
+            """log|det(M(dt) V₀)| via L×L Gram-matrix slogdet."""
             if dt <= 0.0:
                 return 1.0
-            exp_d = np.exp(evals * dt)
-            orbs_tilde = V @ (exp_d[:, None] * coeffs)
-            _, R_mat = np.linalg.qr(orbs_tilde, mode="reduced")
-            diag_abs = np.abs(np.diag(R_mat))
-            if np.any(diag_abs <= 1e-300):
+            exp_d = np.exp(evals * dt)        # (2L,)
+            A = exp_d[:, None] * coeffs        # (2L, L): diag(exp_d) @ coeffs
+            gram = A.conj().T @ (VhV @ A)      # (L, L) Hermitian: (M(dt)V₀)†(M(dt)V₀)
+            sign, logdet = np.linalg.slogdet(gram)
+            if sign <= 0:
                 return 0.0
-            log_abs_det = float(np.sum(np.log(diag_abs)))
-            return float(np.exp(log_abs_det - model.alpha * n_monitored * dt))
+            return float(np.exp(0.5 * logdet - model.alpha * n_monitored * dt))
 
         # Check whether a jump occurs before the horizon
         bn_end = _fast_branch_norm(T_rem)
@@ -279,9 +282,10 @@ def gaussian_born_rule_trajectory(
             cov = evo.covariance
             break
 
-        # Bisect for dt* in (0, T_rem) where branch_norm(dt*) = U
+        # Bisect for dt* in (0, T_rem) where branch_norm(dt*) = U.
+        # ~40 iterations suffice for tol=1e-8 with any physical T_rem.
         lo, hi = 0.0, T_rem
-        for _ in range(200):
+        for _ in range(60):
             mid = 0.5 * (lo + hi)
             if _fast_branch_norm(mid) > U:
                 lo = mid
