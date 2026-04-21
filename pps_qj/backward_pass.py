@@ -155,13 +155,21 @@ class GaussianBackwardData:
     def state_at(self, t: float) -> tuple[np.ndarray, float]:
         if not (0.0 <= t <= self.T):
             raise ValueError("t must lie in [0, T]")
-        tau = self.T - t
-        flat = self.solution.sol(tau)
-        n = 2 * self.model.L
-        covariance = flat[:-1].reshape((n, n))
-        covariance = _clip_covariance_inplace(covariance, eps=self.clip_epsilon)
-        z_scalar = float(np.exp(flat[-1]))
-        return covariance, z_scalar
+        # Use precomputed grid with linear interpolation — much faster than
+        # evaluating the ODE dense output on the full 16385-dim state vector.
+        # sample_tau is in forward-time order (τ = T - t, so t_grid = T - τ).
+        t_grid = self.T - self.sample_tau          # (N,) increasing t values
+        # Clamp to avoid tiny floating-point overshoot.
+        t = float(np.clip(t, t_grid[0], t_grid[-1]))
+        idx = np.searchsorted(t_grid, t)
+        idx = int(np.clip(idx, 1, len(t_grid) - 1))
+        # Linear interpolation weight.
+        t0, t1 = t_grid[idx - 1], t_grid[idx]
+        w = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
+        cov = (1.0 - w) * self.sample_covariances[idx - 1] + w * self.sample_covariances[idx]
+        cov = _clip_covariance_inplace(cov, eps=self.clip_epsilon)
+        z = float((1.0 - w) * self.sample_z[idx - 1] + w * self.sample_z[idx])
+        return cov, z
 
     def covariance_at(self, t: float) -> np.ndarray:
         return self.state_at(t)[0]
@@ -185,7 +193,7 @@ def run_gaussian_backward_pass(
     *,
     rtol: float = 1e-5,
     atol: float = 1e-7,
-    sample_points: int = 257,
+    sample_points: int = 500,
     clip_epsilon: float = 1e-9,
     max_step: float | None = None,
     show_progress: bool = False,

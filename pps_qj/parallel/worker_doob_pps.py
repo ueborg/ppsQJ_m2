@@ -73,7 +73,7 @@ def _bwd_file_path(output_dir: Path, L: int, lam: float, zeta: float, T: float) 
 
 
 def _n_grid_for_bwd(L: int) -> int:
-    return 100 if L <= 96 else 50
+    return 500 if L <= 96 else 250
 
 
 # --------------------------------------------------------------------------
