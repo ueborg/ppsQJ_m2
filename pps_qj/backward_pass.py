@@ -159,7 +159,7 @@ class GaussianBackwardData:
         flat = self.solution.sol(tau)
         n = 2 * self.model.L
         covariance = flat[:-1].reshape((n, n))
-        covariance = project_to_physical_covariance(covariance, eps=self.clip_epsilon)
+        covariance = _clip_covariance_inplace(covariance, eps=self.clip_epsilon)
         z_scalar = float(np.exp(flat[-1]))
         return covariance, z_scalar
 
