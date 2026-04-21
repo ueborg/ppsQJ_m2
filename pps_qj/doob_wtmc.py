@@ -186,15 +186,29 @@ def doob_gaussian_trajectory(
     *,
     tolerances: Tolerances | None = None,
     survival_grid_points: int = 0,
+    max_jumps: int | None = None,
 ) -> JumpTrajectory:
     """Gaussian Doob trajectory with log-space survival arithmetic.
 
     Uses log-space throughout to avoid underflow when z_scalar is extremely
     small (e.g. 10^-100 at small zeta / large L). The survival function
     S(dt) = exp(log_S(dt)) is still monotone, so brentq applies unchanged.
+
+    Parameters
+    ----------
+    max_jumps:
+        Safety guard against Gaussian-closure breakdown. When the approximation
+        is poor the conditioned survival function can collapse to near-zero
+        immediately, causing dt_star ≈ 0 on every iteration and an effectively
+        non-terminating loop. If the accumulated jump count exceeds max_jumps
+        the trajectory is aborted early and flagged with ``degenerate=True``.
+        Defaults to ``20 * len(model.jump_pairs)`` (≈ 20× the number of sites),
+        which is generous relative to the expected Born-rule count at typical T.
     """
     n_monitored = len(model.jump_pairs)
     n = 2 * model.L
+    if max_jumps is None:
+        max_jumps = 20 * n_monitored
 
     # Pre-diagonalise h_effective once for the whole trajectory.
     h_eff = np.asarray(model.h_effective, dtype=np.complex128)
@@ -210,9 +224,14 @@ def doob_gaussian_trajectory(
     t = 0.0
     jump_times: list[float] = []
     channels: list[int] = []
-    diagnostics: dict[str, object] = {"conditioned_survival_segments": []}
+    diagnostics: dict[str, object] = {"conditioned_survival_segments": [], "degenerate": False}
 
     while t < T:
+        # Guard: Gaussian-closure breakdown causes dt_star → 0, producing
+        # runaway jump counts that never reach T. Abort and flag as degenerate.
+        if len(jump_times) >= max_jumps:
+            diagnostics["degenerate"] = True
+            break
         # Backward orbitals W and log_z at current time — O(L²) lookup.
         W_now, log_z_now = backward_data.orbitals_at(t)
         # log_denom = log(Tr(G rho)) using L×L det instead of 2L×2L det.
@@ -328,157 +347,6 @@ def doob_gaussian_trajectory(
         weights /= weights.sum()
 
         channel = int(rng.choice(n_monitored, p=weights))
-        orbitals = post_orbitals_list[channel]
-        jump_times.append(t)
-        channels.append(channel)
-
-    return JumpTrajectory(
-        jump_times=jump_times,
-        channels=channels,
-        final_time=t,
-        final_state=orbitals,
-        diagnostics=diagnostics,
-    )
-    """Gaussian Doob trajectory, optimised with cached eigendecomposition + brentq.
-
-    Parameters
-    ----------
-    max_jumps : int
-        Safety guard: if the trajectory accumulates more than this many jumps
-        (symptomatic of near-zero survival values due to Gaussian closure
-        breakdown at small zeta), the trajectory is aborted early and the final
-        state is returned as-is with a ``degenerate=True`` diagnostic flag.
-        Observables computed from such states will be NaN-tagged by the caller.
-    """
-    n_monitored = len(model.jump_pairs)
-
-    # Pre-diagonalise h_effective once for the whole trajectory.
-    h_eff = np.asarray(model.h_effective, dtype=np.complex128)
-    evals, V = np.linalg.eig(h_eff)
-    V_inv = np.linalg.inv(V)
-
-    # Precompute jump-pair index arrays for vectorised q_j extraction.
-    _jp = model.jump_pairs
-    _ja = np.array([p[0] for p in _jp], dtype=np.intp)
-    _jb = np.array([p[1] for p in _jp], dtype=np.intp)
-
-    orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
-    t = 0.0
-    jump_times: list[float] = []
-    channels: list[int] = []
-    diagnostics: dict[str, object] = {
-        "conditioned_survival_segments": [],
-        "degenerate": False,
-    }
-
-    while t < T:
-        # Guard: abort if jump count suggests dt→0 underflow loop.
-        if len(jump_times) >= max_jumps:
-            diagnostics["degenerate"] = True
-            break
-
-    while t < T:
-        gamma_now = covariance_from_orbitals(orbitals)
-        C_now, z_now = backward_data.state_at(t)
-        denominator = gaussian_overlap(C_now, gamma_now, z_scalar=z_now)
-        if denominator <= 0.0:
-            raise RuntimeError("Encountered non-positive Doob denominator in Gaussian backend")
-
-        r = float(rng.uniform(0.0, 1.0))
-        max_dt = T - t
-
-        # Coefficients in eigenbasis — reused in both survival and propagation.
-        coeffs = V_inv @ orbitals  # (2L, L)
-
-        def _survival(dt: float) -> float:
-            """Conditioned survival via cached eigendecomposition (no expm)."""
-            if dt <= 0.0:
-                return 1.0
-            exp_d = np.exp(evals * dt)
-            orbs_tilde = V @ (exp_d[:, None] * coeffs)
-            q_mat, r_mat = np.linalg.qr(orbs_tilde, mode="reduced")
-            diag_abs = np.abs(np.diag(r_mat))
-            if np.any(diag_abs <= 1e-300):
-                return 0.0
-            log_det = float(np.sum(np.log(diag_abs)))
-            branch_norm = float(np.exp(log_det - model.alpha * n_monitored * dt))
-            cov = covariance_from_orbitals(q_mat)
-            C_t, z_t = backward_data.state_at(t + dt)
-            return float(branch_norm * gaussian_overlap(C_t, cov, z_scalar=z_t) / denominator)
-
-        segment_info: dict[str, object] = {
-            "t_start": float(t),
-            "denominator": float(denominator),
-            "uniform_threshold": float(r),
-            "max_dt": float(max_dt),
-        }
-        terminal_survival = _survival(max_dt)
-        segment_info["terminal_survival"] = terminal_survival
-
-        if survival_grid_points > 1:
-            grid = np.linspace(0.0, max_dt, survival_grid_points)
-            segment_info["times"] = list(t + grid)
-            segment_info["values"] = [_survival(float(s)) for s in grid]
-
-        if terminal_survival > r:
-            segment_info["realized_dt"] = float(max_dt)
-            segment_info["realized_survival"] = terminal_survival
-            segment_info["jumped"] = False
-            diagnostics["conditioned_survival_segments"].append(segment_info)
-            # Propagate to T using cached eigendecomposition (reuses coeffs).
-            exp_d = np.exp(evals * max_dt)
-            orbs_tilde = V @ (exp_d[:, None] * coeffs)
-            q_mat, _ = np.linalg.qr(orbs_tilde, mode="reduced")
-            orbitals = q_mat
-            t = T
-            break
-
-        # Find jump time with Brent's method (~5–8 evals vs ~40 for bisection).
-        try:
-            dt_star = brentq(
-                lambda dt: _survival(dt) - r,
-                0.0, max_dt,
-                xtol=1e-8, maxiter=50, full_output=False,
-            )
-        except ValueError:
-            dt_star = 0.5 * max_dt
-
-        segment_info["realized_dt"] = float(dt_star)
-        segment_info["realized_survival"] = float(_survival(dt_star))
-        segment_info["jumped"] = True
-        diagnostics["conditioned_survival_segments"].append(segment_info)
-
-        # Propagate to jump time — reuses coeffs, no extra V_inv multiply.
-        exp_d_star = np.exp(evals * dt_star)
-        orbs_tilde = V @ (exp_d_star[:, None] * coeffs)
-        pre_orbitals, _ = np.linalg.qr(orbs_tilde, mode="reduced")
-        pre_covariance = covariance_from_orbitals(pre_orbitals)
-        t += dt_star
-
-        C_jump, z_jump = backward_data.state_at(t)
-        overlap_pre = gaussian_overlap(C_jump, pre_covariance, z_scalar=z_jump)
-
-        # Vectorised q_j extraction, then per-channel Doob weights.
-        probs = np.clip(0.5 * (1.0 - pre_covariance[_ja, _jb]), 0.0, 1.0)
-        rates: list[float] = []
-        post_orbitals_list: list[np.ndarray] = []
-        for i, jump_pair in enumerate(model.jump_pairs):
-            q = float(probs[i])
-            if q <= 1e-14:
-                rates.append(0.0)
-                post_orbitals_list.append(pre_orbitals)
-                continue
-            _, post_covariance = apply_projective_jump(pre_covariance, jump_pair)
-            overlap_post = gaussian_overlap(C_jump, post_covariance, z_scalar=z_jump)
-            rates.append(zeta * 2.0 * model.alpha * q * overlap_post / overlap_pre)
-            post_orbitals_list.append(orbitals_from_covariance(post_covariance))
-
-        rates_arr = np.asarray(rates, dtype=np.float64)
-        if np.sum(rates_arr) <= 0.0:
-            orbitals = pre_orbitals
-            continue
-
-        channel = int(rng.choice(n_monitored, p=rates_arr / np.sum(rates_arr)))
         orbitals = post_orbitals_list[channel]
         jump_times.append(t)
         channels.append(channel)
