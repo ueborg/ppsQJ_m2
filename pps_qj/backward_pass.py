@@ -10,37 +10,54 @@ from pps_qj.exact_backend import ExactSpinChainModel, lindbladian_superoperator
 from pps_qj.gaussian_backend import GaussianChainModel, project_to_physical_covariance
 
 
-def _four_point(G: np.ndarray, a: int, b: int, c: int, d: int) -> complex:
-    return G[a, b] * G[c, d] - G[a, c] * G[b, d] + G[a, d] * G[b, c]
+def _monitoring_moment_matrices_fast(
+    G: np.ndarray,
+    C: np.ndarray,
+    jump_pair: tuple[int, int],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Vectorised sandwich and anticommutator matrices for jump pair (a,b).
+
+    Replaces the original O(n²) Python double-loop with O(1) numpy outer-product
+    operations on the precomputed G = I - iC matrix.
+
+    Mathematical identity (vectorised over all m,n simultaneously):
+        f1[m,n] = G[a,b]*G[m,n] - G[a,m]*G[b,n] + G[a,n]*G[b,m]
+              = g_ab*G - outer(G[a,:], G[b,:]) + outer(G[b,:], G[a,:])
+        f2[m,n] = G[a,b]*G[m,n] - G[m,a]*G[n,b] + G[m,b]*G[n,a]
+              = g_ab*G - outer(G[:,a], G[:,b]) + outer(G[:,b], G[:,a])
+    """
+    a, b = jump_pair
+    g_ab = G[a, b]
+
+    # Vectorised four-point functions
+    f1 = g_ab * G - np.outer(G[a, :], G[b, :]) + np.outer(G[b, :], G[a, :])
+    f2 = g_ab * G - np.outer(G[:, a], G[:, b]) + np.outer(G[:, b], G[:, a])
+
+    # Anticommutator: antisymmetric part of C + 0.5*Re(f1+f2)
+    anti = C + 0.5 * np.real(f1 + f2)
+    anticommutator = 0.5 * (anti - anti.T)
+
+    # Sandwich: 0.5*Re(1j*G + f2) where both indices share membership in {a,b}
+    n = G.shape[0]
+    in_pair = np.zeros(n, dtype=bool)
+    in_pair[a] = True
+    in_pair[b] = True
+    same = np.outer(in_pair, in_pair) | np.outer(~in_pair, ~in_pair)
+    sand = np.where(same, 0.5 * np.real(1j * G + f2), 0.0)
+    sandwich = 0.5 * (sand - sand.T)
+
+    return sandwich, anticommutator
 
 
 def _monitoring_moment_matrices(
     covariance: np.ndarray,
     jump_pair: tuple[int, int],
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return matrices for <J B_mn J> and <{J, B_mn}>."""
+    """Public wrapper — computes G then delegates to the fast vectorised kernel."""
     C = np.asarray(covariance, dtype=np.float64)
-    G = np.eye(C.shape[0], dtype=np.complex128) - 1j * C
-    a, b = jump_pair
-    pair = {a, b}
-    sandwich = np.zeros_like(C, dtype=np.float64)
-    anticommutator = np.zeros_like(C, dtype=np.float64)
-
-    for m in range(C.shape[0]):
-        for n in range(m + 1, C.shape[1]):
-            f1 = _four_point(G, a, b, m, n)
-            f2 = _four_point(G, m, n, a, b)
-            anti = C[m, n] + 0.5 * (f1 + f2)
-            anticommutator[m, n] = float(np.real_if_close(anti, tol=1_000.0).real)
-            anticommutator[n, m] = -anticommutator[m, n]
-
-            same_membership = ((m in pair) == (n in pair))
-            if same_membership:
-                sand = 0.5 * (1j * G[m, n] + f2)
-                sandwich[m, n] = float(np.real_if_close(sand, tol=1_000.0).real)
-                sandwich[n, m] = -sandwich[m, n]
-
-    return sandwich, anticommutator
+    n = C.shape[0]
+    G = np.eye(n, dtype=np.complex128) - 1j * C
+    return _monitoring_moment_matrices_fast(G, C, jump_pair)
 
 
 def gaussian_backward_rhs(
@@ -55,6 +72,9 @@ def gaussian_backward_rhs(
     C = y[:-1].reshape((n, n))
     C = project_to_physical_covariance(C, eps=clip_epsilon)
 
+    # Compute G once here — reused by every jump-pair call below.
+    G = np.eye(n, dtype=np.complex128) - 1j * C
+
     q_sum = 0.0
     for pair in model.jump_pairs:
         a, b = pair
@@ -63,7 +83,7 @@ def gaussian_backward_rhs(
 
     rhs = model.h_hamiltonian @ C - C @ model.h_hamiltonian
     for pair in model.jump_pairs:
-        sandwich, anticommutator = _monitoring_moment_matrices(C, pair)
+        sandwich, anticommutator = _monitoring_moment_matrices_fast(G, C, pair)
         rhs += 2.0 * model.alpha * (zeta * sandwich - 0.5 * anticommutator)
 
     rhs -= scalar_rate * C
