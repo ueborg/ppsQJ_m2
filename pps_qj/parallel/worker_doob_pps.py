@@ -179,6 +179,10 @@ def _parse_args(argv: list[str]) -> tuple[int, Path, int, bool]:
     return task_id, output_dir, max(1, n_workers), force_save_bwd
 
 
+# Minimum trajectories per worker — avoids pool startup dominating small-L tasks.
+_MIN_TRAJ_PER_WORKER = 20
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
@@ -201,6 +205,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         f"ζ={zeta:.2f}, T={T:.0f}, n_traj={n_traj}, n_workers={n_workers} ===",
         flush=True,
     )
+
+    # Cap workers so each chunk carries at least _MIN_TRAJ_PER_WORKER trajectories.
+    # Avoids pool startup cost dominating computation at small L.
+    effective_workers = min(n_workers, max(1, n_traj // _MIN_TRAJ_PER_WORKER))
+    if effective_workers < n_workers:
+        _log(t_start, f"capping workers {n_workers} → {effective_workers} (min {_MIN_TRAJ_PER_WORKER} traj/worker)")
+        n_workers = effective_workers
 
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "backward_passes").mkdir(parents=True, exist_ok=True)
@@ -285,9 +296,10 @@ def main(argv: Optional[list[str]] = None) -> int:
             import multiprocessing as mp
             n_chunks = len(chunk_args)
             _log(t_start, f"spawning {n_chunks} workers for {n_traj} trajectories ...")
-            # fork is safe on Linux and avoids re-importing numpy/scipy per worker,
-            # which is critical on CVMFS where imports are slow.
-            with mp.get_context("fork").Pool(processes=n_chunks) as pool:
+            # forkserver: workers are forked from a clean pre-spawned server process
+            # that has not imported numpy, avoiding OpenBLAS thread deadlocks that
+            # occur with plain fork(). Faster than spawn on repeated use.
+            with mp.get_context("forkserver").Pool(processes=n_chunks) as pool:
                 _log(t_start, "pool ready — trajectories running ...")
                 with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
                     for chunk_result in pool.imap_unordered(_run_doob_chunk_unpacked, chunk_args):
