@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from tqdm import tqdm
 
 from pps_qj.backward_pass import run_gaussian_backward_pass
 from pps_qj.backward_pass_io import load_backward_pass, save_backward_pass
@@ -252,14 +253,20 @@ def main(argv: Optional[list[str]] = None) -> int:
         ]
 
         all_results: list[dict] = []
+        pbar_desc = f"L={L} λ={lam:.2f} ζ={zeta:.2f}"
         if len(chunk_args) == 1 or n_workers == 1:
-            for args in chunk_args:
-                all_results.extend(_run_doob_chunk(*args))
+            with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
+                for args in chunk_args:
+                    chunk_result = _run_doob_chunk(*args)
+                    all_results.extend(chunk_result)
+                    pbar.update(len(chunk_result))
         else:
             import multiprocessing as mp
             with mp.get_context("spawn").Pool(processes=len(chunk_args)) as pool:
-                for chunk_result in pool.starmap(_run_doob_chunk, chunk_args):
-                    all_results.extend(chunk_result)
+                with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
+                    for chunk_result in pool.imap_unordered(_run_doob_chunk, chunk_args):
+                        all_results.extend(chunk_result)
+                        pbar.update(len(chunk_result))
 
         # Clean up temp backward pass (if we didn't persist).
         if zeta < 1.0 - 1e-12 and bwd_path_for_workers is not None:
