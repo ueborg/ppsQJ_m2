@@ -39,7 +39,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pps_qj.gaussian_backend import neel_covariance
+from pps_qj.gaussian_backend import neel_covariance, orbitals_from_covariance
 from pps_qj.overlaps import gaussian_overlap
 
 
@@ -115,6 +115,8 @@ class LoadedBackwardPass:
     t_grid: np.ndarray
     C_grid: np.ndarray
     z_grid: np.ndarray
+    orbitals_grid: np.ndarray   # (N, 2L, L) complex
+    log_z_grid: np.ndarray      # (N,) float
     T: float
     zeta: float
     Z_T: float
@@ -126,7 +128,6 @@ class LoadedBackwardPass:
         if not (0.0 <= t <= self.T + 1e-12):
             raise ValueError(f"t={t} must lie in [0, T={self.T}]")
         t_clamped = min(max(t, 0.0), self.T)
-        # Linear interpolation in t for both C (componentwise) and z.
         idx_right = int(np.searchsorted(self.t_grid, t_clamped, side="left"))
         if idx_right <= 0:
             return self.C_grid[0].copy(), float(self.z_grid[0])
@@ -139,9 +140,29 @@ class LoadedBackwardPass:
         w = (t_clamped - t_lo) / (t_hi - t_lo)
         C = (1.0 - w) * self.C_grid[idx_right - 1] + w * self.C_grid[idx_right]
         z = (1.0 - w) * self.z_grid[idx_right - 1] + w * self.z_grid[idx_right]
-        # Enforce antisymmetry (numerical hygiene).
         C = 0.5 * (C - C.T)
         return C, float(z)
+
+    def orbitals_at(self, t: float) -> tuple[np.ndarray, float]:
+        """Return (backward_orbitals W, log_z) at time t."""
+        t = float(t)
+        if not (0.0 <= t <= self.T + 1e-12):
+            raise ValueError(f"t={t} must lie in [0, T={self.T}]")
+        t_clamped = min(max(t, 0.0), self.T)
+        idx_right = int(np.searchsorted(self.t_grid, t_clamped, side="left"))
+        if idx_right <= 0:
+            return self.orbitals_grid[0].copy(), float(self.log_z_grid[0])
+        if idx_right >= len(self.t_grid):
+            return self.orbitals_grid[-1].copy(), float(self.log_z_grid[-1])
+        t_lo = self.t_grid[idx_right - 1]
+        t_hi = self.t_grid[idx_right]
+        if t_hi == t_lo:
+            return self.orbitals_grid[idx_right].copy(), float(self.log_z_grid[idx_right])
+        w = (t_clamped - t_lo) / (t_hi - t_lo)
+        orbs = (1.0 - w) * self.orbitals_grid[idx_right - 1] + w * self.orbitals_grid[idx_right]
+        orbs, _ = np.linalg.qr(orbs, mode="reduced")
+        log_z = float((1.0 - w) * self.log_z_grid[idx_right - 1] + w * self.log_z_grid[idx_right])
+        return orbs, log_z
 
 
 def load_backward_pass(path) -> LoadedBackwardPass:
@@ -160,10 +181,21 @@ def load_backward_pass(path) -> LoadedBackwardPass:
 
     T = float(metadata.get("T", t_grid[-1]))
     zeta = float(metadata.get("zeta", 1.0))
+
+    # Compute orbitals and log_z from stored data — avoids changing save format.
+    n = C_grid.shape[1]
+    L = n // 2
+    orbitals_grid = np.empty((len(t_grid), n, L), dtype=np.complex128)
+    log_z_grid = np.where(z_grid > 0, np.log(z_grid), -np.inf)
+    for i in range(len(t_grid)):
+        orbitals_grid[i] = orbitals_from_covariance(C_grid[i])
+
     return LoadedBackwardPass(
         t_grid=t_grid,
         C_grid=C_grid,
         z_grid=z_grid,
+        orbitals_grid=orbitals_grid,
+        log_z_grid=log_z_grid,
         T=T,
         zeta=zeta,
         Z_T=Z_T,
