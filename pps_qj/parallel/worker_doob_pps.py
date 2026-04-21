@@ -301,17 +301,22 @@ def main(argv: Optional[list[str]] = None) -> int:
                     pbar.update(1)
         else:
             import multiprocessing as mp
-            n_chunks = len(chunk_args)
-            _log(t_start, f"spawning {n_chunks} workers for {n_traj} trajectories ...")
-            # forkserver: workers are forked from a clean pre-spawned server process
-            # that has not imported numpy, avoiding OpenBLAS thread deadlocks that
-            # occur with plain fork(). Faster than spawn on repeated use.
-            with mp.get_context("forkserver").Pool(processes=n_chunks) as pool:
+            pool_size = min(n_workers, n_traj)
+            _log(t_start, f"spawning {pool_size} workers for {n_traj} trajectories ...")
+            # One task per trajectory so imap_unordered yields per-trajectory
+            # results and tqdm ticks once per trajectory, not once per chunk.
+            # Pool size stays at n_workers — workers pull from the queue as they
+            # finish, giving better load balancing than pre-assigned chunks too.
+            traj_args = [
+                (L, w, alpha, T, zeta, bwd_path_for_workers, seed * 100_000 + k, 1)
+                for k in range(n_traj)
+            ]
+            with mp.get_context("forkserver").Pool(processes=pool_size) as pool:
                 _log(t_start, "pool ready — trajectories running ...")
                 with tqdm(total=n_traj, desc=pbar_desc, unit="traj") as pbar:
-                    for chunk_result in pool.imap_unordered(_run_doob_chunk_unpacked, chunk_args):
-                        all_results.extend(chunk_result)
-                        pbar.update(len(chunk_result))
+                    for traj_result in pool.imap_unordered(_run_doob_chunk_unpacked, traj_args):
+                        all_results.extend(traj_result)
+                        pbar.update(1)
 
         # Clean up temp backward pass (if we didn't persist).
         if zeta < 1.0 - 1e-12 and bwd_path_for_workers is not None:
