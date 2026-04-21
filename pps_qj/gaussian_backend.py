@@ -244,6 +244,12 @@ def gaussian_born_rule_trajectory(
     # Gram matrix V†V — needed because V is not unitary (h_eff non-Hermitian).
     VhV = V.conj().T @ V
 
+    # Precompute jump-pair index arrays for vectorised probability extraction.
+    # Replaces an L-1 Python function call loop with a single numpy indexing op.
+    _jp = model.jump_pairs
+    _ja = np.array([p[0] for p in _jp], dtype=np.intp)  # (L-1,) row indices
+    _jb = np.array([p[1] for p in _jp], dtype=np.intp)  # (L-1,) col indices
+
     orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
     cov = np.asarray(model.gamma0, dtype=np.float64).copy()
     t = 0.0
@@ -300,11 +306,8 @@ def gaussian_born_rule_trajectory(
         cov = covariance_from_orbitals(orbitals)
         t += dt_star
 
-        # Select jump channel proportional to q_j
-        probs = np.array(
-            [jump_probability(cov, pair) for pair in model.jump_pairs],
-            dtype=np.float64,
-        )
+        # Select jump channel proportional to q_j (vectorised over all bonds).
+        probs = np.clip(0.5 * (1.0 - cov[_ja, _jb]), 0.0, 1.0)
         total = probs.sum()
         if total < 1e-15:
             break
