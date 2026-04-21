@@ -202,13 +202,13 @@ def doob_gaussian_trajectory(
         immediately, causing dt_star ≈ 0 on every iteration and an effectively
         non-terminating loop. If the accumulated jump count exceeds max_jumps
         the trajectory is aborted early and flagged with ``degenerate=True``.
-        Defaults to ``20 * len(model.jump_pairs)`` (≈ 20× the number of sites),
-        which is generous relative to the expected Born-rule count at typical T.
+        Defaults to ``5 * len(model.jump_pairs)``, which is a generous cap
+        well above any physically meaningful jump count at typical T and alpha.
     """
     n_monitored = len(model.jump_pairs)
     n = 2 * model.L
     if max_jumps is None:
-        max_jumps = 20 * n_monitored
+        max_jumps = 5 * n_monitored
 
     # Pre-diagonalise h_effective once for the whole trajectory.
     h_eff = np.asarray(model.h_effective, dtype=np.complex128)
@@ -220,6 +220,16 @@ def doob_gaussian_trajectory(
     _ja = np.array([p[0] for p in _jp], dtype=np.intp)
     _jb = np.array([p[1] for p in _jp], dtype=np.intp)
 
+    # Born-rule expected inter-jump interval: 1 / (n_monitored * 2*alpha).
+    # Under the tilted measure with zeta < 1, jumps are suppressed so intervals
+    # should be LONGER than this. We detect Gaussian-closure breakdown by
+    # checking whether dt_star is consistently shorter than a fraction of this
+    # Born-rule scale — which should never happen for zeta <= 1.
+    _dt_born = 1.0 / (n_monitored * 2.0 * model.alpha + 1e-12)
+    _dt_tiny = _dt_born / 10.0   # 10x shorter than Born-rule is already a red flag
+    _MAX_CONSEC_TINY = 3          # abort after this many consecutive tiny waits
+    _consec_tiny = 0
+
     orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
     t = 0.0
     jump_times: list[float] = []
@@ -227,8 +237,7 @@ def doob_gaussian_trajectory(
     diagnostics: dict[str, object] = {"conditioned_survival_segments": [], "degenerate": False}
 
     while t < T:
-        # Guard: Gaussian-closure breakdown causes dt_star → 0, producing
-        # runaway jump counts that never reach T. Abort and flag as degenerate.
+        # Hard cap on total jumps.
         if len(jump_times) >= max_jumps:
             diagnostics["degenerate"] = True
             break
@@ -298,6 +307,17 @@ def doob_gaussian_trajectory(
         except ValueError:
             dt_star = 0.5 * max_dt
 
+        # Fast degeneracy detector: if dt_star is far below the Born-rule mean
+        # inter-jump interval for several consecutive jumps, the Gaussian
+        # closure has collapsed and the trajectory will never reach T.
+        if dt_star < _dt_tiny:
+            _consec_tiny += 1
+            if _consec_tiny >= _MAX_CONSEC_TINY:
+                diagnostics["degenerate"] = True
+                break
+        else:
+            _consec_tiny = 0
+
         segment_info["realized_dt"] = float(dt_star)
         segment_info["jumped"] = True
         diagnostics["conditioned_survival_segments"].append(segment_info)
@@ -337,8 +357,11 @@ def doob_gaussian_trajectory(
         log_rates_arr = np.asarray(log_rates, dtype=np.float64)
         finite_mask = np.isfinite(log_rates_arr)
         if not np.any(finite_mask):
-            orbitals = pre_orbitals
-            continue
+            # All channel weights non-finite: Gaussian closure has broken down
+            # at this point in the trajectory. Continuing is meaningless —
+            # the state cannot be evolved forward reliably. Mark degenerate.
+            diagnostics["degenerate"] = True
+            break
 
         # Numerically stable softmax-style normalisation.
         log_rates_arr[~finite_mask] = -np.inf
