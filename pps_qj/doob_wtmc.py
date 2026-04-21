@@ -186,16 +186,18 @@ def doob_gaussian_trajectory(
     *,
     tolerances: Tolerances | None = None,
     survival_grid_points: int = 0,
+    max_jumps: int = 100_000,
 ) -> JumpTrajectory:
     """Gaussian Doob trajectory, optimised with cached eigendecomposition + brentq.
 
-    Key changes vs the original:
-    - ``h_effective`` is pre-diagonalised once; ``M(dt) = V diag(exp_d) V⁻¹``
-      replaces ``scipy.linalg.expm`` in every survival evaluation (~8× faster).
-    - ``brentq`` replaces ``_bounded_bisection`` (~5–8 vs ~40 evaluations).
-    - ``coeffs = V⁻¹ @ orbitals`` is computed once per inter-jump interval and
-      reused for the propagation step, saving one matrix multiply.
-    - Jump probabilities are extracted with a single numpy indexing op.
+    Parameters
+    ----------
+    max_jumps : int
+        Safety guard: if the trajectory accumulates more than this many jumps
+        (symptomatic of near-zero survival values due to Gaussian closure
+        breakdown at small zeta), the trajectory is aborted early and the final
+        state is returned as-is with a ``degenerate=True`` diagnostic flag.
+        Observables computed from such states will be NaN-tagged by the caller.
     """
     n_monitored = len(model.jump_pairs)
 
@@ -213,7 +215,16 @@ def doob_gaussian_trajectory(
     t = 0.0
     jump_times: list[float] = []
     channels: list[int] = []
-    diagnostics: dict[str, object] = {"conditioned_survival_segments": []}
+    diagnostics: dict[str, object] = {
+        "conditioned_survival_segments": [],
+        "degenerate": False,
+    }
+
+    while t < T:
+        # Guard: abort if jump count suggests dt→0 underflow loop.
+        if len(jump_times) >= max_jumps:
+            diagnostics["degenerate"] = True
+            break
 
     while t < T:
         gamma_now = covariance_from_orbitals(orbitals)

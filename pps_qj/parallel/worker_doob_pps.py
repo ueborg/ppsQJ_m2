@@ -111,15 +111,17 @@ def _run_doob_chunk(
         bwd = load_backward_pass(bwd_path_or_none)
         for _ in range(n_chunk):
             traj = doob_gaussian_trajectory(model, bwd, T, zeta, rng)
-            # doob_gaussian_trajectory.final_state = orbitals; convert to gamma.
-            final_state = np.asarray(traj.final_state)
-            if final_state.ndim == 2 and final_state.shape[0] == 2 * L and final_state.shape[1] == L:
-                gamma = covariance_from_orbitals(final_state)
+            if traj.diagnostics.get("degenerate", False):
+                obs = {k: float("nan") for k in ("S_half", "S_top", "S_top_d", "B_L", "B_L_prime")}
+                obs["n_jumps"] = int(traj.n_jumps)
             else:
-                # Defensive fallback: if it ever becomes a covariance, accept.
-                gamma = np.asarray(final_state, dtype=np.float64)
-            obs = compute_all_observables(gamma, L, jump_pairs_list)
-            obs["n_jumps"] = int(traj.n_jumps)
+                final_state = np.asarray(traj.final_state)
+                if final_state.ndim == 2 and final_state.shape[0] == 2 * L and final_state.shape[1] == L:
+                    gamma = covariance_from_orbitals(final_state)
+                else:
+                    gamma = np.asarray(final_state, dtype=np.float64)
+                obs = compute_all_observables(gamma, L, jump_pairs_list)
+                obs["n_jumps"] = int(traj.n_jumps)
             results.append(obs)
     return results
 
@@ -337,6 +339,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         B_L_all = arr_of("B_L")
         B_L_prime_all = arr_of("B_L_prime")
         n_jumps_all = arr_of("n_jumps")
+        n_degenerate = int(sum(1 for r in all_results if np.isnan(r.get("S_half", 0.0))))
+        frac_degenerate = n_degenerate / max(len(all_results), 1)
 
         S_half_mean, S_half_std, S_half_err, _ = _nan_stats(S_half_all)
         S_top_mean, S_top_std, S_top_err, _ = _nan_stats(S_top_all)
@@ -374,6 +378,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             B_L_mean=B_L_mean, B_L_err=B_L_err,
             B_L_prime_mean=B_L_prime_mean,
             theta_doob=theta_doob, Z_T=Z_T,
+            n_degenerate=n_degenerate, frac_degenerate=frac_degenerate,
             wall_time=wall_time, status="complete",
         )
         _write_summary_atomic(summary_file, summary)
@@ -381,7 +386,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(
             f"task {task_id}: L={L}, λ={lam:.3f}, ζ={zeta:.2f}, T={T:.0f}, "
             f"<S>={S_half_mean:.4f}±{S_half_err:.4f}, "
-            f"<B_L>={B_L_mean:.4f}, θ_D={theta_doob:.4f}, t={wall_time:.1f}s",
+            f"<B_L>={B_L_mean:.4f}, θ_D={theta_doob:.4f}, "
+            f"degenerate={n_degenerate}/{n_traj} ({frac_degenerate:.0%}), "
+            f"t={wall_time:.1f}s",
             flush=True,
         )
         return 0
