@@ -56,6 +56,7 @@ class CloningResult:
     N_c: int
     T_total: float
     delta_tau: float
+    final_covs: list  # N_c covariance matrices after last resampling step
 
 
 def _systematic_resample(
@@ -263,6 +264,7 @@ def run_cloning(
         N_c=int(N_c),
         T_total=float(T_total),
         delta_tau=float(delta_tau_eff),
+        final_covs=covs,
     )
 
 

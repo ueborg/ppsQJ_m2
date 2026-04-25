@@ -31,6 +31,7 @@ from tqdm import tqdm
 
 from pps_qj.cloning import CloningCollapse, run_cloning
 from pps_qj.gaussian_backend import build_gaussian_chain_model
+from pps_qj.observables import compute_all_observables
 from pps_qj.parallel.grid_pps import task_params_clone
 
 
@@ -81,7 +82,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         S_stds = np.full(N_REAL, np.nan, dtype=np.float64)
         thetas = np.full(N_REAL, np.nan, dtype=np.float64)
         ESSs = np.full(N_REAL, np.nan, dtype=np.float64)
+        B_L_means = np.full(N_REAL, np.nan, dtype=np.float64)
+        B_L_stds = np.full(N_REAL, np.nan, dtype=np.float64)
         n_collapses_total = 0
+
+        # jump_pairs needed by compute_all_observables; extract once
+        jump_pairs_list = list(model.jump_pairs)
+        # B_L requires L divisible by 4; flag it once rather than per clone
+        can_compute_B_L = (L % 4 == 0)
 
         print(
             f"\n=== clone task {task_id}: L={L}, λ={lam:.3f} (α={alpha:.3f}, w={w:.3f}), "
@@ -103,10 +111,24 @@ def main(argv: Optional[list[str]] = None) -> int:
                     thetas[r] = float(result.theta_hat)
                     ESSs[r] = float(result.eff_sample_size)
                     n_collapses_total += int(result.n_collapses)
+                    # Compute B_L across the final clone population
+                    if can_compute_B_L and result.final_covs:
+                        bl_vals = []
+                        for cov in result.final_covs:
+                            obs = compute_all_observables(
+                                np.asarray(cov, dtype=np.float64),
+                                L, jump_pairs_list,
+                            )
+                            if np.isfinite(obs["B_L"]):
+                                bl_vals.append(obs["B_L"])
+                        if bl_vals:
+                            B_L_means[r] = float(np.mean(bl_vals))
+                            B_L_stds[r] = float(np.std(bl_vals))
                     pbar.set_postfix({
                         "S": f"{result.S_mean:.3f}",
                         "θ": f"{result.theta_hat:+.3f}",
                         "ESS": f"{result.eff_sample_size:.0f}",
+                        "B_L": f"{B_L_means[r]:.3f}" if np.isfinite(B_L_means[r]) else "nan",
                     })
                 except CloningCollapse:
                     n_collapses_total += 1
@@ -128,6 +150,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         S_mean, S_std_across, S_err, n_valid_S = _nanstat(S_means)
         theta_mean, theta_std_across, theta_err, n_valid_theta = _nanstat(thetas)
         ESS_mean, _, _, _ = _nanstat(ESSs)
+        B_L_mean, B_L_std_across, B_L_err, n_valid_B_L = _nanstat(B_L_means)
 
         wall_time = time.time() - t_start
 
@@ -138,10 +161,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             S_mean=S_mean, S_std=S_std_across, S_err=S_err,
             theta_mean=theta_mean, theta_std=theta_std_across, theta_err=theta_err,
             ESS_mean=ESS_mean,
+            B_L_mean=B_L_mean, B_L_std=B_L_std_across, B_L_err=B_L_err,
             S_means_all=S_means, S_stds_all=S_stds,
             thetas_all=thetas, ESSs_all=ESSs,
+            B_L_means_all=B_L_means, B_L_stds_all=B_L_stds,
             n_collapses=n_collapses_total,
-            n_valid_S=n_valid_S, n_valid_theta=n_valid_theta,
+            n_valid_S=n_valid_S, n_valid_theta=n_valid_theta, n_valid_B_L=n_valid_B_L,
             wall_time=wall_time,
         )
 
@@ -149,6 +174,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             task_id=task_id, L=L, lam=lam, zeta=zeta, T=T, N_c=N_c, n_real=N_REAL,
             S_mean=S_mean, S_err=S_err,
             theta_mean=theta_mean, theta_err=theta_err,
+            B_L_mean=B_L_mean, B_L_err=B_L_err,
             ESS_mean=ESS_mean, n_collapses=n_collapses_total,
             wall_time=wall_time, status="complete",
         )
@@ -157,6 +183,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(
             f"clone task {task_id}: L={L}, λ={lam:.3f}, ζ={zeta:.2f}, T={T:.0f}, "
             f"N_c={N_c}, <S>={S_mean:.4f}±{S_err:.4f}, "
+            f"<B_L>={B_L_mean:.4f}±{B_L_err:.4f}, "
             f"θ={theta_mean:.4f}±{theta_err:.4f}, n_coll={n_collapses_total}, "
             f"t={wall_time:.1f}s",
             flush=True,

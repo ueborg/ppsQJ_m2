@@ -23,8 +23,13 @@ ZETA_VALS_DOOB: List[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 # ----------------------------------------------------------------------
 # Cloning cross-validation grid
 # ----------------------------------------------------------------------
-L_CLONE: List[int] = [8, 12, 16]
-ZETA_VALS_CLONE: List[float] = [0.3, 0.5, 0.7, 1.0]
+L_CLONE: List[int] = [8, 16, 32, 64]
+
+ZETA_VALS_CLONE: List[float] = [
+    0.10, 0.20, 0.30, 0.40, 0.50,
+    0.60, 0.70, 0.75, 0.80, 0.85,
+    0.90, 0.92, 0.95, 0.97, 1.00,
+]  # 15 points; denser near ζ=1 where the transition lives for most λ
 
 
 def _alpha_w_from_lam(lam: float) -> tuple[float, float]:
@@ -45,13 +50,10 @@ def n_traj_for_L(L: int) -> int:
 
 
 def nc_for_L(L: int) -> int:
-    if L == 8:
-        return 2000
-    if L == 12:
-        return 1000
-    if L == 16:
-        return 500
-    raise ValueError(f"N_c not defined for L={L}")
+    # N_c balances statistical quality against wall time.
+    # Rule of thumb: N_c * delta_tau * n_steps ~ constant budget.
+    # At the critical point ESS ~ N_c / L^d so we scale N_c with L.
+    return {8: 2000, 16: 1000, 32: 500, 64: 200}[L]
 
 
 def time_horizon(L: int, alpha: float) -> float:
