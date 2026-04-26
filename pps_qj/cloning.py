@@ -99,24 +99,38 @@ def _systematic_resample(
     weights: np.ndarray,
     rng: np.random.Generator,
 ) -> list[np.ndarray]:
-    """Systematic resampling of a covariance population.
-
-    At equal weights this is deterministic: returns one copy per clone.
-    """
+    """Systematic resampling of covariances only (kept for external callers)."""
     weights = np.asarray(weights, dtype=np.float64)
-    total = float(weights.sum())
+    total   = float(weights.sum())
     if total <= 0.0:
         raise CloningCollapse("Cannot resample: all weights zero.")
-    probs = weights / total
-    N_c = len(covs)
-    F = np.cumsum(probs)
-    F[-1] = 1.0  # guard against floating drift
-    U = float(rng.uniform(0.0, 1.0 / N_c))
-    positions = U + np.arange(N_c) / N_c
-    # searchsorted with side='right' gives index i such that F[i-1] < pos <= F[i]
-    indices = np.searchsorted(F, positions, side="left")
-    indices = np.clip(indices, 0, N_c - 1)
-    return [covs[int(i)].copy() for i in indices]
+    N_c   = len(covs)
+    F     = np.cumsum(weights / total); F[-1] = 1.0
+    U     = float(rng.uniform(0.0, 1.0 / N_c))
+    idxs  = np.clip(np.searchsorted(F, U + np.arange(N_c) / N_c, side="left"), 0, N_c - 1)
+    return [covs[int(i)].copy() for i in idxs]
+
+
+def _systematic_resample_pairs(
+    covs: list[np.ndarray],
+    orbs: list[np.ndarray],
+    weights: np.ndarray,
+    rng: np.random.Generator,
+) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Systematic resampling of (covariance, orbital) pairs.
+
+    Resamples both arrays with the same index sequence so covariances and
+    orbitals stay consistent without an extra orbitals_from_covariance call.
+    """
+    weights = np.asarray(weights, dtype=np.float64)
+    total   = float(weights.sum())
+    if total <= 0.0:
+        raise CloningCollapse("Cannot resample: all weights zero.")
+    N_c  = len(covs)
+    F    = np.cumsum(weights / total); F[-1] = 1.0
+    U    = float(rng.uniform(0.0, 1.0 / N_c))
+    idxs = np.clip(np.searchsorted(F, U + np.arange(N_c) / N_c, side="left"), 0, N_c - 1)
+    return [(covs[int(i)].copy(), orbs[int(i)].copy()) for i in idxs]
 
 
 def _step_log_weight(n_jumps: int, zeta: float) -> float:
@@ -177,8 +191,11 @@ def run_cloning(
     # Recompute effective delta_tau so n_steps * delta_tau == T_total exactly
     delta_tau_eff = T_total / n_steps
 
-    # Per-clone covariances (independent copies of gamma0)
+    # Per-clone covariances and orbitals (independent copies of initial state).
+    # Storing orbitals alongside covariances avoids re-calling
+    # orbitals_from_covariance at the start of every trajectory segment.
     covs: list[np.ndarray] = [model.gamma0.copy() for _ in range(N_c)]
+    orbs: list[np.ndarray] = [model.orbitals0.copy() for _ in range(N_c)]
 
     log_Z_acc = 0.0
     log_Z_history: list[float] = []
@@ -207,18 +224,13 @@ def run_cloning(
         sub_rngs = rng.spawn(N_c)
         n_jumps = np.zeros(N_c, dtype=np.int64)
         for i in range(N_c):
-            # Build a sub-model view whose initial state is clone i's cov.
-            # We must also supply orbitals consistent with this covariance.
-            # gaussian_born_rule_trajectory reads model.gamma0 and
-            # model.orbitals0; constructing orbitals fresh from the covariance.
-            from .gaussian_backend import orbitals_from_covariance
-
-            orbs = orbitals_from_covariance(covs[i])
-            sub_model = replace(model, gamma0=covs[i].copy(), orbitals0=orbs)
-            result = gaussian_born_rule_trajectory(
+            # Pass stored orbitals directly — no orbitals_from_covariance call.
+            sub_model = replace(model, gamma0=covs[i], orbitals0=orbs[i])
+            result    = gaussian_born_rule_trajectory(
                 sub_model, T=delta_tau_eff, rng=sub_rngs[i]
             )
-            covs[i] = np.asarray(result.final_covariance, dtype=np.float64)
+            covs[i]   = np.asarray(result.final_covariance, dtype=np.float64)
+            orbs[i]   = result.final_orbitals
             n_jumps[i] = int(result.n_jumps)
 
         # Compute weights (explicit zeta==0/zeta==1 branches)
@@ -259,7 +271,10 @@ def run_cloning(
         # Resampling step (skip at zeta==1: uniform weights -> trivial no-op,
         # keeps streams identical to independent evolution).
         if zeta != 1.0:
-            covs = _systematic_resample(covs, weights, rng)
+            pairs   = _systematic_resample_pairs(covs, orbs, weights, rng)
+            covs, orbs = zip(*pairs)
+            covs = list(covs)
+            orbs = list(orbs)
         # else: leave covs untouched (all weights equal anyway)
 
     log_Z_arr = np.asarray(log_Z_history, dtype=np.float64)

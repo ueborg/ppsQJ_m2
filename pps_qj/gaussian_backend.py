@@ -230,6 +230,8 @@ def entanglement_entropy(covariance: np.ndarray, ell: int, base: float = 2.0) ->
 class GaussianTrajectoryResult:
     """Result of a Born-rule quantum-jump trajectory in the Gaussian backend."""
     final_covariance: np.ndarray
+    final_orbitals: np.ndarray   # consistent with final_covariance; avoids
+                                 # re-calling orbitals_from_covariance in cloning
     n_jumps: int
     jump_times: list[float]
     jump_channels: list[int]
@@ -342,6 +344,7 @@ def gaussian_born_rule_trajectory(
 
     return GaussianTrajectoryResult(
         final_covariance=cov,
+        final_orbitals=orbitals,
         n_jumps=len(jump_times),
         jump_times=jump_times,
         jump_channels=jump_channels,
