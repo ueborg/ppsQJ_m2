@@ -302,6 +302,7 @@ def gaussian_born_rule_trajectory(
             exp_d = np.exp(evals * T_rem)
             orbs_tilde = V @ (exp_d[:, None] * coeffs)
             q_mat, _ = np.linalg.qr(orbs_tilde, mode="reduced")
+            orbitals = q_mat   # keep consistent with cov below
             cov = covariance_from_orbitals(q_mat)
             break
 
