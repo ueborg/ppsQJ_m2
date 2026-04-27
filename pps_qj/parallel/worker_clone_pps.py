@@ -31,10 +31,7 @@ from tqdm import tqdm
 
 from pps_qj.cloning import CloningCollapse, run_cloning
 from pps_qj.gaussian_backend import build_gaussian_chain_model
-from pps_qj.parallel.grid_pps import task_params_clone
-
-
-N_REAL = 5  # independent realisations per grid point
+from pps_qj.parallel.grid_pps import task_params_clone, NREAL_FOR_L
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +187,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     T = float(task["T"])
     N_c = int(task["N_c"])
     seed = int(task["seed"])
+    # Realisation count is L-dependent (see NREAL_FOR_L in grid_pps.py).
+    # L=64 uses N_REAL=2 to keep all tasks within a 48h wall-time limit.
+    N_REAL = NREAL_FOR_L.get(L, 5)
 
     try:
         model = build_gaussian_chain_model(L=L, w=w, alpha=alpha)

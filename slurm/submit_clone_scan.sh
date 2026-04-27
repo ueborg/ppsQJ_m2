@@ -8,7 +8,15 @@
 # Preset invocations:
 #   L=16 finish:  bash slurm/submit_clone_scan.sh 255 509 <outdir> 06:00:00
 #   L=32 run:     bash slurm/submit_clone_scan.sh 510 764 <outdir> 24:00:00
-#   L=64 run:     bash slurm/submit_clone_scan.sh 765 1019 <outdir> 24:00:00
+#   L=64 run:     bash slurm/submit_clone_scan.sh 765 1019 <outdir> 48:00:00
+#
+# L=64 wall-time note
+# -------------------
+# Profiling shows ~43.8 ms/clone at L=64 (L^4.8 effective scaling due to
+# L2-cache thrashing on 256 KB model matrices in the serial clone loop).
+# N_c=100 and N_REAL=2 (set automatically by NREAL_FOR_L in grid_pps.py)
+# gives ~15.7 h/task at alpha=0.4 and ~35.3 h/task at alpha=0.9.  48 h
+# covers all tasks; check your partition's MaxWallDuration before submitting.
 #
 # Completed tasks are skipped automatically (idempotency guard in worker).
 # =============================================================================
