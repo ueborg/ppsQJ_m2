@@ -125,9 +125,16 @@ def _batched_log_u(
     # NumPy matmul broadcasts (L, 2L) against (N_c, 2L, L) → (N_c, L, L).
     WdV_batch = backward_orbitals.conj().T @ forward_orbitals_batch  # (N_c, L, L)
     sign, logdet = np.linalg.slogdet(WdV_batch)   # (N_c,) each
+    # W†V is complex, so slogdet returns a complex `sign` = exp(i·arg(det)).
+    # The condition `sign > 0` would silently check Re(sign) > 0 — i.e. whether
+    # arg(det) ∈ (-π/2, π/2) — and incorrectly returns -inf for the other half
+    # of the unit circle.  The phase is irrelevant: we only need log|det(W†V)|,
+    # which is `logdet` (always real; = -inf iff det=0).  Use isfinite(logdet)
+    # as the sole validity gate.
+    logdet_real = np.asarray(logdet, dtype=np.float64).real
     log_overlap = np.where(
-        sign > 0,
-        log_z + L * np.log(4.0) + 2.0 * np.asarray(logdet, dtype=np.float64).real,
+        np.isfinite(logdet_real),
+        log_z + L * np.log(4.0) + 2.0 * logdet_real,
         -np.inf,
     )
     return log_overlap.astype(np.float64)
