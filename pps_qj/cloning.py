@@ -34,30 +34,29 @@ def _batched_entanglement_entropy(
 
     Replaces a Python loop over N_c calls to ``entanglement_entropy`` with a
     single batched ``np.linalg.eigvals`` on the stacked 2ell×2ell submatrices.
-    Gives identical results to the serial version; ~40× faster at N_c=200.
-
-    Parameters
-    ----------
-    covs : list of (2L, 2L) covariance matrices
-    ell  : subsystem size (number of sites); uses the top-left 2ell×2ell block
-    base : logarithm base (default 2 = bits)
-
-    Returns
-    -------
-    S : np.ndarray of shape (N_c,)
+    Falls back to the serial per-clone computation if eigvals fails to converge
+    (can occur at L=32+ when covariance matrices accumulate numerical drift).
     """
     two_ell = 2 * ell
-    # Stack submatrices: (N_c, 2ell, 2ell)
-    subs = np.stack([c[:two_ell, :two_ell] for c in covs], axis=0)
-    # Batch eigenvalue decomposition
-    eigs = np.linalg.eigvals(subs)                       # (N_c, 2*ell)
-    nus  = np.sort(np.abs(np.imag(eigs)), axis=-1)[:, ::2]  # (N_c, ell)
-    nus  = np.clip(nus, 0.0, 1.0)
-    p_plus  = np.clip(0.5 * (1.0 + nus), 1e-15, 1.0 - 1e-15)
-    p_minus = np.clip(0.5 * (1.0 - nus), 1e-15, 1.0 - 1e-15)
     log_fn  = np.log2 if base == 2.0 else np.log
-    S = -np.sum(p_plus * log_fn(p_plus) + p_minus * log_fn(p_minus), axis=-1)
-    return S.astype(np.float64)
+
+    # Try batched path first
+    try:
+        subs = np.stack([c[:two_ell, :two_ell] for c in covs], axis=0)
+        eigs = np.linalg.eigvals(subs)                        # (N_c, 2*ell)
+        nus  = np.sort(np.abs(np.imag(eigs)), axis=-1)[:, ::2]  # (N_c, ell)
+        nus  = np.clip(nus, 0.0, 1.0)
+        p_plus  = np.clip(0.5 * (1.0 + nus), 1e-15, 1.0 - 1e-15)
+        p_minus = np.clip(0.5 * (1.0 - nus), 1e-15, 1.0 - 1e-15)
+        S = -np.sum(p_plus * log_fn(p_plus) + p_minus * log_fn(p_minus), axis=-1)
+        return S.astype(np.float64)
+    except np.linalg.LinAlgError:
+        # Batched eigvals failed (poorly conditioned matrix at large L).
+        # Fall back to serial computation which uses eigh on the antisymmetric
+        # form and is more numerically stable.
+        return np.array(
+            [entanglement_entropy(c, ell) for c in covs], dtype=np.float64
+        )
 
 
 __all__ = [
