@@ -29,9 +29,27 @@ from typing import Optional
 import numpy as np
 from tqdm import tqdm
 
+import os
+
 from pps_qj.cloning import CloningCollapse, run_cloning
 from pps_qj.gaussian_backend import build_gaussian_chain_model
-from pps_qj.parallel.grid_pps import task_params_clone, NREAL_FOR_L
+from pps_qj.parallel.grid_pps import task_params_clone
+
+
+# Independent realisations per grid point
+N_REAL = 5
+
+# Number of worker processes for the inner clone loop within each task.
+# Read from PPS_N_WORKERS env variable (defaults to 1 = serial), or from
+# SLURM_CPUS_PER_TASK if set.  Pinning BLAS to 1 thread per worker (set
+# OMP_NUM_THREADS=1 in the SLURM script) is critical to prevent threads
+# from contending across worker processes.
+def _n_workers_from_env() -> int:
+    for var in ("PPS_N_WORKERS", "SLURM_CPUS_PER_TASK"):
+        v = os.environ.get(var)
+        if v is not None and v.isdigit() and int(v) >= 1:
+            return int(v)
+    return 1
 
 
 # ---------------------------------------------------------------------------
@@ -187,9 +205,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     T = float(task["T"])
     N_c = int(task["N_c"])
     seed = int(task["seed"])
-    # Realisation count is L-dependent (see NREAL_FOR_L in grid_pps.py).
-    # L=64 uses N_REAL=2 to keep all tasks within a 48h wall-time limit.
-    N_REAL = NREAL_FOR_L.get(L, 5)
+    n_workers = _n_workers_from_env()
 
     try:
         model = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
@@ -212,7 +228,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
         print(
             f"\n=== clone task {task_id}: L={L}, λ={lam:.3f} (α={alpha:.3f}, w={w:.3f}), "
-            f"ζ={zeta:.2f}, T={T:.0f}, N_c={N_c}, n_real={N_REAL}"
+            f"ζ={zeta:.2f}, T={T:.0f}, N_c={N_c}, n_real={N_REAL}, n_workers={n_workers}"
             + (" [JS]" if using_js else "")
             + " ===",
             flush=True,
@@ -227,6 +243,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                         show_progress=True,
                         progress_desc=f"  real {r+1}/{N_REAL}",
                         backward_data=backward_data,
+                        n_workers=n_workers,
                     )
                     S_means[r] = float(result.S_mean)
                     S_stds[r] = float(result.S_std)

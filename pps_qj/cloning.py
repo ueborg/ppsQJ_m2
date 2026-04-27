@@ -45,6 +45,39 @@ from .gaussian_backend import (
 from .overlaps import log_gaussian_overlap_from_orbitals
 
 
+# ---------------------------------------------------------------------------
+# Multiprocessing worker (must be at module level so it can be pickled)
+# ---------------------------------------------------------------------------
+
+# Process-local model cache, populated by the pool initializer.
+# Avoids re-pickling the ~5 MB model object on every step.
+_WORKER_MODEL: Optional[GaussianChainModel] = None
+
+
+def _init_clone_worker(model: GaussianChainModel) -> None:
+    """Initializer for clone worker processes — caches the model in a global."""
+    global _WORKER_MODEL
+    _WORKER_MODEL = model
+
+
+def _worker_evolve_one_clone(args):
+    """Evolve a single clone in a worker process.
+
+    The model is read from the process-local global ``_WORKER_MODEL`` (set
+    once per worker by ``_init_clone_worker``), so only the small per-clone
+    state (cov, orb, dt, rng) is transferred per call.
+    """
+    from dataclasses import replace
+    cov, orb, dt, sub_rng = args
+    sub_model = replace(_WORKER_MODEL, gamma0=cov, orbitals0=orb)
+    r = gaussian_born_rule_trajectory(sub_model, T=dt, rng=sub_rng)
+    return (
+        np.asarray(r.final_covariance, dtype=np.float64),
+        r.final_orbitals,
+        int(r.n_jumps),
+    )
+
+
 def _batched_entanglement_entropy(
     covs: list[np.ndarray],
     ell: int,
@@ -235,6 +268,7 @@ def run_cloning(
     show_progress: bool = False,
     progress_desc: str = "",
     backward_data: Any = None,
+    n_workers: int = 1,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -313,6 +347,22 @@ def run_cloning(
     # Lazy import to avoid circular; reuse dataclasses.replace pattern
     from dataclasses import replace
 
+    # ---- Set up multiprocessing pool if requested ----
+    # Each worker process holds a cached copy of the model in a global,
+    # populated once via _init_clone_worker.  Per-step IPC carries only the
+    # per-clone state (cov, orb, dt, sub_rng) — small relative to the per-clone
+    # compute cost at L >= 32.  Pinning BLAS to 1 thread per worker (set
+    # OMP_NUM_THREADS=1 in the SLURM script) is essential to prevent thread
+    # contention across processes.
+    pool = None
+    if n_workers > 1:
+        import multiprocessing as mp
+        pool = mp.Pool(
+            processes=n_workers,
+            initializer=_init_clone_worker,
+            initargs=(model,),
+        )
+
     if show_progress:
         from tqdm import tqdm
         step_iter = tqdm(
@@ -324,113 +374,135 @@ def run_cloning(
     else:
         step_iter = range(n_steps)
 
-    for _k in step_iter:
-        # ---- Save pre-evolution orbitals for JS control (if enabled) ----
-        # The JS weight ratio u(t) / u(t - delta_tau) needs the state at the
-        # START of this window (before trajectory evolution). Since the
-        # trajectory evolution replaces orbs[i] in-place (by reference), we
-        # capture the current list of array references before the inner loop.
-        # _systematic_resample_pairs already called .copy() on the arrays, so
-        # these are independent copies from the previous resampling step.
-        if use_js:
-            orbs_pre = list(orbs)  # shallow copy of list; arrays are not yet mutated
-
-        # ---- Evolve all clones independently ----
-        sub_rngs = rng.spawn(N_c)
-        n_jumps = np.zeros(N_c, dtype=np.int64)
-        for i in range(N_c):
-            # Pass stored orbitals directly — no orbitals_from_covariance call.
-            sub_model = replace(model, gamma0=covs[i], orbitals0=orbs[i])
-            result    = gaussian_born_rule_trajectory(
-                sub_model, T=delta_tau_eff, rng=sub_rngs[i]
-            )
-            covs[i]   = np.asarray(result.final_covariance, dtype=np.float64)
-            orbs[i]   = result.final_orbitals
-            n_jumps[i] = int(result.n_jumps)
-
-        # ---- Compute weights ----
-        # For zeta==0 and zeta==1 the weight is trivially determined; the
-        # general case uses log-sum-exp to handle the potentially large
-        # JS correction log_u_now - log_u_prev without overflow.
-        if zeta == 0.0:
-            weights = (n_jumps == 0).astype(np.float64)
-            lw_max = 0.0  # not used below, but avoids NameError
-            log_W_k = float(np.log(weights.mean())) if weights.any() else -np.inf
-        elif zeta == 1.0:
-            weights = np.ones(N_c, dtype=np.float64)
-            lw_max = 0.0
-            log_W_k = 0.0
-        else:
-            log_w = n_jumps * np.log(zeta)  # (N_c,), all ≤ 0
-
+    try:
+        for _k in step_iter:
+            # ---- Save pre-evolution orbitals for JS control (if enabled) ----
+            # The JS weight ratio u(t) / u(t - delta_tau) needs the state at the
+            # START of this window (before trajectory evolution). Since the
+            # trajectory evolution replaces orbs[i] in-place (by reference), we
+            # capture the current list of array references before the inner loop.
+            # _systematic_resample_pairs already called .copy() on the arrays, so
+            # these are independent copies from the previous resampling step.
             if use_js:
-                # Physical times bracketing this resampling window
-                t_start = _k * delta_tau_eff
-                t_end   = (_k + 1) * delta_tau_eff
+                orbs_pre = list(orbs)  # shallow copy of list; arrays are not yet mutated
 
-                W_prev, log_z_prev = backward_data.orbitals_at(t_start)
-                W_now,  log_z_now  = backward_data.orbitals_at(t_end)
-
-                # Stack pre-evolution orbitals: (N_c, 2L, L)
-                orbs_pre_batch = np.stack(orbs_pre, axis=0).astype(np.complex128)
-                # Stack post-evolution orbitals: (N_c, 2L, L)
-                orbs_now_batch = np.stack(orbs, axis=0).astype(np.complex128)
-
-                log_u_prev = _batched_log_u(W_prev, orbs_pre_batch, log_z_prev, L)
-                log_u_now  = _batched_log_u(W_now,  orbs_now_batch, log_z_now,  L)
-
-                log_js = log_u_now - log_u_prev  # (N_c,)
-                valid  = np.isfinite(log_js)
-                n_js_fallbacks += int((~valid).sum())
-                # Clones where the overlap is numerically invalid fall back to
-                # the standard zeta^n weight (log_js correction = 0 for them).
-                log_w = log_w + np.where(valid, log_js, 0.0)
-
-            # log-sum-exp trick: shift by max(log_w) before exp to prevent
-            # overflow. For standard cloning (no JS) log_w ≤ 0 so lw_max ≤ 0
-            # and exp never overflows; the trick is a no-op in that case.
-            lw_max = float(log_w.max())
-            if not np.isfinite(lw_max):
-                weights  = np.zeros(N_c, dtype=np.float64)
-                log_W_k  = -np.inf
+            # ---- Evolve all clones independently ----
+            sub_rngs = rng.spawn(N_c)
+            n_jumps = np.zeros(N_c, dtype=np.int64)
+            if pool is not None:
+                # Parallel path: dispatch all clone trajectories to worker pool.
+                # The model is read from each worker's process-local global, so
+                # IPC carries only (cov, orb, dt, rng) per clone per step.
+                args_list = [
+                    (covs[i], orbs[i], delta_tau_eff, sub_rngs[i])
+                    for i in range(N_c)
+                ]
+                results = pool.map(_worker_evolve_one_clone, args_list)
+                for i, (cov_i, orb_i, nj_i) in enumerate(results):
+                    covs[i]    = cov_i
+                    orbs[i]    = orb_i
+                    n_jumps[i] = nj_i
             else:
-                w_rel    = np.exp(log_w - lw_max)   # (N_c,) in (0, 1] range
-                mean_rel = float(w_rel.mean())
-                log_W_k  = (np.log(mean_rel) + lw_max) if mean_rel > 0.0 else -np.inf
-                weights  = w_rel  # relative weights suffice for resampling and entropy
+                # Serial path (n_workers == 1): identical to the original loop.
+                for i in range(N_c):
+                    sub_model = replace(model, gamma0=covs[i], orbitals0=orbs[i])
+                    result    = gaussian_born_rule_trajectory(
+                        sub_model, T=delta_tau_eff, rng=sub_rngs[i]
+                    )
+                    covs[i]    = np.asarray(result.final_covariance, dtype=np.float64)
+                    orbs[i]    = result.final_orbitals
+                    n_jumps[i] = int(result.n_jumps)
 
-        W_k = float(np.exp(log_W_k)) if np.isfinite(log_W_k) else 0.0
-        W_history.append(W_k)
-        if W_k <= 0.0:
-            n_collapses += 1
-            raise CloningCollapse(
-                f"Population collapsed at step {_k + 1}/{n_steps} "
-                f"(zeta={zeta}, n_jumps min={int(n_jumps.min())})."
-            )
-        log_Z_acc += log_W_k
-        log_Z_history.append(log_Z_acc)
-
-        if record_entropy:
-            S_vals = _batched_entanglement_entropy(covs, L // 2)
-            w_sum = float(weights.sum())
-            if w_sum > 0.0:
-                S_zeta_k = float(np.sum(weights * S_vals) / w_sum)
+            # ---- Compute weights ----
+            # For zeta==0 and zeta==1 the weight is trivially determined; the
+            # general case uses log-sum-exp to handle the potentially large
+            # JS correction log_u_now - log_u_prev without overflow.
+            if zeta == 0.0:
+                weights = (n_jumps == 0).astype(np.float64)
+                lw_max = 0.0  # not used below, but avoids NameError
+                log_W_k = float(np.log(weights.mean())) if weights.any() else -np.inf
+            elif zeta == 1.0:
+                weights = np.ones(N_c, dtype=np.float64)
+                lw_max = 0.0
+                log_W_k = 0.0
             else:
-                S_zeta_k = float(np.mean(S_vals))
-            S_history.append(S_zeta_k)
-            if show_progress:
-                step_iter.set_postfix({"S": f"{S_zeta_k:.3f}", "W": f"{W_k:.3e}"})
+                log_w = n_jumps * np.log(zeta)  # (N_c,), all ≤ 0
 
-        final_weights = weights.copy()
+                if use_js:
+                    # Physical times bracketing this resampling window
+                    t_start = _k * delta_tau_eff
+                    t_end   = (_k + 1) * delta_tau_eff
 
-        # Resampling step (skip at zeta==1: uniform weights -> trivial no-op,
-        # keeps streams identical to independent evolution).
-        if zeta != 1.0:
-            pairs   = _systematic_resample_pairs(covs, orbs, weights, rng)
-            covs, orbs = zip(*pairs)
-            covs = list(covs)
-            orbs = list(orbs)
-        # else: leave covs untouched (all weights equal anyway)
+                    W_prev, log_z_prev = backward_data.orbitals_at(t_start)
+                    W_now,  log_z_now  = backward_data.orbitals_at(t_end)
+
+                    # Stack pre-evolution orbitals: (N_c, 2L, L)
+                    orbs_pre_batch = np.stack(orbs_pre, axis=0).astype(np.complex128)
+                    # Stack post-evolution orbitals: (N_c, 2L, L)
+                    orbs_now_batch = np.stack(orbs, axis=0).astype(np.complex128)
+
+                    log_u_prev = _batched_log_u(W_prev, orbs_pre_batch, log_z_prev, L)
+                    log_u_now  = _batched_log_u(W_now,  orbs_now_batch, log_z_now,  L)
+
+                    log_js = log_u_now - log_u_prev  # (N_c,)
+                    valid  = np.isfinite(log_js)
+                    n_js_fallbacks += int((~valid).sum())
+                    # Clones where the overlap is numerically invalid fall back to
+                    # the standard zeta^n weight (log_js correction = 0 for them).
+                    log_w = log_w + np.where(valid, log_js, 0.0)
+
+                # log-sum-exp trick: shift by max(log_w) before exp to prevent
+                # overflow. For standard cloning (no JS) log_w ≤ 0 so lw_max ≤ 0
+                # and exp never overflows; the trick is a no-op in that case.
+                lw_max = float(log_w.max())
+                if not np.isfinite(lw_max):
+                    weights  = np.zeros(N_c, dtype=np.float64)
+                    log_W_k  = -np.inf
+                else:
+                    w_rel    = np.exp(log_w - lw_max)   # (N_c,) in (0, 1] range
+                    mean_rel = float(w_rel.mean())
+                    log_W_k  = (np.log(mean_rel) + lw_max) if mean_rel > 0.0 else -np.inf
+                    weights  = w_rel  # relative weights suffice for resampling and entropy
+
+            W_k = float(np.exp(log_W_k)) if np.isfinite(log_W_k) else 0.0
+            W_history.append(W_k)
+            if W_k <= 0.0:
+                n_collapses += 1
+                raise CloningCollapse(
+                    f"Population collapsed at step {_k + 1}/{n_steps} "
+                    f"(zeta={zeta}, n_jumps min={int(n_jumps.min())})."
+                )
+            log_Z_acc += log_W_k
+            log_Z_history.append(log_Z_acc)
+
+            if record_entropy:
+                S_vals = _batched_entanglement_entropy(covs, L // 2)
+                w_sum = float(weights.sum())
+                if w_sum > 0.0:
+                    S_zeta_k = float(np.sum(weights * S_vals) / w_sum)
+                else:
+                    S_zeta_k = float(np.mean(S_vals))
+                S_history.append(S_zeta_k)
+                if show_progress:
+                    step_iter.set_postfix({"S": f"{S_zeta_k:.3f}", "W": f"{W_k:.3e}"})
+
+            final_weights = weights.copy()
+
+            # Resampling step (skip at zeta==1: uniform weights -> trivial no-op,
+            # keeps streams identical to independent evolution).
+            if zeta != 1.0:
+                pairs   = _systematic_resample_pairs(covs, orbs, weights, rng)
+                covs, orbs = zip(*pairs)
+                covs = list(covs)
+                orbs = list(orbs)
+            # else: leave covs untouched (all weights equal anyway)
+    finally:
+        # Always shut down the pool, even if a CloningCollapse propagated
+        # out of the for loop.  Without this, child processes leak and
+        # progressively eat into the per-task SLURM memory allocation.
+        if pool is not None:
+            pool.close()
+            pool.join()
 
     log_Z_arr = np.asarray(log_Z_history, dtype=np.float64)
     W_arr = np.asarray(W_history, dtype=np.float64)

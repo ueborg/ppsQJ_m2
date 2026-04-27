@@ -54,23 +54,20 @@ def nc_for_L(L: int) -> int:
 
     Balances statistical quality against wall time on Habrok.
 
-    L=64 note
-    ---------
+    L=64 wall-time note
+    -------------------
     Profiling shows ~43.8 ms/clone at L=64 vs 1.51 ms/clone at L=32 —
-    effectively L^4.8 scaling rather than the expected L^3, due to L2-cache
-    thrashing on the 256 KB model matrices (V, V_inv, VhV) in the serial
-    clone loop.  N_c=200 gives ~78.5 h/task for N_REAL=5, which is
-    infeasible.  N_c=100 gives ~15.7 h at alpha=0.4 and ~35.3 h at alpha=0.9
-    for N_REAL=2, both fitting within a 48 h wall-time limit.  See
-    ``NREAL_FOR_L`` for the matching per-L realisation count.
+    effectively L^4.8 scaling rather than L^3, due to L2-cache thrashing
+    on the 256 KB model matrices (V, V_inv, VhV) in the *serial* clone
+    loop.  N_c=200, N_REAL=5 gives 78.5 h/task at alpha=0.4 — infeasible
+    on a single CPU core.
+
+    The fix is intra-task multiprocessing (see ``run_cloning(n_workers=…)``
+    in cloning.py and ``--cpus-per-task`` in submit_clone_scan.sh): with
+    8 cores per task the worst-case L=64 task drops from 78.5 h to ~12 h,
+    keeping N_c=200 and N_REAL=5 across the full grid.
     """
-    return {8: 2000, 16: 1000, 32: 500, 64: 100}[L]
-
-
-# Per-L realisation count, consistent with nc_for_L wall-time budget.
-# L=64 uses N_REAL=2: worst-case task (alpha=0.9, N_c=100) completes in ~35 h,
-# within the 48 h wall time used for L=64 SLURM submissions.
-NREAL_FOR_L: dict[int, int] = {8: 5, 16: 5, 32: 5, 64: 2}
+    return {8: 2000, 16: 1000, 32: 500, 64: 200}[L]
 
 
 def time_horizon(L: int, alpha: float) -> float:
@@ -189,7 +186,7 @@ if __name__ == "__main__":
         print(f"n_tasks_clone = {n_tasks_clone()} (expected 1020)")
         print(f"first: {g[0]}")
         print(f"last : {g[-1]}")
-        print(f"L=64 N_c: {nc_for_L(64)}, N_REAL: {NREAL_FOR_L[64]}")
+        print(f"L=64 N_c: {nc_for_L(64)}")
     else:
         print(f"unknown grid type: {which}")
         sys.exit(1)
