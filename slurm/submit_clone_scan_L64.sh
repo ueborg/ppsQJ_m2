@@ -39,8 +39,11 @@ PARTITION="regular"
 LOG_DIR="/scratch/${USER}/pps_qj/logs"
 
 # Intra-task parallelism
-CPUS_PER_TASK=8
-CONCURRENT_TASKS=15        # 8 * 15 = 120 cores total
+# N_REAL=5 realisations per task; one worker per realisation gives perfect
+# load balance (98% parallel efficiency measured on Habrok).  More workers
+# than realisations would leave cores idle; fewer would serialise some.
+CPUS_PER_TASK=5
+CONCURRENT_TASKS=24        # 5 * 24 = 120 cores total
 TOTAL_CORES=$(( CPUS_PER_TASK * CONCURRENT_TASKS ))
 
 sbatch <<SLURM_SCRIPT
@@ -82,7 +85,7 @@ export NUMEXPR_NUM_THREADS=1
 
 # run_cloning reads PPS_N_WORKERS and dispatches the per-step clone evolution
 # to a Pool of that size (see _n_workers_from_env in worker_clone_pps.py).
-export PPS_N_WORKERS=${CPUS_PER_TASK}
+export PPS_N_WORKERS=${CPUS_PER_TASK}   # = 5: one worker per realisation
 
 mkdir -p ${OUTPUT_DIR}
 mkdir -p ${LOG_DIR}

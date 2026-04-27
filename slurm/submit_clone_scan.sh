@@ -59,6 +59,13 @@ module purge
 source \${HOME}/venvs/pps_qj/bin/activate
 cd \${HOME}/pps_qj
 
+# Pin BLAS to 1 thread per task. With --cpus-per-task=1 and 120 concurrent
+# tasks, allowing numpy to spawn thread pools would oversubscribe the node.
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1
+
 mkdir -p ${OUTPUT_DIR}
 mkdir -p ${LOG_DIR}
 
