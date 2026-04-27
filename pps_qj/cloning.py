@@ -9,12 +9,31 @@ ensemble-averaged half-chain entanglement S_zeta.
 
 The Born-rule trajectory driver is ``gaussian_born_rule_trajectory`` from
 ``pps_qj.gaussian_backend`` (exact bisection-based QJ unraveling).
+
+Jack-Sollich feedback control
+------------------------------
+When a pre-computed ``GaussianBackwardData`` (or ``LoadedBackwardPass``) object
+is supplied via the ``backward_data`` keyword, the per-window clone weight is
+augmented by the control ratio
+
+    w_i^JS = zeta^{n_i} * u(Gamma_i(t), t) / u(Gamma_i(t - delta_tau), t - delta_tau)
+
+where u(Gamma, t) = Tr(G_t rho_Gamma) is the Gaussian approximation to the
+Doob backward operator, evaluated via ``_batched_log_u``. This is an exact
+variance-reduction technique: the control potential cancels in expectation
+(no bias) but reduces weight variance near the phase transition, allowing
+the same statistical accuracy with a smaller clone population.
+
+The Gaussian G_t approximation that failed catastrophically as a direct sampler
+is adequate here because the cloning resampling step corrects for any
+inaccuracy in u — the correction only needs to capture the rough shape of the
+weight distribution, not its precise values.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -23,6 +42,7 @@ from .gaussian_backend import (
     entanglement_entropy,
     gaussian_born_rule_trajectory,
 )
+from .overlaps import log_gaussian_overlap_from_orbitals
 
 
 def _batched_entanglement_entropy(
@@ -33,30 +53,84 @@ def _batched_entanglement_entropy(
     """Vectorised half-chain entanglement entropy for a population of clones.
 
     Replaces a Python loop over N_c calls to ``entanglement_entropy`` with a
-    single batched ``np.linalg.eigvals`` on the stacked 2ell×2ell submatrices.
-    Falls back to the serial per-clone computation if eigvals fails to converge
-    (can occur at L=32+ when covariance matrices accumulate numerical drift).
+    single batched eigvalsh on stacked 2ell×2ell submatrices. For a real
+    antisymmetric covariance subblock C, the matrix iC is complex Hermitian, so
+    ``eigvalsh`` is both faster and more numerically stable than the general
+    ``eigvals`` path previously used. Falls back to the serial per-clone
+    computation if eigvalsh fails (can occur at L=32+ when covariance matrices
+    accumulate numerical drift).
     """
     two_ell = 2 * ell
     log_fn  = np.log2 if base == 2.0 else np.log
 
     # Try batched path first
     try:
-        subs = np.stack([c[:two_ell, :two_ell] for c in covs], axis=0)
-        eigs = np.linalg.eigvals(subs)                        # (N_c, 2*ell)
-        nus  = np.sort(np.abs(np.imag(eigs)), axis=-1)[:, ::2]  # (N_c, ell)
+        subs = np.stack([c[:two_ell, :two_ell] for c in covs], axis=0)  # (N_c, 2*ell, 2*ell)
+        # iC is complex Hermitian (C real antisymmetric => (iC)† = -iC^T = iC).
+        # eigvalsh exploits Hermitian structure: faster and more stable than eigvals.
+        eigs = np.linalg.eigvalsh((1j * subs).astype(np.complex128))    # (N_c, 2*ell) ascending
+        nus  = np.abs(eigs[:, ell:])   # positive half of ±ν spectrum, shape (N_c, ell)
         nus  = np.clip(nus, 0.0, 1.0)
         p_plus  = np.clip(0.5 * (1.0 + nus), 1e-15, 1.0 - 1e-15)
         p_minus = np.clip(0.5 * (1.0 - nus), 1e-15, 1.0 - 1e-15)
         S = -np.sum(p_plus * log_fn(p_plus) + p_minus * log_fn(p_minus), axis=-1)
         return S.astype(np.float64)
     except np.linalg.LinAlgError:
-        # Batched eigvals failed (poorly conditioned matrix at large L).
+        # Batched eigvalsh failed (poorly conditioned matrix at large L).
         # Fall back to serial computation which uses eigh on the antisymmetric
         # form and is more numerically stable.
         return np.array(
             [entanglement_entropy(c, ell) for c in covs], dtype=np.float64
         )
+
+
+def _batched_log_u(
+    backward_orbitals: np.ndarray,
+    forward_orbitals_batch: np.ndarray,
+    log_z: float,
+    L: int,
+) -> np.ndarray:
+    """Vectorised log_gaussian_overlap_from_orbitals over all N_c clones.
+
+    Replaces N_c serial calls to ``log_gaussian_overlap_from_orbitals`` with a
+    single batched matrix multiply and a batched slogdet. The memory cost is
+    N_c L×L complex matrices; at L=64, N_c=200 this is 200 * 64^2 * 16B ≈ 13 MB,
+    acceptable.
+
+    Parameters
+    ----------
+    backward_orbitals      : (2L, L) complex — backward Gaussian operator orbitals W
+    forward_orbitals_batch : (N_c, 2L, L) complex — stacked forward state orbitals V_i
+    log_z                  : float — log of the Gaussian operator normalisation z_scalar
+    L                      : int — chain length (= forward_orbitals.shape[-1])
+
+    Returns
+    -------
+    (N_c,) float64 array of log-overlaps; entries are -inf where det(W†V_i) = 0.
+
+    Notes
+    -----
+    The mathematical identity used is (Kells et al., SciPost 2023, appendix)::
+
+        det(I - C Gamma_i) = 4^L |det(W† V_i)|^2
+
+    so::
+
+        log Tr(G rho_i) = log_z + L log 4 + 2 Re log|det(W† V_i)|.
+
+    This replaces an O((2L)^3) slogdet on a 2L×2L matrix with an O(L^3)
+    slogdet on an L×L matrix — 8× cheaper at L=64 — and vectorises over N_c.
+    """
+    # W† V_i = (L, 2L) @ (2L, L) = (L, L) for each i.
+    # NumPy matmul broadcasts (L, 2L) against (N_c, 2L, L) → (N_c, L, L).
+    WdV_batch = backward_orbitals.conj().T @ forward_orbitals_batch  # (N_c, L, L)
+    sign, logdet = np.linalg.slogdet(WdV_batch)   # (N_c,) each
+    log_overlap = np.where(
+        sign > 0,
+        log_z + L * np.log(4.0) + 2.0 * np.asarray(logdet, dtype=np.float64).real,
+        -np.inf,
+    )
+    return log_overlap.astype(np.float64)
 
 
 __all__ = [
@@ -91,6 +165,7 @@ class CloningResult:
     T_total: float
     delta_tau: float
     final_covs: list  # N_c covariance matrices after last resampling step
+    n_js_fallbacks: int = 0  # number of (clone, step) pairs where JS correction was NaN/inf
 
 
 def _systematic_resample(
@@ -152,6 +227,7 @@ def run_cloning(
     record_entropy: bool = True,
     show_progress: bool = False,
     progress_desc: str = "",
+    backward_data: Any = None,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -162,6 +238,16 @@ def run_cloning(
     log Z, the weighted half-chain entropy is recorded (BEFORE resampling),
     and the population is systematically resampled (skipped at zeta==1 since
     uniform weights make resampling a no-op but bias-free).
+
+    Jack-Sollich feedback control
+    ------------------------------
+    If ``backward_data`` is not None, the per-window weight is augmented by the
+    control ratio u(Gamma_i(t), t) / u(Gamma_i(t - delta_tau), t - delta_tau),
+    where u is the Gaussian approximation to the Doob backward operator. This
+    reduces weight variance near the phase transition without introducing bias.
+    ``backward_data`` must expose an ``orbitals_at(t) -> (W, log_z)`` method
+    (compatible with both ``GaussianBackwardData`` and ``LoadedBackwardPass``).
+    Its ``.T`` attribute must match ``T_total`` to within 1e-6 * T_total.
 
     Implementation notes
     --------------------
@@ -190,6 +276,16 @@ def run_cloning(
     # Recompute effective delta_tau so n_steps * delta_tau == T_total exactly
     delta_tau_eff = T_total / n_steps
 
+    # Validate backward_data compatibility
+    use_js = backward_data is not None
+    if use_js:
+        bwd_T = float(getattr(backward_data, 'T', T_total))
+        if abs(bwd_T - T_total) > 1e-6 * T_total:
+            raise ValueError(
+                f"backward_data.T = {bwd_T:.6g} does not match T_total = {T_total:.6g}. "
+                "Pre-compute the backward pass with the same T as the cloning run."
+            )
+
     # Per-clone covariances and orbitals (independent copies of initial state).
     # Storing orbitals alongside covariances avoids re-calling
     # orbitals_from_covariance at the start of every trajectory segment.
@@ -201,7 +297,11 @@ def run_cloning(
     W_history: list[float] = []
     S_history: list[float] = []
     n_collapses = 0
+    n_js_fallbacks = 0
     final_weights = np.ones(N_c, dtype=np.float64)
+
+    # Pre-compute burnin boundary so it can be used inside the loop.
+    n_burnin_steps = int(n_steps * n_burnin_frac)
 
     # Lazy import to avoid circular; reuse dataclasses.replace pattern
     from dataclasses import replace
@@ -218,8 +318,17 @@ def run_cloning(
         step_iter = range(n_steps)
 
     for _k in step_iter:
-        # Spawn sub-rngs for this step (one per clone). Using rng.spawn keeps
-        # streams reproducible and non-overlapping.
+        # ---- Save pre-evolution orbitals for JS control (if enabled) ----
+        # The JS weight ratio u(t) / u(t - delta_tau) needs the state at the
+        # START of this window (before trajectory evolution). Since the
+        # trajectory evolution replaces orbs[i] in-place (by reference), we
+        # capture the current list of array references before the inner loop.
+        # _systematic_resample_pairs already called .copy() on the arrays, so
+        # these are independent copies from the previous resampling step.
+        if use_js:
+            orbs_pre = list(orbs)  # shallow copy of list; arrays are not yet mutated
+
+        # ---- Evolve all clones independently ----
         sub_rngs = rng.spawn(N_c)
         n_jumps = np.zeros(N_c, dtype=np.int64)
         for i in range(N_c):
@@ -232,18 +341,58 @@ def run_cloning(
             orbs[i]   = result.final_orbitals
             n_jumps[i] = int(result.n_jumps)
 
-        # Compute weights (explicit zeta==0/zeta==1 branches)
+        # ---- Compute weights ----
+        # For zeta==0 and zeta==1 the weight is trivially determined; the
+        # general case uses log-sum-exp to handle the potentially large
+        # JS correction log_u_now - log_u_prev without overflow.
         if zeta == 0.0:
             weights = (n_jumps == 0).astype(np.float64)
+            lw_max = 0.0  # not used below, but avoids NameError
+            log_W_k = float(np.log(weights.mean())) if weights.any() else -np.inf
         elif zeta == 1.0:
             weights = np.ones(N_c, dtype=np.float64)
+            lw_max = 0.0
+            log_W_k = 0.0
         else:
-            # Overflow-safe via log-space for large n_jumps
-            log_w = n_jumps * np.log(zeta)
-            # Shift for numerical stability, but keep absolute scale for W_k
-            weights = np.exp(log_w)
+            log_w = n_jumps * np.log(zeta)  # (N_c,), all ≤ 0
 
-        W_k = float(np.mean(weights))
+            if use_js:
+                # Physical times bracketing this resampling window
+                t_start = _k * delta_tau_eff
+                t_end   = (_k + 1) * delta_tau_eff
+
+                W_prev, log_z_prev = backward_data.orbitals_at(t_start)
+                W_now,  log_z_now  = backward_data.orbitals_at(t_end)
+
+                # Stack pre-evolution orbitals: (N_c, 2L, L)
+                orbs_pre_batch = np.stack(orbs_pre, axis=0).astype(np.complex128)
+                # Stack post-evolution orbitals: (N_c, 2L, L)
+                orbs_now_batch = np.stack(orbs, axis=0).astype(np.complex128)
+
+                log_u_prev = _batched_log_u(W_prev, orbs_pre_batch, log_z_prev, L)
+                log_u_now  = _batched_log_u(W_now,  orbs_now_batch, log_z_now,  L)
+
+                log_js = log_u_now - log_u_prev  # (N_c,)
+                valid  = np.isfinite(log_js)
+                n_js_fallbacks += int((~valid).sum())
+                # Clones where the overlap is numerically invalid fall back to
+                # the standard zeta^n weight (log_js correction = 0 for them).
+                log_w = log_w + np.where(valid, log_js, 0.0)
+
+            # log-sum-exp trick: shift by max(log_w) before exp to prevent
+            # overflow. For standard cloning (no JS) log_w ≤ 0 so lw_max ≤ 0
+            # and exp never overflows; the trick is a no-op in that case.
+            lw_max = float(log_w.max())
+            if not np.isfinite(lw_max):
+                weights  = np.zeros(N_c, dtype=np.float64)
+                log_W_k  = -np.inf
+            else:
+                w_rel    = np.exp(log_w - lw_max)   # (N_c,) in (0, 1] range
+                mean_rel = float(w_rel.mean())
+                log_W_k  = (np.log(mean_rel) + lw_max) if mean_rel > 0.0 else -np.inf
+                weights  = w_rel  # relative weights suffice for resampling and entropy
+
+        W_k = float(np.exp(log_W_k)) if np.isfinite(log_W_k) else 0.0
         W_history.append(W_k)
         if W_k <= 0.0:
             n_collapses += 1
@@ -251,7 +400,7 @@ def run_cloning(
                 f"Population collapsed at step {_k + 1}/{n_steps} "
                 f"(zeta={zeta}, n_jumps min={int(n_jumps.min())})."
             )
-        log_Z_acc += float(np.log(W_k))
+        log_Z_acc += log_W_k
         log_Z_history.append(log_Z_acc)
 
         if record_entropy:
@@ -282,7 +431,6 @@ def run_cloning(
 
     theta_hat = log_Z_acc / T_total
 
-    n_burnin_steps = int(n_steps * n_burnin_frac)
     if record_entropy and len(S_arr) > n_burnin_steps:
         S_mean = float(np.mean(S_arr[n_burnin_steps:]))
         S_std = float(np.std(S_arr[n_burnin_steps:]))
@@ -312,6 +460,7 @@ def run_cloning(
         T_total=float(T_total),
         delta_tau=float(delta_tau_eff),
         final_covs=covs,
+        n_js_fallbacks=int(n_js_fallbacks),
     )
 
 
