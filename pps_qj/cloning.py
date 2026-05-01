@@ -213,6 +213,17 @@ def run_cloning(
     covs: list[np.ndarray] = [model.gamma0.copy() for _ in range(N_c)]
     orbs: list[np.ndarray] = [model.orbitals0.copy() for _ in range(N_c)]
 
+    # Precompute jump-pair index arrays once — used in every trajectory call.
+    # Avoids building these from model.jump_pairs N_c × n_steps times.
+    _jp = model.jump_pairs
+    _ja_cache = np.array([p[0] for p in _jp], dtype=np.intp)
+    _jb_cache = np.array([p[1] for p in _jp], dtype=np.intp)
+
+    # Pre-spawn one independent RNG stream per clone, shared across all steps.
+    # Each clone advances its own state; equivalent to per-step spawning but
+    # eliminates N_c Generator allocations × n_steps.
+    sub_rngs = rng.spawn(N_c)
+
     log_Z_acc = 0.0
     log_Z_history: list[float] = []
     W_history: list[float] = []
@@ -221,8 +232,6 @@ def run_cloning(
     n_js_fallbacks = 0
     final_weights = np.ones(N_c, dtype=np.float64)
     n_burnin_steps = int(n_steps * n_burnin_frac)
-
-    from dataclasses import replace
 
     if show_progress:
         from tqdm import tqdm
@@ -240,14 +249,18 @@ def run_cloning(
             orbs_pre = list(orbs)
 
         # --- Evolve all clones (serial) ---
-        sub_rngs = rng.spawn(N_c)
         n_jumps = np.zeros(N_c, dtype=np.int64)
         for i in range(N_c):
-            sub_model = replace(model, gamma0=covs[i], orbitals0=orbs[i])
-            r = gaussian_born_rule_trajectory(sub_model, T=delta_tau_eff, rng=sub_rngs[i])
-            covs[i]    = np.asarray(r.final_covariance, dtype=np.float64)
+            r = gaussian_born_rule_trajectory(
+                model, T=delta_tau_eff, rng=sub_rngs[i],
+                gamma0_override=covs[i],
+                orbitals0_override=orbs[i],
+                ja_cached=_ja_cache,
+                jb_cached=_jb_cache,
+            )
+            covs[i]    = r.final_covariance
             orbs[i]    = r.final_orbitals
-            n_jumps[i] = int(r.n_jumps)
+            n_jumps[i] = r.n_jumps
 
         # --- Compute per-step weight W_k = mean_i(w_i) ---
         if zeta == 0.0:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 from scipy.linalg import expm
@@ -242,6 +243,11 @@ def gaussian_born_rule_trajectory(
     T: float,
     rng: np.random.Generator,
     bisection_tol: float = 1e-8,
+    *,
+    gamma0_override: Optional[np.ndarray] = None,
+    orbitals0_override: Optional[np.ndarray] = None,
+    ja_cached: Optional[np.ndarray] = None,
+    jb_cached: Optional[np.ndarray] = None,
 ) -> GaussianTrajectoryResult:
     """Exact Born-rule quantum-jump trajectory.
 
@@ -253,6 +259,18 @@ def gaussian_born_rule_trajectory(
     ``h_effective`` (two matrix multiplies) rather than scipy's Padé expm,
     and reuses ``coeffs = V⁻¹ @ orbitals`` already computed for the branch-norm
     evaluation, saving one extra matrix multiply per jump.
+
+    Optional override parameters
+    ----------------------------
+    gamma0_override, orbitals0_override
+        If provided, the trajectory starts from this (covariance, orbitals)
+        pair instead of model.gamma0/orbitals0.  This avoids creating a new
+        frozen GaussianChainModel via ``dataclasses.replace`` per-clone in
+        the cloning loop.
+    ja_cached, jb_cached
+        Precomputed jump-pair index arrays.  If not supplied, they are built
+        on each call.  In cloning, these depend only on jump_pairs, so they
+        are computed once outside the step loop and passed in.
     """
     n_monitored = len(model.jump_pairs)
 
@@ -265,14 +283,25 @@ def gaussian_born_rule_trajectory(
     V_inv = model.h_eff_V_inv
     VhV   = model.h_eff_VhV
 
-    # Precompute jump-pair index arrays for vectorised probability extraction.
-    # Replaces an L-1 Python function call loop with a single numpy indexing op.
-    _jp = model.jump_pairs
-    _ja = np.array([p[0] for p in _jp], dtype=np.intp)  # (L-1,) row indices
-    _jb = np.array([p[1] for p in _jp], dtype=np.intp)  # (L-1,) col indices
+    # Precompute jump-pair index arrays for vectorised probability extraction
+    # — fall back to building them if the caller didn't supply cached versions.
+    if ja_cached is None or jb_cached is None:
+        _jp = model.jump_pairs
+        _ja = np.array([p[0] for p in _jp], dtype=np.intp)
+        _jb = np.array([p[1] for p in _jp], dtype=np.intp)
+    else:
+        _ja = ja_cached
+        _jb = jb_cached
 
-    orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
-    cov = np.asarray(model.gamma0, dtype=np.float64).copy()
+    # Use override state if provided (avoids replace(model, ...) overhead)
+    if orbitals0_override is None:
+        orbitals = np.asarray(model.orbitals0, dtype=np.complex128).copy()
+    else:
+        orbitals = np.asarray(orbitals0_override, dtype=np.complex128).copy()
+    if gamma0_override is None:
+        cov = np.asarray(model.gamma0, dtype=np.float64).copy()
+    else:
+        cov = np.asarray(gamma0_override, dtype=np.float64).copy()
     t = 0.0
     jump_times: list[float] = []
     jump_channels: list[int] = []
