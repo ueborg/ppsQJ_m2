@@ -71,17 +71,15 @@ def nc_for_L(L: int) -> int:
 
 
 def time_horizon(L: int, alpha: float) -> float:
-    """T(L, alpha) = max(30, 2L, 5/alpha).
-
-    Exception: at L=256 we drop the 2L contribution to L to keep wall time
-    tractable (see the prompt's note). Documented here for provenance.
-    """
+    """T(L, alpha) = max(30, 2L, 5/alpha), capped at 128 for L>=128."""
     base = max(30.0, 5.0 / max(alpha, 1e-9))
-    if L >= 256:
-        propagation = float(L)          # reduced from 2*L for the largest L
-    else:
-        propagation = 2.0 * L
-    return float(max(base, propagation))
+    propagation = 2.0 * L
+    T = float(max(base, propagation))
+    # Cap at 128 for L>=128: saturation checks confirm T=128 is sufficient,
+    # and T=256 would exceed the 24h Habrok walltime limit per task.
+    if L >= 128:
+        T = min(T, 128.0)
+    return T
 
 
 def _seed(L: int, lam: float, zeta: float) -> int:
