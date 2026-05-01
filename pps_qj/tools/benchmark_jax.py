@@ -31,6 +31,7 @@ import numpy as np
 def check_jax():
     try:
         import jax
+        jax.config.update("jax_enable_x64", True)  # must be before any jnp ops
         import jax.numpy as jnp
         print(f"JAX version: {jax.__version__}")
         print(f"Devices:     {jax.devices()}")

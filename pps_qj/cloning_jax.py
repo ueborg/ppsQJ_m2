@@ -53,6 +53,10 @@ import numpy as np
 
 try:
     import jax
+    # Must be set before any JAX operations — enables float64/complex128.
+    # Without this JAX silently truncates all 64-bit types to 32-bit,
+    # which is catastrophically wrong for covariance matrix arithmetic.
+    jax.config.update("jax_enable_x64", True)
     import jax.numpy as jnp
     from jax import lax, vmap, jit
     import jax.random as jr
