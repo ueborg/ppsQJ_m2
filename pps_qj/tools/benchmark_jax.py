@@ -64,6 +64,26 @@ def bench_jax_vs_numpy(L: int, lam: float, zeta: float,
     print(f"L={L}  lam={lam:.2f}  zeta={zeta:.2f}  N_c={N_c}  T={T}")
     print(f"{'='*60}")
 
+    # Build model and compile JAX kernel once — shared across all seeds.
+    from pps_qj.cloning_jax import _make_jax_model, _make_trajectory_fn
+    from jax import vmap
+    jax_model = _make_jax_model(model)
+    print("  [JAX] compiling trajectory kernel...", flush=True)
+    import time as _t
+    t0 = _t.perf_counter()
+    traj_fn = _make_trajectory_fn(jax_model, float(
+        1.0 / max(2.0 * alpha * (L - 1), 1e-6)  # delta_tau
+    ))
+    batched = vmap(traj_fn, in_axes=(0, 0, 0))
+    # Trigger compilation with a dummy call.
+    import jax.numpy as jnp, jax.random as jr
+    dummy_key = jr.PRNGKey(0)
+    dummy_keys = jr.split(dummy_key, N_c)
+    gamma0_b = jnp.stack([jnp.array(model.gamma0)] * N_c)
+    orbs0_b  = jnp.stack([jnp.array(model.orbitals0)] * N_c)
+    _ = batched(gamma0_b, orbs0_b, dummy_keys)
+    print(f"  [JAX] compilation: {_t.perf_counter()-t0:.1f}s", flush=True)
+
     # ----- JAX benchmark -----
     print("\n[JAX]")
     jax_results = []
