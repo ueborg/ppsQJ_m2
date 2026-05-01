@@ -23,13 +23,21 @@ ZETA_VALS_DOOB: List[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 # ----------------------------------------------------------------------
 # Cloning cross-validation grid
 # ----------------------------------------------------------------------
-L_CLONE: List[int] = [8, 16, 32, 64]
+L_CLONE: List[int] = [8, 16, 32, 64, 128]
 
 ZETA_VALS_CLONE: List[float] = [
     0.10, 0.20, 0.30, 0.40, 0.50,
     0.60, 0.70, 0.75, 0.80, 0.85,
     0.90, 0.92, 0.95, 0.97, 1.00,
 ]  # 15 points; denser near ζ=1 where the transition lives for most λ
+
+# Finer lambda resolution near the phase boundary (λ ∈ [0.30, 0.55]).
+# Use LAMBDA_VALS_FINE instead of LAMBDA_VALS when constructing an L=128
+# targeted scan — adds 5 intermediate points where the (32,64) crossings live.
+LAMBDA_VALS_FINE: List[float] = sorted(set(
+    np.linspace(0.1, 0.9, 17).tolist() +
+    [0.325, 0.375, 0.425, 0.475, 0.525]
+))  # 22 points total
 
 
 def _alpha_w_from_lam(lam: float) -> tuple[float, float]:
@@ -67,7 +75,7 @@ def nc_for_L(L: int) -> int:
     8 cores per task the worst-case L=64 task drops from 78.5 h to ~12 h,
     keeping N_c=200 and N_REAL=5 across the full grid.
     """
-    return {8: 2000, 16: 1000, 32: 500, 64: 200}[L]
+    return {8: 2000, 16: 1000, 32: 500, 64: 200, 128: 200}[L]
 
 
 def time_horizon(L: int, alpha: float) -> float:
@@ -143,6 +151,13 @@ def n_tasks_doob() -> int:
 
 def n_tasks_clone() -> int:
     return len(L_CLONE) * len(LAMBDA_VALS) * len(ZETA_VALS_CLONE)
+
+
+def clone_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_task_id, last_task_id) inclusive. Useful for SLURM arrays."""
+    per_L = len(LAMBDA_VALS) * len(ZETA_VALS_CLONE)
+    return {L: (i * per_L, (i + 1) * per_L - 1)
+            for i, L in enumerate(L_CLONE)}
 
 
 def task_params_doob(task_id: int) -> dict:
