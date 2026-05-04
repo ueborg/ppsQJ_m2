@@ -183,6 +183,144 @@ def doob_task_id_ranges() -> dict[int, tuple[int, int]]:
     return out
 
 
+# ======================================================================
+# Cloning v2 grid — full production scan
+# ======================================================================
+# Design rationale
+# ----------------
+# Lambda grid:  extends LAMBDA_VALS_FINE with two very-small-λ points
+#   (0.02, 0.05) to resolve the small-ζ phase boundary, predicted to lie
+#   at λ_c(ζ) ~ Cζ (linear onset).  24 points total.
+#
+# Zeta grid:    10 points — dense for ζ ∈ [0.02, 0.20] to probe the Ising
+#   plateau, then sparser for ζ ∈ [0.30, 1.00].  ζ=0 (pure no-click) is
+#   handled separately if needed; ζ=0.02 is already extremely close.
+#
+# L sizes:      adds L=24, 48, 96 to the original set, as recommended for
+#   finite-size scaling with non-power-of-two steps.  L=8 is kept only as a
+#   sanity check (it is excluded from FSS fits).
+#
+# Total tasks:  8 sizes × 24 λ × 10 ζ = 1920 tasks.
+#
+# Compute budget (3 Habrok nodes, 120 cores each):
+#   Node 1 — tasks   0..719  (L=8,16,24):  serial, 1 core/task, ≤12h
+#   Node 2 — tasks 720..1199 (L=32,48):    serial, 1 core/task, ≤24h
+#   Node 3 — tasks 1200..1919 (L=64,96,128): 5 cores/task, 24 concurrent,
+#                                            ≤48h (worst case L=128, α=0.02)
+# ======================================================================
+
+L_CLONE_V2: List[int] = [8, 16, 24, 32, 48, 64, 96, 128]
+
+# 24 λ points: very-small extension + LAMBDA_VALS_FINE
+LAMBDA_VALS_V2: List[float] = sorted(set(
+    [0.02, 0.05]
+    + np.linspace(0.1, 0.9, 17).tolist()
+    + [0.325, 0.375, 0.425, 0.475, 0.525]
+))  # 24 points
+
+ZETA_VALS_V2: List[float] = [
+    0.02, 0.05, 0.10, 0.15, 0.20,  # dense small-ζ: probe Ising plateau
+    0.30, 0.50, 0.70, 0.85, 1.00,  # coarser across the crossover and Born-rule end
+]  # 10 points
+
+# Per-task grid dimensions
+_N_LAM_V2  = len(LAMBDA_VALS_V2)   # 24
+_N_ZETA_V2 = len(ZETA_VALS_V2)     # 10
+_PER_L_V2  = _N_LAM_V2 * _N_ZETA_V2  # 240
+
+
+def nc_for_L_v2(L: int) -> int:
+    """Clone population size for the v2 grid.
+
+    New intermediate sizes (L=24,48,96) are interpolated conservatively.
+    L=128 keeps N_c=100 — wall-time limited even with 5-core intra-task MP.
+    """
+    return {
+        8:   2000,
+        16:  1000,
+        24:   800,
+        32:   500,
+        48:   300,
+        64:   200,
+        96:   150,
+        128:  100,
+    }[L]
+
+
+def time_horizon_v2(L: int, alpha: float) -> float:
+    """T(L, α) for the v2 grid, with tighter caps for large L.
+
+    The existing time_horizon() allows T up to 5/α, which can reach 250 for
+    α=0.02.  At L≥64 this is unaffordable.  Caps here keep the worst-case task
+    at ≲48 h:
+      L≥96  → T ≤ 100
+      L≥64  → T ≤ 150
+      L≥32  → T ≤ 200
+      L<32  → uncapped (max 250, affordable)
+
+    Steady-state saturation has been verified at these cap values for the
+    relevant parameter ranges in earlier production runs.
+    """
+    base = max(30.0, 5.0 / max(alpha, 1e-9))
+    T = float(max(base, 2.0 * L))
+    if L >= 96:
+        T = min(T, 100.0)
+    elif L >= 64:
+        T = min(T, 150.0)
+    elif L >= 32:
+        T = min(T, 200.0)
+    return T
+
+
+def make_clone_v2_grid() -> List[dict]:
+    """All (L, λ, ζ) parameter combinations for the v2 production scan.
+
+    Task ids are assigned in (L outer, λ middle, ζ inner) order, so tasks
+    for each L form a contiguous block of 240 ids.
+    """
+    grid: List[dict] = []
+    task_id = 0
+    for L in L_CLONE_V2:
+        for lam in LAMBDA_VALS_V2:
+            for zeta in ZETA_VALS_V2:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_v2(L, alpha)
+                grid.append(dict(
+                    task_id=task_id,
+                    L=int(L),
+                    lam=float(lam),
+                    alpha=alpha,
+                    w=w,
+                    zeta=float(zeta),
+                    T=float(T),
+                    N_c=int(nc_for_L_v2(L)),
+                    seed=_seed(L, lam, zeta),
+                ))
+                task_id += 1
+    return grid
+
+
+def task_params_clone_v2(task_id: int) -> dict:
+    grid = make_clone_v2_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(
+            f"Clone-v2 task_id {task_id} out of range [0, {len(grid)})"
+        )
+    return grid[task_id]
+
+
+def n_tasks_clone_v2() -> int:
+    return len(L_CLONE_V2) * _N_LAM_V2 * _N_ZETA_V2  # 1920
+
+
+def clone_v2_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_task_id, last_task_id) inclusive for the v2 grid."""
+    return {
+        L: (i * _PER_L_V2, (i + 1) * _PER_L_V2 - 1)
+        for i, L in enumerate(L_CLONE_V2)
+    }
+
+
 if __name__ == "__main__":
     import sys
     which = sys.argv[1] if len(sys.argv) > 1 else "doob"
@@ -200,6 +338,16 @@ if __name__ == "__main__":
         print(f"first: {g[0]}")
         print(f"last : {g[-1]}")
         print(f"L=64 N_c: {nc_for_L(64)}")
+    elif which == "clone_v2":
+        g = make_clone_v2_grid()
+        print(f"n_tasks_clone_v2 = {n_tasks_clone_v2()} (expected 1920)")
+        print(f"first: {g[0]}")
+        print(f"last : {g[-1]}")
+        print(f"lambda grid ({_N_LAM_V2} pts): {LAMBDA_VALS_V2}")
+        print(f"zeta  grid ({_N_ZETA_V2} pts): {ZETA_VALS_V2}")
+        print("L task_id ranges:")
+        for L, (lo, hi) in clone_v2_task_id_ranges().items():
+            print(f"  L={L:4d}  tasks {lo:4d}..{hi:4d}  N_c={nc_for_L_v2(L)}")
     else:
         print(f"unknown grid type: {which}")
         sys.exit(1)

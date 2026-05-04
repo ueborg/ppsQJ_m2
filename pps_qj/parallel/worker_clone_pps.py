@@ -7,19 +7,33 @@ Entry point::
 Runs N_REAL=5 independent realisations per task.  When PPS_N_WORKERS > 1
 (set by the SLURM script via the environment variable), realisations are
 dispatched in parallel using a multiprocessing.Pool created once per task.
-Each worker runs one full run_cloning call — no IPC inside the hot inner
-loop — giving near-ideal parallel efficiency.
 
-The BLAS/OpenMP thread count must be pinned to 1 per worker process via
-OMP_NUM_THREADS=1, MKL_NUM_THREADS=1, OPENBLAS_NUM_THREADS=1 in the SLURM
-script; without this, each worker spawns its own thread pool and the cores
-oversubscribe by a factor of N_WORKERS.
+Checkpoint / resume
+-------------------
+For serial runs (n_workers=1), a partial progress file
+``clone_{task_id:05d}_partial.pkl`` is written after each realisations
+completes.  If the task is interrupted and restarted, the completed
+realisations are loaded from this file and skipped, so only the remaining
+realisations are re-run.  The partial file is deleted on successful
+completion.  For parallel runs (n_workers>1), pool.map returns all results
+simultaneously so no meaningful partial state exists; the existing task-level
+idempotency guard (checking for the final .npz) applies as usual.
+
+New observables (v2, cloning.py)
+---------------------------------
+Each realization now returns:
+  n_T_mean  — mean activity density k̄ = <N_T>/(L·T) under tilted measure
+  chi_k     — activity susceptibility χ_k = Var(N_T^window)/(L·δτ)
+  S_var     — variance Var_ζ(S_L/2) under tilted measure
+  covar_Sk  — activity-entropy covariance C_{S,k}/(L·δτ)
+These are aggregated across realisations and saved in the .npz output.
 """
 from __future__ import annotations
 
 import json
 import multiprocessing as mp
 import os
+import pickle
 import sys
 import time
 import traceback
@@ -49,14 +63,7 @@ def _n_workers_from_env() -> int:
 # ---------------------------------------------------------------------------
 
 def _run_one_realisation(args: dict) -> dict:
-    """Run one full cloning realisation and return a plain result dict.
-
-    This is the function dispatched to each worker process.  It receives all
-    parameters as a plain dict (fully picklable — no numpy objects) and
-    reconstructs the GaussianChainModel internally, so only small scalars
-    cross the IPC boundary.  The result dict contains only Python scalars and
-    numpy arrays (also picklable).
-    """
+    """Run one full cloning realisation and return a plain result dict."""
     L       = int(args["L"])
     w       = float(args["w"])
     alpha   = float(args["alpha"])
@@ -74,20 +81,56 @@ def _run_one_realisation(args: dict) -> dict:
             show_progress=False,
         )
         return {
-            "ok":            True,
-            "S_mean":        float(result.S_mean),
-            "S_std":         float(result.S_std),
-            "theta_hat":     float(result.theta_hat),
+            "ok":             True,
+            "S_mean":         float(result.S_mean),
+            "S_std":          float(result.S_std),
+            "theta_hat":      float(result.theta_hat),
             "eff_sample_size": float(result.eff_sample_size),
-            "n_collapses":   int(result.n_collapses),
+            "n_collapses":    int(result.n_collapses),
             "n_js_fallbacks": int(result.n_js_fallbacks),
-            # Pass back covariance matrices for B_L computation in the main process
-            "final_covs":    [np.asarray(c, dtype=np.float64) for c in result.final_covs],
+            # New observables
+            "n_T_mean":       float(result.n_T_mean),
+            "chi_k":          float(result.chi_k),
+            "S_var":          float(result.S_var),
+            "covar_Sk":       float(result.covar_Sk),
+            # Covariance matrices for B_L
+            "final_covs": [np.asarray(c, dtype=np.float64) for c in result.final_covs],
         }
     except CloningCollapse as exc:
         return {"ok": False, "error": str(exc), "n_collapses": 1}
     except Exception as exc:
         return {"ok": False, "error": str(exc), "n_collapses": 0}
+
+
+# ---------------------------------------------------------------------------
+# Checkpoint helpers
+# ---------------------------------------------------------------------------
+
+def _load_partial(partial_file: Path) -> dict[int, dict]:
+    """Load completed-realisations dict from partial file. Returns {} on failure."""
+    try:
+        with open(partial_file, "rb") as f:
+            data = pickle.load(f)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    try:
+        partial_file.unlink(missing_ok=True)
+    except Exception:
+        pass
+    return {}
+
+
+def _save_partial(partial_file: Path, completed: dict[int, dict]) -> None:
+    """Atomically write partial file."""
+    tmp = partial_file.with_suffix(".pkl.tmp")
+    try:
+        with open(tmp, "wb") as f:
+            pickle.dump(completed, f, protocol=4)
+        tmp.replace(partial_file)
+    except Exception:
+        tmp.unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +155,7 @@ def _batched_compute_B_L(covs_list: list[np.ndarray], L: int) -> np.ndarray:
     sub_ABD = gamma_batch[:, :tL,      :tL     ]
 
     def _batch_entropy(sub: np.ndarray) -> np.ndarray:
-        m, ell = sub.shape[-1], sub.shape[-1] // 2
+        ell = sub.shape[-1] // 2
         eigs = np.linalg.eigvalsh((1j * sub).astype(np.complex128))
         nus  = np.clip(np.abs(eigs[:, ell:]), 0.0, 1.0)
         p_p  = np.clip(0.5 * (1.0 + nus), 1e-15, 1.0 - 1e-15)
@@ -150,6 +193,14 @@ def _write_summary_atomic(path: Path, payload: dict) -> None:
     tmp.replace(path)
 
 
+def _nanstat(a: np.ndarray):
+    a = a[~np.isnan(a)]
+    n = int(a.size)
+    if n == 0:
+        return float("nan"), float("nan"), float("nan"), 0
+    return float(np.mean(a)), float(np.std(a)), float(np.std(a) / np.sqrt(n)), n
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -167,6 +218,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     output_file  = output_dir / f"clone_{task_id:05d}.npz"
     summary_file = output_dir / f"summary_clone_{task_id:05d}.json"
+    partial_file = output_dir / f"clone_{task_id:05d}_partial.pkl"
 
     if output_file.exists():
         print(f"clone task {task_id}: already done, skipping", flush=True)
@@ -192,8 +244,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
 
     try:
-        # Build one args dict per realisation.  Each worker reconstructs the
-        # model internally — avoids pickling large numpy objects.
         real_args = [
             dict(L=L, w=w, alpha=alpha, zeta=zeta, T=T, N_c=N_c,
                  seed=seed + r * 999_983)
@@ -201,20 +251,41 @@ def main(argv: Optional[list[str]] = None) -> int:
         ]
 
         if n_workers > 1:
-            # Realisation-level parallelism: pool created once per task,
-            # N_REAL items dispatched, IPC = one result dict per realisation.
+            # Parallel: pool.map returns all results at once; no partial saving.
             with mp.Pool(processes=min(n_workers, N_REAL)) as pool:
                 real_results = pool.map(_run_one_realisation, real_args)
         else:
-            real_results = [_run_one_realisation(a) for a in real_args]
+            # Serial: save partial checkpoint after each realization.
+            completed = _load_partial(partial_file)
+            if completed:
+                print(
+                    f"  Resuming from partial file: "
+                    f"{len(completed)}/{N_REAL} realisations already done.",
+                    flush=True,
+                )
 
-        # Aggregate
-        S_means    = np.full(N_REAL, np.nan)
-        S_stds     = np.full(N_REAL, np.nan)
-        thetas     = np.full(N_REAL, np.nan)
-        ESSs       = np.full(N_REAL, np.nan)
-        B_L_means  = np.full(N_REAL, np.nan)
-        B_L_stds   = np.full(N_REAL, np.nan)
+            real_results = [None] * N_REAL
+            for r in range(N_REAL):
+                if r in completed:
+                    real_results[r] = completed[r]
+                    print(f"  real {r+1}: loaded from checkpoint", flush=True)
+                    continue
+                res = _run_one_realisation(real_args[r])
+                real_results[r] = res
+                completed[r] = res
+                _save_partial(partial_file, completed)
+
+        # --- Aggregate results ---
+        S_means       = np.full(N_REAL, np.nan)
+        S_stds        = np.full(N_REAL, np.nan)
+        thetas        = np.full(N_REAL, np.nan)
+        ESSs          = np.full(N_REAL, np.nan)
+        B_L_means     = np.full(N_REAL, np.nan)
+        B_L_stds      = np.full(N_REAL, np.nan)
+        n_T_means     = np.full(N_REAL, np.nan)
+        chi_ks        = np.full(N_REAL, np.nan)
+        S_vars        = np.full(N_REAL, np.nan)
+        covar_Sks     = np.full(N_REAL, np.nan)
         n_collapses_total    = 0
         n_js_fallbacks_total = 0
         can_compute_B_L = (L % 4 == 0)
@@ -225,10 +296,14 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print(f"  real {r}: FAILED — {res.get('error', '?')}", flush=True)
                 continue
 
-            S_means[r]  = float(res["S_mean"])
-            S_stds[r]   = float(res["S_std"])
-            thetas[r]   = float(res["theta_hat"])
-            ESSs[r]     = float(res["eff_sample_size"])
+            S_means[r]   = float(res["S_mean"])
+            S_stds[r]    = float(res["S_std"])
+            thetas[r]    = float(res["theta_hat"])
+            ESSs[r]      = float(res["eff_sample_size"])
+            n_T_means[r] = float(res.get("n_T_mean", float("nan")))
+            chi_ks[r]    = float(res.get("chi_k",    float("nan")))
+            S_vars[r]    = float(res.get("S_var",    float("nan")))
+            covar_Sks[r] = float(res.get("covar_Sk", float("nan")))
             n_js_fallbacks_total += int(res.get("n_js_fallbacks", 0))
 
             if can_compute_B_L:
@@ -240,21 +315,19 @@ def main(argv: Optional[list[str]] = None) -> int:
 
             print(
                 f"  real {r+1}: S={S_means[r]:.4f}, θ={thetas[r]:.4f}, "
-                f"ESS={ESSs[r]:.0f}, B_L={B_L_means[r]:.4f}",
+                f"ESS={ESSs[r]:.0f}, k̄={n_T_means[r]:.4f}, "
+                f"χ_k={chi_ks[r]:.4f}, C_Sk={covar_Sks[r]:.4f}",
                 flush=True,
             )
 
-        def _nanstat(a):
-            a = a[~np.isnan(a)]
-            n = int(a.size)
-            if n == 0:
-                return float("nan"), float("nan"), float("nan"), 0
-            return float(np.mean(a)), float(np.std(a)), float(np.std(a)/np.sqrt(n)), n
-
-        S_mean, S_std_r, S_err, nS    = _nanstat(S_means)
-        theta_mean, _, theta_err, nth = _nanstat(thetas)
-        ESS_mean, _, _, _             = _nanstat(ESSs)
-        B_L_mean, _, B_L_err, nBL     = _nanstat(B_L_means)
+        S_mean,   S_std_r,   S_err,   nS   = _nanstat(S_means)
+        theta_mean,  _, theta_err, nth      = _nanstat(thetas)
+        ESS_mean,    _, _,        _         = _nanstat(ESSs)
+        B_L_mean, _,  B_L_err,   nBL       = _nanstat(B_L_means)
+        n_T_mean, _,  n_T_err,   _         = _nanstat(n_T_means)
+        chi_k_mean, _, chi_k_err, _         = _nanstat(chi_ks)
+        S_var_mean, _, S_var_err, _         = _nanstat(S_vars)
+        covar_Sk_mean, _, covar_Sk_err, _   = _nanstat(covar_Sks)
 
         wall_time = time.time() - t_start
 
@@ -266,9 +339,17 @@ def main(argv: Optional[list[str]] = None) -> int:
             theta_mean=theta_mean, theta_err=theta_err,
             ESS_mean=ESS_mean,
             B_L_mean=B_L_mean, B_L_err=B_L_err,
+            # New observables
+            n_T_mean=n_T_mean, n_T_err=n_T_err,
+            chi_k_mean=chi_k_mean, chi_k_err=chi_k_err,
+            S_var_mean=S_var_mean, S_var_err=S_var_err,
+            covar_Sk_mean=covar_Sk_mean, covar_Sk_err=covar_Sk_err,
+            # Per-realization arrays
             S_means_all=S_means, S_stds_all=S_stds,
             thetas_all=thetas, ESSs_all=ESSs,
             B_L_means_all=B_L_means, B_L_stds_all=B_L_stds,
+            n_T_means_all=n_T_means, chi_ks_all=chi_ks,
+            S_vars_all=S_vars, covar_Sks_all=covar_Sks,
             n_collapses=n_collapses_total,
             n_valid_S=nS, n_valid_theta=nth, n_valid_B_L=nBL,
             n_js_fallbacks=n_js_fallbacks_total,
@@ -280,14 +361,22 @@ def main(argv: Optional[list[str]] = None) -> int:
             S_mean=S_mean, S_err=S_err,
             theta_mean=theta_mean, theta_err=theta_err,
             B_L_mean=B_L_mean, B_L_err=B_L_err,
+            n_T_mean=n_T_mean, chi_k_mean=chi_k_mean,
+            S_var_mean=S_var_mean, covar_Sk_mean=covar_Sk_mean,
             ESS_mean=ESS_mean, n_collapses=n_collapses_total,
             n_js_fallbacks=n_js_fallbacks_total,
             wall_time=wall_time, status="complete",
         ))
+
+        # Clean up partial file on successful completion
+        partial_file.unlink(missing_ok=True)
+
         print(
             f"clone task {task_id}: L={L}, λ={lam:.3f}, ζ={zeta:.2f}, "
             f"<S>={S_mean:.4f}±{S_err:.4f}, <B_L>={B_L_mean:.4f}±{B_L_err:.4f}, "
-            f"θ={theta_mean:.4f}±{theta_err:.4f}, t={wall_time:.1f}s",
+            f"θ={theta_mean:.4f}±{theta_err:.4f}, "
+            f"k̄={n_T_mean:.4f}, χ_k={chi_k_mean:.4f}, "
+            f"C_Sk={covar_Sk_mean:.4f}, t={wall_time:.1f}s",
             flush=True,
         )
         return 0

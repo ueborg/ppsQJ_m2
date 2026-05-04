@@ -19,7 +19,7 @@ pool creation and IPC overhead dominated at every tested worker count.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 import numpy as np
@@ -124,6 +124,16 @@ class CloningResult:
     delta_tau: float
     final_covs: list
     n_js_fallbacks: int = 0
+    # Activity and covariance summary statistics (computed post-burnin)
+    n_T_mean: float = float("nan")   # mean activity density k̄ = <n_jumps>/(L·δτ)
+    chi_k: float = float("nan")      # activity susceptibility χ_k = Var(n_jumps)/(L·δτ)
+    S_var: float = float("nan")      # variance Var_ζ(S_L/2) under tilted measure
+    covar_Sk: float = float("nan")   # activity-entropy covariance C_{S,k}/(L·δτ)
+    # Per-step history arrays for the new diagnostics (empty if record_entropy=False)
+    n_T_mean_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    n_T_sq_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    S_sq_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    covar_Sn_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
 
 
 def _systematic_resample(
@@ -228,6 +238,11 @@ def run_cloning(
     log_Z_history: list[float] = []
     W_history: list[float] = []
     S_history: list[float] = []
+    # New diagnostic histories — accumulated in the entropy block each step
+    S_sq_history: list[float] = []
+    n_T_mean_history: list[float] = []
+    n_T_sq_history: list[float] = []
+    covar_Sn_history: list[float] = []
     n_collapses = 0
     n_js_fallbacks = 0
     final_weights = np.ones(N_c, dtype=np.float64)
@@ -311,11 +326,24 @@ def run_cloning(
         if record_entropy:
             S_vals = _batched_entanglement_entropy(covs, L // 2)
             w_sum  = float(weights.sum())
-            S_zeta_k = float(
-                np.sum(weights * S_vals) / w_sum if w_sum > 0.0
-                else np.mean(S_vals)
-            )
+            if w_sum > 0.0:
+                w_norm = weights / w_sum
+                S_zeta_k  = float(np.dot(w_norm, S_vals))
+                S_sq_k    = float(np.dot(w_norm, S_vals ** 2))
+                n_mean_k  = float(np.dot(w_norm, n_jumps))
+                n_sq_k    = float(np.dot(w_norm, n_jumps ** 2))
+                covar_k   = float(np.dot(w_norm, S_vals * n_jumps))
+            else:
+                S_zeta_k  = float(np.mean(S_vals))
+                S_sq_k    = float(np.mean(S_vals ** 2))
+                n_mean_k  = float(np.mean(n_jumps))
+                n_sq_k    = float(np.mean(n_jumps ** 2))
+                covar_k   = float(np.mean(S_vals * n_jumps))
             S_history.append(S_zeta_k)
+            S_sq_history.append(S_sq_k)
+            n_T_mean_history.append(n_mean_k)
+            n_T_sq_history.append(n_sq_k)
+            covar_Sn_history.append(covar_k)
             if show_progress:
                 step_iter.set_postfix({"S": f"{S_zeta_k:.3f}", "W": f"{W_k:.3e}"})
 
@@ -333,9 +361,30 @@ def run_cloning(
 
     theta_hat = log_Z_acc / T_total
 
+    # --- Summary statistics (post-burnin) ---
+    n_T_mean_val = chi_k_val = S_var_val = covar_Sk_val = float("nan")
+    S_sq_arr = n_T_mean_arr = n_T_sq_arr = covar_Sn_arr = np.asarray([])
+
     if record_entropy and len(S_arr) > n_burnin_steps:
         S_mean = float(np.mean(S_arr[n_burnin_steps:]))
         S_std  = float(np.std(S_arr[n_burnin_steps:]))
+
+        S_sq_arr      = np.asarray(S_sq_history,      dtype=np.float64)
+        n_T_mean_arr  = np.asarray(n_T_mean_history,  dtype=np.float64)
+        n_T_sq_arr    = np.asarray(n_T_sq_history,    dtype=np.float64)
+        covar_Sn_arr  = np.asarray(covar_Sn_history,  dtype=np.float64)
+
+        S_pb   = S_arr[n_burnin_steps:]
+        Ssq_pb = S_sq_arr[n_burnin_steps:]
+        nm_pb  = n_T_mean_arr[n_burnin_steps:]
+        nsq_pb = n_T_sq_arr[n_burnin_steps:]
+        cov_pb = covar_Sn_arr[n_burnin_steps:]
+
+        norm = float(L * delta_tau_eff)   # L · δτ : converts counts to density
+        n_T_mean_val  = float(np.mean(nm_pb)) / norm
+        chi_k_val     = float(np.mean(nsq_pb - nm_pb ** 2)) / norm
+        S_var_val     = float(np.mean(Ssq_pb - S_pb ** 2))
+        covar_Sk_val  = float(np.mean(cov_pb - S_pb * nm_pb)) / norm
     else:
         S_mean = float("nan")
         S_std  = float("nan")
@@ -357,6 +406,14 @@ def run_cloning(
         N_c=int(N_c), T_total=float(T_total), delta_tau=float(delta_tau_eff),
         final_covs=covs,
         n_js_fallbacks=int(n_js_fallbacks),
+        n_T_mean=n_T_mean_val,
+        chi_k=chi_k_val,
+        S_var=S_var_val,
+        covar_Sk=covar_Sk_val,
+        n_T_mean_history=n_T_mean_arr,
+        n_T_sq_history=n_T_sq_arr,
+        S_sq_history=S_sq_arr,
+        covar_Sn_history=covar_Sn_arr,
     )
 
 
