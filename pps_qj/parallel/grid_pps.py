@@ -345,12 +345,19 @@ LAMBDA_VALS_ZETA0: List[float] = [
 def time_horizon_zeta0(L: int, alpha: float) -> float:
     """T for the deterministic no-click evolution.
 
-    Need T >> 1/Δ_eff where Δ_eff is the spectral gap of H_eff.  For
-    the topological phase (α < w), the gap is O(w) and T=4L is ample.
-    Near the transition the gap may be smaller, but our λ grid stops at
-    0.30 (well into the topological phase) so the gap is never tiny.
+    The convergence time to the H_eff ground state scales as L/α
+    (O(L) modes each damping at rate ~α).  The original cap of 500 was
+    too short for small α and large L.  New formula:
+
+        T = min(20000, max(15·L, 50/α))
+
+    For (L=128, α=0.01): T = min(20000, max(1920, 5000)) = 5000  (~4s)
+    For (L=128, α=0.10): T = min(20000, max(1920,  500)) = 1920  (~1.5s)
+    For (L=8,   α=0.01): T = min(20000, max( 120, 5000)) = 5000  (<1s)
+
+    All tasks remain computationally trivial.
     """
-    return float(min(500.0, max(5.0 / max(alpha, 0.001), 4.0 * L)))
+    return float(min(20000.0, max(15.0 * L, 50.0 / max(alpha, 1e-9))))
 
 
 def make_zeta0_grid() -> List[dict]:
