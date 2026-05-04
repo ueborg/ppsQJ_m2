@@ -321,6 +321,153 @@ def clone_v2_task_id_ranges() -> dict[int, tuple[int, int]]:
     }
 
 
+# ======================================================================
+# ζ=0 no-click benchmark grid
+# ======================================================================
+# Purpose: test the postselected corner scaling λ_cross(L, ζ=0) ~ L^{-1/2}.
+# The simulation is fully deterministic (no random jumps), so N_REAL=1 per
+# task and the total cost is negligible.
+#
+# λ range: [0.01, 0.3] — only the lower half of the phase diagram is needed
+#   since the transition at ζ=0 is near λ=0 for large L.
+# T: capped at 500 (single-shot propagation under H_eff; cost is O(L^3)
+#   independent of T via precomputed matrix exponential).
+# Total tasks: 8 × 9 = 72.
+# ======================================================================
+
+L_ZETA0: List[int] = [8, 16, 24, 32, 48, 64, 96, 128]
+
+LAMBDA_VALS_ZETA0: List[float] = [
+    0.01, 0.02, 0.03, 0.05, 0.075, 0.10, 0.15, 0.20, 0.30
+]  # 9 points, dense near 0 for λ_cross(L) ~ L^{-1/2} test
+
+
+def time_horizon_zeta0(L: int, alpha: float) -> float:
+    """T for the deterministic no-click evolution.
+
+    Need T >> 1/Δ_eff where Δ_eff is the spectral gap of H_eff.  For
+    the topological phase (α < w), the gap is O(w) and T=4L is ample.
+    Near the transition the gap may be smaller, but our λ grid stops at
+    0.30 (well into the topological phase) so the gap is never tiny.
+    """
+    return float(min(500.0, max(5.0 / max(alpha, 0.001), 4.0 * L)))
+
+
+def make_zeta0_grid() -> List[dict]:
+    """All (L, λ) combinations for the ζ=0 no-click benchmark."""
+    grid: List[dict] = []
+    task_id = 0
+    for L in L_ZETA0:
+        for lam in LAMBDA_VALS_ZETA0:
+            alpha, w = _alpha_w_from_lam(lam)
+            T = time_horizon_zeta0(L, alpha)
+            grid.append(dict(
+                task_id=task_id, L=int(L), lam=float(lam),
+                alpha=alpha, w=w, T=float(T),
+                seed=_seed(L, lam, 0.0),
+            ))
+            task_id += 1
+    return grid
+
+
+def task_params_zeta0(task_id: int) -> dict:
+    grid = make_zeta0_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(f"ζ=0 task_id {task_id} out of range [0, {len(grid)})")
+    return grid[task_id]
+
+
+def n_tasks_zeta0() -> int:
+    return len(L_ZETA0) * len(LAMBDA_VALS_ZETA0)  # 72
+
+
+def zeta0_task_id_ranges() -> dict[int, tuple[int, int]]:
+    per_L = len(LAMBDA_VALS_ZETA0)
+    return {L: (i * per_L, (i + 1) * per_L - 1) for i, L in enumerate(L_ZETA0)}
+
+
+# ======================================================================
+# Clone v2 supplement grid (300 tasks)
+# ======================================================================
+# Two supplementary blocks:
+#
+#   Block A (tasks 0..59):   low-λ small-ζ — resolves the phase boundary
+#     where λ_c(ζ) ~ Cζ may fall below the v2 grid's λ_min=0.02.
+#     L=[32,48,64,96,128], λ=[0.005,0.01,0.03,0.075], ζ=[0.02,0.05,0.10]
+#
+#   Block B (tasks 60..299): large-ζ — adds ζ=0.90,0.95 for the near-
+#     Born-rule linear-response test λ_c(ζ)=λ_c(1)-A(1-ζ)+O((1-ζ)^2).
+#     L=[32,48,64,96,128], full 24-point λ grid, ζ=[0.90,0.95]
+# ======================================================================
+
+L_SUPP: List[int] = [32, 48, 64, 96, 128]
+
+LAMBDA_VALS_SUPP_LOWLAM: List[float] = [0.005, 0.01, 0.03, 0.075]  # 4 pts
+ZETA_VALS_SUPP_LOWLAM: List[float] = [0.02, 0.05, 0.10]             # 3 pts
+ZETA_VALS_LARGE: List[float] = [0.90, 0.95]                          # 2 new pts
+
+_N_SUPP_LOW      = len(L_SUPP) * len(LAMBDA_VALS_SUPP_LOWLAM) * len(ZETA_VALS_SUPP_LOWLAM)  # 60
+_N_SUPP_LARGE_Z  = len(L_SUPP) * _N_LAM_V2 * len(ZETA_VALS_LARGE)                           # 240
+_N_SUPP_TOTAL    = _N_SUPP_LOW + _N_SUPP_LARGE_Z                                             # 300
+
+
+def make_clone_v2_supp_grid() -> List[dict]:
+    """Supplement tasks: low-λ small-ζ block + large-ζ block.
+
+    Uses the same N_c and time_horizon_v2 as the main v2 grid.
+    """
+    grid: List[dict] = []
+    task_id = 0
+    # --- Block A: low-λ, small ζ ---
+    for L in L_SUPP:
+        for lam in LAMBDA_VALS_SUPP_LOWLAM:
+            for zeta in ZETA_VALS_SUPP_LOWLAM:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_v2(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=int(nc_for_L_v2(L)),
+                    seed=_seed(L, lam, zeta),
+                ))
+                task_id += 1
+    # --- Block B: large ζ ---
+    for L in L_SUPP:
+        for lam in LAMBDA_VALS_V2:
+            for zeta in ZETA_VALS_LARGE:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_v2(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=int(nc_for_L_v2(L)),
+                    seed=_seed(L, lam, zeta),
+                ))
+                task_id += 1
+    return grid
+
+
+def task_params_clone_v2_supp(task_id: int) -> dict:
+    grid = make_clone_v2_supp_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(
+            f"Clone-v2-supp task_id {task_id} out of range [0, {len(grid)})"
+        )
+    return grid[task_id]
+
+
+def n_tasks_clone_v2_supp() -> int:
+    return _N_SUPP_TOTAL  # 300
+
+
+def clone_v2_supp_task_id_ranges() -> dict[str, tuple[int, int]]:
+    """Block-level ranges for the supplement grid."""
+    return {
+        "low_lam":  (0,                 _N_SUPP_LOW - 1),
+        "large_z":  (_N_SUPP_LOW,       _N_SUPP_TOTAL - 1),
+    }
+
+
 if __name__ == "__main__":
     import sys
     which = sys.argv[1] if len(sys.argv) > 1 else "doob"
@@ -348,6 +495,22 @@ if __name__ == "__main__":
         print("L task_id ranges:")
         for L, (lo, hi) in clone_v2_task_id_ranges().items():
             print(f"  L={L:4d}  tasks {lo:4d}..{hi:4d}  N_c={nc_for_L_v2(L)}")
+    elif which == "clone_v2_supp":
+        g = make_clone_v2_supp_grid()
+        print(f"n_tasks_clone_v2_supp = {n_tasks_clone_v2_supp()} (expected 300)")
+        print(f"first: {g[0]}")
+        print(f"last : {g[-1]}")
+        for name, (lo, hi) in clone_v2_supp_task_id_ranges().items():
+            print(f"  {name}: tasks {lo}..{hi}")
+    elif which == "zeta0":
+        g = make_zeta0_grid()
+        print(f"n_tasks_zeta0 = {n_tasks_zeta0()} (expected 72)")
+        print(f"first: {g[0]}")
+        print(f"last : {g[-1]}")
+        print(f"lambda grid ({len(LAMBDA_VALS_ZETA0)} pts): {LAMBDA_VALS_ZETA0}")
+        print("L task_id ranges:")
+        for L, (lo, hi) in zeta0_task_id_ranges().items():
+            print(f"  L={L:4d}  tasks {lo:2d}..{hi:2d}")
     else:
         print(f"unknown grid type: {which}")
         sys.exit(1)
