@@ -26,19 +26,20 @@ TASK_LO=${1:-255}
 TASK_HI=${2:-509}
 OUTPUT_DIR=${3:-/scratch/${USER}/pps_qj/pps_clone_scan_v2}
 WALL_TIME=${4:-06:00:00}
+CPUS_PER_TASK=${5:-1}   # Set to 5 for L=128 (5 realisations in parallel)
 
 N_TASKS=$(( TASK_HI - TASK_LO + 1 ))
+N_PARALLEL=$(( 120 / CPUS_PER_TASK ))   # parallel task slots given 120 cores
 JOB_NAME="pps_clone_${TASK_LO}_${TASK_HI}"
 PARTITION="regular"
-N_CORES=120
 LOG_DIR="/scratch/${USER}/pps_qj/logs"
 
 sbatch <<SLURM_SCRIPT
 #!/bin/bash
 #SBATCH --job-name=${JOB_NAME}
 #SBATCH --nodes=1
-#SBATCH --ntasks=${N_CORES}
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=${N_PARALLEL}
+#SBATCH --cpus-per-task=${CPUS_PER_TASK}
 #SBATCH --time=${WALL_TIME}
 #SBATCH --partition=${PARTITION}
 #SBATCH --output=${LOG_DIR}/${JOB_NAME}_%j.out
@@ -50,7 +51,7 @@ set -euo pipefail
 
 echo "======================================================================"
 echo "Job \${SLURM_JOB_ID}: ${JOB_NAME}"
-echo "Node: \$(hostname)   Cores: \${SLURM_NTASKS}   Started: \$(date)"
+echo "Node: \$(hostname)   Parallel slots: ${N_PARALLEL} (${CPUS_PER_TASK} CPUs each)   Started: \$(date)"
 echo "Tasks: ${TASK_LO}..${TASK_HI}  (${N_TASKS} total, completed tasks skipped)"
 echo "Output: ${OUTPUT_DIR}"
 echo "======================================================================"
@@ -82,7 +83,7 @@ _progress() {
 _progress &
 PROGRESS_PID=\$!
 
-seq ${TASK_LO} ${TASK_HI} | xargs -P \${SLURM_NTASKS} -I{} \
+seq ${TASK_LO} ${TASK_HI} | xargs -P ${N_PARALLEL} -I{} \
     python -m pps_qj.parallel.worker_clone_pps {} ${OUTPUT_DIR}
 
 kill \${PROGRESS_PID} 2>/dev/null || true
@@ -98,7 +99,7 @@ echo "======================================================================"
 SLURM_SCRIPT
 
 echo "Submitted: ${JOB_NAME}"
-echo "  Tasks:     ${TASK_LO}..${TASK_HI} (${N_TASKS} tasks, ${N_CORES} cores)"
+echo "  Tasks:     ${TASK_LO}..${TASK_HI} (${N_TASKS} tasks, ${N_PARALLEL} parallel slots, ${CPUS_PER_TASK} CPUs each)"
 echo "  Wall time: ${WALL_TIME}   Partition: ${PARTITION}"
 echo "  Monitor:   squeue -u \$USER"
 echo "  Log:       tail -f ${LOG_DIR}/${JOB_NAME}_<JOBID>.out"
