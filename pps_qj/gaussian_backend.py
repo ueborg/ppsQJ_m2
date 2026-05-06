@@ -242,7 +242,7 @@ def gaussian_born_rule_trajectory(
     model: GaussianChainModel,
     T: float,
     rng: np.random.Generator,
-    bisection_tol: float = 1e-8,
+    bisection_tol: float = 1e-6,
     *,
     gamma0_override: Optional[np.ndarray] = None,
     orbitals0_override: Optional[np.ndarray] = None,
@@ -320,16 +320,31 @@ def gaussian_born_rule_trajectory(
         coeffs = V_inv @ orbitals  # (2L, L)
 
         def _fast_branch_norm(dt: float) -> float:
-            """log|det(M(dt) V₀)| via L×L Gram-matrix slogdet."""
+            """Survival probability via L×L Gram-matrix Cholesky logdet.
+
+            Gram = A^† (V^†V) A is PSD Hermitian by construction (= ||V^{1/2}A||²),
+            so np.linalg.cholesky is ~2x faster than np.linalg.slogdet on PSD
+            matrices (cholesky skips the LU pivoting that slogdet needs for
+            general matrices).  Falls back to slogdet on LinAlgError, which
+            happens only when the Gram is numerically singular — i.e. when the
+            survival probability is exponentially small anyway and the caller
+            will route the clone into the jumping branch regardless.
+            """
             if dt <= 0.0:
                 return 1.0
             exp_d = np.exp(evals * dt)
             A = exp_d[:, None] * coeffs
             gram = A.conj().T @ (VhV @ A)
-            sign, logdet = np.linalg.slogdet(gram)
-            if sign <= 0:
-                return 0.0
-            return float(np.exp(0.5 * logdet - model.alpha * n_monitored * dt))
+            try:
+                L_chol = np.linalg.cholesky(gram)
+                # log sqrt(det(gram)) = sum log |diag(L_chol)|  for L lower-triangular
+                log_half_logdet = float(np.sum(np.log(np.abs(np.diag(L_chol)))))
+                return float(np.exp(log_half_logdet - model.alpha * n_monitored * dt))
+            except np.linalg.LinAlgError:
+                sign, logdet = np.linalg.slogdet(gram)
+                if sign <= 0 or not np.isfinite(logdet):
+                    return 0.0
+                return float(np.exp(0.5 * logdet - model.alpha * n_monitored * dt))
 
         bn_end = _fast_branch_norm(T_rem)
         if bn_end >= U:
@@ -478,7 +493,7 @@ def gaussian_born_rule_trajectory_batched(
     rngs,                              # Sequence[np.random.Generator], len = N_c
     cov_stack: np.ndarray,             # (N_c, 2L, 2L), float64
     orbs_stack: np.ndarray,            # (N_c, 2L, L),  complex128
-    bisection_tol: float = 1e-8,
+    bisection_tol: float = 1e-6,
     *,
     ja_cached: Optional[np.ndarray] = None,
     jb_cached: Optional[np.ndarray] = None,
