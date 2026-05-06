@@ -129,7 +129,67 @@ SciPost Phys. 14, 031 (2023) [diffusive unraveling] to quantum-jump regime.
 
 ## 4. CODE CHANGES LOG (most recent first)
 
-### 2026-05-06: Benchmark script
+### 2026-05-06: GPU and Numba investigations (both abandoned)
+
+- **pps_qj/gaussian_backend_jit.py** [NEW — not used in production]
+  Numba `@njit` compiled trajectory driver. Replaced `scipy.optimize.brentq`
+  with bisection (~25–30 iterations vs 5–8 for Brent). Benchmark on Habrok:
+  L=32: 1.1 ms/call (original) → 1.3 ms/call (JIT) = **0.86× slower**.
+  L=64: 5.0 ms/call → 7.8 ms/call = **0.65× slower**.
+  Root cause: LAPACK (slogdet, QR, eigh) already optimised; Numba adds overhead
+  without replacing LAPACK. Bisection makes things worse. Not integrated into
+  run_cloning. File retained for reference.
+
+- **pps_qj/cloning_jax.py** [NEW — not used in production]
+  JAX/vmap GPU implementation. All N_c clones batched as tensor dimension,
+  `lax.while_loop` for WTMC inner loop, `jax.config.update("jax_enable_x64",True)`
+  required (otherwise silent float32 truncation destroys physics).
+  Benchmark on Habrok L40S GPU: L=32 numpy 4.3 s → JAX GPU **415 s** (12× slower).
+  Root cause: `lax.while_loop` inside `vmap` serialises on GPU due to divergent
+  loop termination (jump counts are Poisson-distributed, variable per clone →
+  GPU warp divergence). Fixing this requires replacing continuous-time WTMC
+  with a Trotterised fixed-step scheme, which changes the physics and is a
+  separate project. File retained for reference.
+  **Conclusion: CPU numpy is the correct approach for this algorithm.**
+
+- **pps_qj/tools/benchmark_optimizations.py** [NEW]
+  Timing + correctness harness for optimisations 1–3.
+  Run: `python -m pps_qj.tools.benchmark_optimizations --L 32 64 --with-jit`
+
+- **pps_qj/tools/benchmark_jax.py** [NEW]
+  GPU vs numpy speedup + statistical agreement test.
+  Run: `python -m pps_qj.tools.benchmark_jax --L 32 64 128`
+
+### 2026-05-06: Optimisations 1–3 in cloning core (~27% speedup at L=32)
+
+- **pps_qj/gaussian_backend.py** [MODIFIED]
+  `gaussian_born_rule_trajectory` gains kwargs:
+    `gamma0_override`, `orbitals0_override` — avoids `dataclasses.replace`
+    per-clone per-step (was N_c × n_steps frozen dataclass allocations).
+    `ja_cached`, `jb_cached` — precomputed jump-pair index arrays passed
+    in from the outer loop rather than rebuilt per call.
+  Added `from typing import Optional`.
+
+- **pps_qj/cloning.py** [MODIFIED]
+  Pre-spawn N_c RNG streams once before the step loop (was re-spawning
+  N_c Generator objects every step). Jump-pair index arrays precomputed once
+  per run and passed to trajectory driver. Removed `dataclasses.replace` call.
+  Removed `from dataclasses import replace` import (no longer needed).
+  Measured speedup on Habrok: L=32 1.51 ms/call → 1.1 ms/call (**27% faster**),
+  L=64 ~5.4 ms/call → 5.0 ms/call (~8% faster).
+
+### 2026-05-05: submit_clone_scan.sh — CPUS_PER_TASK fix
+
+- **slurm/submit_clone_scan.sh** [MODIFIED]
+  Added 5th positional argument `CPUS_PER_TASK` (default 1, backward-compatible).
+  `N_PARALLEL=$(( 120 / CPUS_PER_TASK ))` replaces hardcoded `N_CORES=120`.
+  `xargs -P ${N_PARALLEL}` replaces `xargs -P ${SLURM_NTASKS}`.
+  **Why this matters:** The worker reads `SLURM_CPUS_PER_TASK` to set `n_workers`.
+  With the old script (cpus-per-task=1), all L=128 tasks ran n_workers=1 → 5
+  realisations serial → critical-point tasks needed ~110h (far over any cap).
+  With CPUS_PER_TASK=5: 24 parallel task slots × 5 workers each → critical-point
+  tasks complete in ~22h/5 = ~4.4h. Usage for L=128:
+  `bash slurm/submit_clone_scan.sh 1020 1274 <outdir> 48:00:00 5`
 - **slurm/submit_benchmark.sh** [NEW]
   Reruns 6 completed production task_ids in a throwaway dir, compares wall times
   to production .npz values. Tests: (1) hardware match interactive vs compute
@@ -238,6 +298,56 @@ SciPost Phys. 14, 031 (2023) [diffusive unraveling] to quantum-jump regime.
 - L=128 will need dedicated resubmission with 120h wall time
 - Interactive vs SLURM hardware ratio: PENDING (benchmark job running)
 
+### Preliminary FSS results from old pps_clone_scan_v2 dataset
+**Note:** This is an older, coarser dataset (L=8,16,32,64, 17 λ values, 15 ζ values,
+output at pps_clone_scan_v2/). It has been superseded by the v2 main grid but
+contains useful preliminary diagnostics.
+
+**B_L crossing analysis:**
+Non-monotone crossings observed: the (16,32) crossing is systematically displaced
+*upward* relative to both (8,16) and (32,64) pairs.
+
+Diagnostic (Test 1): checked whether S_half has crossings between L values.
+**Result: S_half has essentially NO crossings between any L pair at any λ.**
+This means ALL crossing behaviour in B_L comes from S_top, not S_half.
+Since B_L = S_top × S_half, and S_half is monotone in L everywhere, the
+crossing location is set entirely by S_top's L-dependence.
+
+**Root cause of (16,32) non-monotonicity:** S_top is the Kitaev-Preskill
+combination evaluated on four contiguous L/4-site regions. At L=16, each region
+has only 4 sites — too small for area-law boundary corrections to cancel.
+At L=32 (8 sites), L=64 (16 sites) the combination works as intended.
+L=16 B_L data is therefore unreliable for FSS; the (32,64) crossing is the
+cleanest current estimate of ζ_c(λ).
+
+**Phase boundary from (32,64) B_L crossings:**
+  λ=0.35: ζ_c ≈ 0.377
+  λ=0.40: ζ_c ≈ 0.475
+  λ=0.50: ζ_c ≈ 0.797
+  λ≤0.30: system volume-law throughout (no crossing accessible)
+  λ≥0.55: system area-law throughout (no crossing at these L)
+
+**Preliminary ν estimates from FSS collapse (L=32, 64 only):**
+  λ=0.35: ν ≈ 1.316, 2×-min interval [1.064, 2.154]
+  λ=0.40: ν ≈ 1.368, 2×-min interval [1.034, 2.665]
+  λ=0.50: ν ≈ 1.168, 2×-min interval [0.886, 2.020]
+The residual minimum is very shallow with only two system sizes — wide intervals
+are expected. The lower bound ν > 1 is reliable; upper bound is not.
+Adding L=128 is necessary for a defensible published estimate.
+
+**Saturation check (L=32):**
+Ran cloning with T = 3×T_prod, n_burnin_frac=0, recorded full S_history.
+Result: system saturates by t ≈ 5–10 in all parameter regimes (area-law,
+volume-law, near critical). T_prod = 64 at L=32 provides 6–10 saturation
+times of stationary averaging. T is sufficient; no need to extend.
+
+**Time parameterisation:**
+Code enforces α + w = 1 always (normalised energy scale). One unit of time = 1.
+δτ = 1/(2α(L-1)) = mean inter-jump waiting time for the whole chain.
+T_prod = max(30, 2L, 5/α). At L=32, α=0.4: T=64, δτ≈0.04, n_steps≈1600,
+expected jumps ≈ 1587. The continuous-time WTMC is exact (not discretised):
+jump times sampled by inverting survival function via Brent's method (brentq).
+
 ---
 
 ## 7. KEY DECISIONS & RATIONALE
@@ -247,6 +357,42 @@ Reweighting Born-rule trajectories by ζ^{N_T} retrospectively has exponential
 variance collapse. Doob + cloning gives exact sampling of the tilted measure.
 
 **Why the Gaussian Doob approach was abandoned:**
+The Gaussian closure approximation fails at intermediate ζ (where the MIPT lives)
+— the backwards operator projected onto the Gaussian manifold is insufficiently
+accurate. Empirically confirmed at L=16 across all ζ≠1.
+
+**Why GPU acceleration was abandoned:**
+The cloning trajectory driver uses a continuous-time WTMC with a `while_loop`
+whose iteration count is data-dependent (Poisson-distributed jump count per clone).
+Under `jax.vmap` on GPU, this causes warp divergence: threads whose clones finish
+early idle while the slowest clone in their warp finishes, effectively serialising
+the computation. Measured 12× slowdown vs numpy on Habrok L40S GPU at L=32.
+Fixing this requires replacing the continuous-time WTMC with a Trotterised
+fixed-step scheme — a different algorithm requiring fresh validation.
+CPU numpy with the cloning architecture is the correct approach.
+
+**Why Numba JIT was abandoned:**
+The hot path in `gaussian_born_rule_trajectory` is dominated by LAPACK calls
+(slogdet, QR, eigh on L×L and 2L×L matrices). NumPy already dispatches these
+to optimised BLAS/LAPACK. Numba adds dispatch overhead without improving the
+LAPACK calls, and replacing `scipy.optimize.brentq` (5–8 iterations) with
+bisection (25–30 iterations) more than offsets any loop overhead savings.
+Measured 0.86× (L=32) and 0.65× (L=64) speedup — i.e., slower.
+
+**Why B_L = S_top × S_half works as a crossing observable but has limitations:**
+S_half alone is monotone in L everywhere (no crossings), so it cannot locate
+the phase boundary. S_top changes sign/ordering across the transition, producing
+crossings in B_L = S_top × S_half. However, S_top uses the Kitaev-Preskill
+combination on L/4-site regions — at L=16 (4 sites per region) finite-size
+boundary corrections dominate and S_top is unreliable. FSS should use L≥32.
+
+**Habrok GPU nodes:**
+Two dedicated interactive GPU nodes: gpu1.hb.hpc.rug.nl and gpu2.hb.hpc.rug.nl,
+each with NVIDIA L40S (48 GB). Access via `ssh gpu1.hb.hpc.rug.nl`.
+Run `unset SW_STACK_ARCH && module restore` after connecting.
+For SLURM GPU jobs, use `--gres=gpu:1` (not `--gpus-per-node`, known issue).
+JAX on GPU requires `jax.config.update("jax_enable_x64", True)` before any
+jnp operations, otherwise float64/complex128 is silently truncated to float32.
 The Gaussian closure approximation fails at intermediate ζ (where the MIPT lives)
 — the backwards operator projected onto the Gaussian manifold is insufficiently
 accurate. Empirically confirmed at L=16 across all ζ≠1.
