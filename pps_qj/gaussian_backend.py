@@ -248,6 +248,7 @@ def gaussian_born_rule_trajectory(
     orbitals0_override: Optional[np.ndarray] = None,
     ja_cached: Optional[np.ndarray] = None,
     jb_cached: Optional[np.ndarray] = None,
+    initial_uniform_override: Optional[float] = None,
 ) -> GaussianTrajectoryResult:
     """Exact Born-rule quantum-jump trajectory.
 
@@ -305,9 +306,14 @@ def gaussian_born_rule_trajectory(
     t = 0.0
     jump_times: list[float] = []
     jump_channels: list[int] = []
+    _first_iter_override = initial_uniform_override is not None
 
     while t < T:
-        U = float(rng.uniform(0.0, 1.0))
+        if _first_iter_override:
+            U = float(initial_uniform_override)
+            _first_iter_override = False
+        else:
+            U = float(rng.uniform(0.0, 1.0))
         T_rem = T - t
 
         # V⁻¹ @ orbitals — reused both in branch-norm and in propagation.
@@ -459,3 +465,168 @@ def topological_entanglement_entropy(covariance: np.ndarray) -> float:
     S_D = _region_entropy(G, F, D)
 
     return S_AB + S_BC - S_B - S_D
+
+
+
+# ---------------------------------------------------------------------------
+# Batched Born-rule trajectory advance (single cloning interval, N_c clones)
+# ---------------------------------------------------------------------------
+
+def gaussian_born_rule_trajectory_batched(
+    model: GaussianChainModel,
+    T: float,
+    rngs,                              # Sequence[np.random.Generator], len = N_c
+    cov_stack: np.ndarray,             # (N_c, 2L, 2L), float64
+    orbs_stack: np.ndarray,            # (N_c, 2L, L),  complex128
+    bisection_tol: float = 1e-8,
+    *,
+    ja_cached: Optional[np.ndarray] = None,
+    jb_cached: Optional[np.ndarray] = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Advance N_c independent Born-rule trajectories over [0, T] in batch.
+
+    Hybrid strategy:
+      1. Batched single-shot survival check at t = T for all clones.
+      2. Clones whose draw indicates "no jump in [0, T]" go through a
+         fully batched no-jump branch (one matmul, one batched QR, one
+         batched outer-product for the covariances).
+      3. Clones that jump fall back to the scalar gaussian_born_rule_trajectory
+         for the remainder of T, reusing the U_i already drawn (so no RNG
+         draws are wasted).
+
+    Statistical (not bit-exact) equivalent to running the scalar function
+    on each clone independently — small differences arise because batched
+    LAPACK calls accumulate floating-point in a different order than serial
+    calls.  Validation is via Monte Carlo agreement on S_mean over many seeds.
+
+    Parameters
+    ----------
+    model : GaussianChainModel
+        Source of cached eigendecomposition and jump pairs.
+    T : float
+        Duration of the interval (typically delta_tau in cloning).
+    rngs : Sequence[np.random.Generator]
+        Length-N_c list of independent RNGs, one per clone.
+    cov_stack, orbs_stack : ndarray
+        Stacked initial states.  Both are modified in place is NOT done — new
+        arrays are returned to keep the function pure.
+    ja_cached, jb_cached : ndarray, optional
+        Precomputed jump-pair index arrays.
+
+    Returns
+    -------
+    new_cov_stack : (N_c, 2L, 2L) float64
+    new_orbs_stack : (N_c, 2L, L) complex128
+    n_jumps : (N_c,) int64
+    """
+    N_c = cov_stack.shape[0]
+    n_dim = cov_stack.shape[1]
+    L = model.L
+    n_monitored = len(model.jump_pairs)
+
+    if orbs_stack.shape != (N_c, n_dim, L):
+        raise ValueError(
+            f"orbs_stack shape {orbs_stack.shape} inconsistent with "
+            f"cov_stack {cov_stack.shape}"
+        )
+    if len(rngs) != N_c:
+        raise ValueError(f"len(rngs)={len(rngs)} != N_c={N_c}")
+
+    evals = model.h_eff_evals
+    V     = model.h_eff_V
+    V_inv = model.h_eff_V_inv
+    VhV   = model.h_eff_VhV
+
+    if ja_cached is None or jb_cached is None:
+        _jp = model.jump_pairs
+        ja = np.array([p[0] for p in _jp], dtype=np.intp)
+        jb = np.array([p[1] for p in _jp], dtype=np.intp)
+    else:
+        ja = ja_cached
+        jb = jb_cached
+
+    # Cast inputs to expected dtypes (cheap if already correct).
+    orbs_in = np.ascontiguousarray(orbs_stack, dtype=np.complex128)
+    cov_in  = np.ascontiguousarray(cov_stack,  dtype=np.float64)
+
+    # --- Step 1: batched coefficients V⁻¹ @ orbs_i for all clones -----------
+    # einsum('ij,njk->nik', V_inv, orbs) → (N_c, 2L, L)
+    coeffs_stack = np.einsum('ij,njk->nik', V_inv, orbs_in, optimize=True)
+
+    # --- Step 2: batched survival probability at t = T ----------------------
+    exp_d_T = np.exp(evals * T)                                # (2L,) complex
+    A_stack = exp_d_T[None, :, None] * coeffs_stack            # (N_c, 2L, L)
+
+    # gram_i = A_i^† (V^†V) A_i  (shape L×L per clone, PSD Hermitian)
+    VhV_A = np.einsum('ij,njk->nik', VhV, A_stack, optimize=True)        # (N_c, 2L, L)
+    gram_stack = np.einsum('nij,nik->njk', A_stack.conj(), VhV_A, optimize=True)  # (N_c, L, L)
+
+    sign_stack, logdet_stack = np.linalg.slogdet(gram_stack)
+    log_S_stack = 0.5 * np.asarray(logdet_stack, dtype=np.complex128).real \
+                  - model.alpha * n_monitored * T
+    # Degenerate (sign=0) → -inf so the clone is forced into the jumping branch.
+    log_S_stack = np.where(np.abs(sign_stack) > 0.0, log_S_stack, -np.inf)
+
+    # --- Step 3: draw U_i for all clones, decide jump vs no-jump -----------
+    U_stack = np.empty(N_c, dtype=np.float64)
+    for i in range(N_c):
+        U_stack[i] = float(rngs[i].uniform(0.0, 1.0))
+    log_U_stack = np.log(np.clip(U_stack, 1e-300, 1.0))
+
+    no_jump_mask = log_S_stack >= log_U_stack
+    no_jump_idx  = np.flatnonzero(no_jump_mask)
+    jump_idx     = np.flatnonzero(~no_jump_mask)
+
+    # --- Output buffers ----------------------------------------------------
+    new_orbs_stack = np.empty_like(orbs_in)
+    new_cov_stack  = np.empty_like(cov_in)
+    n_jumps        = np.zeros(N_c, dtype=np.int64)
+
+    # --- Step 4: batched no-jump branch ------------------------------------
+    if no_jump_idx.size > 0:
+        # M(T) V_i = V @ A_i (we already have A_stack)
+        orbs_tilde_nj = np.einsum(
+            'ij,njk->nik', V, A_stack[no_jump_idx], optimize=True,
+        )                                                       # (n_nj, 2L, L)
+
+        # Batched thin QR.  numpy.linalg.qr broadcasts over leading axes.
+        q_stack, _ = np.linalg.qr(orbs_tilde_nj, mode='reduced')
+        new_orbs_stack[no_jump_idx] = q_stack
+
+        # Batched covariance: cov_i = i (2 Q_i Q_i^† − I), take real part,
+        # antisymmetrise.  For valid orthonormal Q the imaginary part is
+        # ~machine epsilon; we drop it without an explicit real_if_close
+        # check because the cost would be O(n_nj·L^2) per clone and the
+        # downstream consumers (apply_projective_jump, channel selection)
+        # already coerce/clip values.
+        QQt = np.einsum('nij,nkj->nik', q_stack, q_stack.conj(), optimize=True)
+        Eye = np.eye(n_dim)
+        cov_complex = 1j * (2.0 * QQt - Eye[None, :, :])
+        cov_real = np.ascontiguousarray(cov_complex.real, dtype=np.float64)
+        cov_real = 0.5 * (cov_real - cov_real.transpose(0, 2, 1))
+        new_cov_stack[no_jump_idx] = cov_real
+        # n_jumps already 0 for these clones.
+
+    # --- Step 5: serial fallback for jumping clones ------------------------
+    # We pass U_stack[i] as initial_uniform_override so the scalar function
+    # uses the same uniform draw we already consumed for the survival check
+    # — preserving the conditional distribution of jump times.  Subsequent
+    # within-interval draws (for any second jump, channel selection) come
+    # from rngs[i] as usual.
+    for i in jump_idx:
+        result = gaussian_born_rule_trajectory(
+            model,
+            T=T,
+            rng=rngs[i],
+            bisection_tol=bisection_tol,
+            gamma0_override=cov_in[i],
+            orbitals0_override=orbs_in[i],
+            ja_cached=ja,
+            jb_cached=jb,
+            initial_uniform_override=float(U_stack[i]),
+        )
+        new_cov_stack[i]  = result.final_covariance
+        new_orbs_stack[i] = result.final_orbitals
+        n_jumps[i]        = result.n_jumps
+
+    return new_cov_stack, new_orbs_stack, n_jumps

@@ -28,6 +28,7 @@ from .gaussian_backend import (
     GaussianChainModel,
     entanglement_entropy,
     gaussian_born_rule_trajectory,
+    gaussian_born_rule_trajectory_batched,
 )
 from .overlaps import log_gaussian_overlap_from_orbitals
 
@@ -95,6 +96,7 @@ __all__ = [
     "run_cloning",
     "sweep_zeta",
     "_systematic_resample",
+    "_systematic_resample_idxs",
     "_batched_entanglement_entropy",
     "_batched_log_u",
 ]
@@ -134,6 +136,17 @@ class CloningResult:
     n_T_sq_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
     S_sq_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
     covar_Sn_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    # Per-step pre-resampling effective sample size, ESS_k = (sum w)^2 / sum(w^2).
+    # Length = n_steps if recorded, else 0.
+    ess_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    # Minimum of ess_history / N_c over the post-burnin window.  A value <~0.1
+    # indicates population near collapse at some point during the run; values
+    # >~0.5 are healthy.  NaN if no post-burnin data available.
+    min_ess_frac_postburnin: float = float("nan")
+    # Number of distinct original-clone ancestors with surviving descendants
+    # at t = T.  In a healthy run this is ≳ 0.5·N_c; collapse to ~10–20 even
+    # at large N_c indicates genealogical degeneracy and unreliable estimators.
+    n_distinct_ancestors: int = -1
 
 
 def _systematic_resample(
@@ -170,6 +183,30 @@ def _systematic_resample_pairs(
     return [(covs[int(i)].copy(), orbs[int(i)].copy()) for i in idxs]
 
 
+def _systematic_resample_idxs(
+    weights: np.ndarray,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Index-only systematic-resampling draw.
+
+    Returns the integer index array of length N_c such that the resampled
+    population is given by [orig[i] for i in idxs].  Exposed separately so
+    callers (e.g. run_cloning) can apply the same idxs to multiple parallel
+    arrays — covs, orbs, ancestor_ids — without re-randomising.
+    """
+    weights = np.asarray(weights, dtype=np.float64)
+    total = float(weights.sum())
+    if total <= 0.0:
+        raise CloningCollapse("Cannot resample: all weights zero.")
+    N_c = weights.size
+    F = np.cumsum(weights / total); F[-1] = 1.0
+    U = float(rng.uniform(0.0, 1.0 / N_c))
+    return np.clip(
+        np.searchsorted(F, U + np.arange(N_c) / N_c, side="left"),
+        0, N_c - 1,
+    ).astype(np.intp)
+
+
 def run_cloning(
     model: GaussianChainModel,
     zeta: float,
@@ -182,6 +219,7 @@ def run_cloning(
     show_progress: bool = False,
     progress_desc: str = "",
     backward_data: Any = None,
+    backend: str = "scalar",
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -197,6 +235,20 @@ def run_cloning(
         found to be ineffective near the MIPT critical point (variance ratio
         ~300x worse than standard cloning at the test point), so production
         runs use backward_data=None.
+    backend : {'scalar', 'batched'}
+        Trajectory advance strategy for the inner clone loop.
+        - 'scalar' (default): N_c serial calls to gaussian_born_rule_trajectory
+          per cloning interval.  Bit-exact reproducibility against historical
+          runs.  Recommended until the batched backend has been validated on
+          your scientific configuration.
+        - 'batched': single call to gaussian_born_rule_trajectory_batched per
+          cloning interval, which fuses the no-jump branch across all clones
+          into batched LAPACK calls (matmul, slogdet, QR).  Statistically
+          equivalent to 'scalar' but not bit-exact (different floating-point
+          accumulation order).  Speedup is parameter-dependent: ~2x at low
+          jump rate (small λ or small ζ), ~1.1–1.4x near the MIPT, negligible
+          at large λ or ζ→1.  Incompatible with backward_data (Jack-Sollich)
+          for now.
     """
     if zeta < 0.0:
         raise ValueError("zeta must be non-negative")
@@ -204,6 +256,8 @@ def run_cloning(
         raise ValueError("T_total must be positive")
     if N_c < 1:
         raise ValueError("N_c must be >= 1")
+    if backend not in ("scalar", "batched"):
+        raise ValueError(f"backend must be 'scalar' or 'batched', got {backend!r}")
 
     L, alpha, w = model.L, model.alpha, model.w
 
@@ -218,6 +272,12 @@ def run_cloning(
         if abs(bwd_T - T_total) > 1e-6 * T_total:
             raise ValueError(
                 f"backward_data.T={bwd_T:.6g} != T_total={T_total:.6g}"
+            )
+        if backend == "batched":
+            raise NotImplementedError(
+                "Jack-Sollich feedback (backward_data is not None) is not yet "
+                "supported by backend='batched'. Use backend='scalar' or run "
+                "without feedback control."
             )
 
     covs: list[np.ndarray] = [model.gamma0.copy() for _ in range(N_c)]
@@ -243,6 +303,12 @@ def run_cloning(
     n_T_mean_history: list[float] = []
     n_T_sq_history: list[float] = []
     covar_Sn_history: list[float] = []
+    ess_history: list[float] = []
+    # Genealogy: ancestor_ids[i] = original-clone index of the lineage now
+    # carried by slot i.  Updated each resampling step by ancestor_ids =
+    # ancestor_ids[idxs].  At t=T, len(unique(ancestor_ids)) is the number
+    # of original clones with surviving descendants.
+    ancestor_ids = np.arange(N_c, dtype=np.intp)
     n_collapses = 0
     n_js_fallbacks = 0
     final_weights = np.ones(N_c, dtype=np.float64)
@@ -263,19 +329,36 @@ def run_cloning(
         if use_js:
             orbs_pre = list(orbs)
 
-        # --- Evolve all clones (serial) ---
-        n_jumps = np.zeros(N_c, dtype=np.int64)
-        for i in range(N_c):
-            r = gaussian_born_rule_trajectory(
-                model, T=delta_tau_eff, rng=sub_rngs[i],
-                gamma0_override=covs[i],
-                orbitals0_override=orbs[i],
-                ja_cached=_ja_cache,
-                jb_cached=_jb_cache,
+        # --- Evolve all clones ---
+        if backend == "scalar":
+            n_jumps = np.zeros(N_c, dtype=np.int64)
+            for i in range(N_c):
+                r = gaussian_born_rule_trajectory(
+                    model, T=delta_tau_eff, rng=sub_rngs[i],
+                    gamma0_override=covs[i],
+                    orbitals0_override=orbs[i],
+                    ja_cached=_ja_cache,
+                    jb_cached=_jb_cache,
+                )
+                covs[i]    = r.final_covariance
+                orbs[i]    = r.final_orbitals
+                n_jumps[i] = r.n_jumps
+        else:  # backend == "batched"
+            cov_stack_in  = np.stack(covs, axis=0)
+            orbs_stack_in = np.stack(orbs, axis=0)
+            cov_stack_out, orbs_stack_out, n_jumps = (
+                gaussian_born_rule_trajectory_batched(
+                    model,
+                    T=delta_tau_eff,
+                    rngs=sub_rngs,
+                    cov_stack=cov_stack_in,
+                    orbs_stack=orbs_stack_in,
+                    ja_cached=_ja_cache,
+                    jb_cached=_jb_cache,
+                )
             )
-            covs[i]    = r.final_covariance
-            orbs[i]    = r.final_orbitals
-            n_jumps[i] = r.n_jumps
+            covs = [cov_stack_out[i] for i in range(N_c)]
+            orbs = [orbs_stack_out[i] for i in range(N_c)]
 
         # --- Compute per-step weight W_k = mean_i(w_i) ---
         if zeta == 0.0:
@@ -349,11 +432,17 @@ def run_cloning(
 
         final_weights = weights.copy()
 
+        # --- Per-step ESS (pre-resampling) ---
+        w_sum_step = float(weights.sum())
+        w_sq_step  = float(np.sum(weights ** 2))
+        ess_step   = (w_sum_step ** 2) / w_sq_step if w_sq_step > 0.0 else 0.0
+        ess_history.append(ess_step)
+
         if zeta != 1.0:
-            pairs = _systematic_resample_pairs(covs, orbs, weights, rng)
-            covs, orbs = zip(*pairs)
-            covs = list(covs)
-            orbs = list(orbs)
+            idxs = _systematic_resample_idxs(weights, rng)
+            covs = [covs[int(i)].copy() for i in idxs]
+            orbs = [orbs[int(i)].copy() for i in idxs]
+            ancestor_ids = ancestor_ids[idxs]
 
     log_Z_arr = np.asarray(log_Z_history, dtype=np.float64)
     W_arr     = np.asarray(W_history,     dtype=np.float64)
@@ -393,6 +482,14 @@ def run_cloning(
     fw_sq  = float(np.sum(final_weights ** 2))
     eff_sample_size = (fw_sum ** 2) / fw_sq if fw_sq > 0 else 0.0
 
+    # --- New diagnostics: per-step ESS history, post-burnin min, ancestors ---
+    ess_arr = np.asarray(ess_history, dtype=np.float64)
+    if ess_arr.size > n_burnin_steps:
+        min_ess_frac_pb = float(ess_arr[n_burnin_steps:].min()) / float(N_c)
+    else:
+        min_ess_frac_pb = float("nan")
+    n_distinct_ancestors = int(np.unique(ancestor_ids).size)
+
     return CloningResult(
         theta_hat=theta_hat,
         S_mean=S_mean, S_std=S_std,
@@ -414,6 +511,9 @@ def run_cloning(
         n_T_sq_history=n_T_sq_arr,
         S_sq_history=S_sq_arr,
         covar_Sn_history=covar_Sn_arr,
+        ess_history=ess_arr,
+        min_ess_frac_postburnin=min_ess_frac_pb,
+        n_distinct_ancestors=n_distinct_ancestors,
     )
 
 
