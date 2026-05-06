@@ -57,6 +57,7 @@ SciPost Phys. 14, 031 (2023) [diffusive unraveling] to quantum-jump regime.
 | v2 supp   | 0..299   (low-λ + large-ζ) | ✅ COMPLETE | pps_clone_v2_supp/ |
 | ζ=0 scan  | 0..71    (deterministic)  | ✅ COMPLETE (70/72 converged) | pps_zeta0/ |
 | benchmark | 6 tasks  (timing test)    | ⏳ SUBMITTED, not yet returned | benchmark_*/ |
+| old L=128 (job 28808838) | tasks 1020..1274 (L=128, 255 tasks) | 🔄 RUNNING — 37/255 complete, CPUS_PER_TASK=5 fix applied | pps_clone_scan_v2/ |
 
 ### Key outstanding actions
 
