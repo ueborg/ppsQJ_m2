@@ -75,10 +75,22 @@ def _run_one_realisation(args: dict) -> dict:
     rng = np.random.default_rng(seed)
     model = build_gaussian_chain_model(L=L, w=w, alpha=alpha)
 
+    # Optional dτ multiplier from env-var (default 1.0 = unchanged behaviour).
+    # Set PPS_DTAU_MULT=2.0 to halve n_steps; validated safe at ζ ≥ 0.3
+    # (mult=2.0) and ζ ≥ 0.5 (mult=3.0) at L=32, with statistical agreement
+    # of ⟨S⟩ vs baseline within 3σ across all tested configurations.
+    dtau_mult = float(os.environ.get("PPS_DTAU_MULT", "1.0"))
+    if dtau_mult != 1.0:
+        dtau_default = 1.0 / max(2.0 * alpha * (L - 1), 1e-6)
+        delta_tau    = dtau_mult * dtau_default
+        cloning_kw   = {"delta_tau": delta_tau}
+    else:
+        cloning_kw   = {}
+
     try:
         result: CloningResult = run_cloning(
             model, zeta=zeta, T_total=T, N_c=N_c, rng=rng,
-            show_progress=False,
+            show_progress=False, **cloning_kw,
         )
         return {
             "ok":             True,
@@ -330,11 +342,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         covar_Sk_mean, _, covar_Sk_err, _   = _nanstat(covar_Sks)
 
         wall_time = time.time() - t_start
+        dtau_mult_used = float(os.environ.get("PPS_DTAU_MULT", "1.0"))
 
         np.savez(
             output_file,
             task_id=task_id, L=L, lam=lam, alpha=alpha, w=w, zeta=zeta,
             T=T, N_c=N_c, n_real=N_REAL,
+            dtau_mult=dtau_mult_used,
             S_mean=S_mean, S_std=S_std_r, S_err=S_err,
             theta_mean=theta_mean, theta_err=theta_err,
             ESS_mean=ESS_mean,

@@ -94,6 +94,13 @@ export NUMEXPR_NUM_THREADS=1
 # (one worker per realisation → 100% parallel efficiency).
 export PPS_N_WORKERS=${CPUS_PER_TASK}
 
+# Optional: dτ multiplier.  Default 1.0 keeps original behaviour.  Setting 2.0
+# halves n_steps and was validated safe for ζ ≥ 0.3 at L=32 (stat-agreement
+# of ⟨S⟩ vs baseline within 3σ across all tested mults; ESS ≥ 0.79).  See
+# scratch/.../dtau_validation_*/aggregate.txt for the raw evidence.
+# Override at submission time with: PPS_DTAU_MULT=1.0 bash submit_clone_v2_large.sh
+export PPS_DTAU_MULT=\${PPS_DTAU_MULT:-1.0}
+
 mkdir -p ${OUTPUT_DIR}
 mkdir -p ${LOG_DIR}
 
