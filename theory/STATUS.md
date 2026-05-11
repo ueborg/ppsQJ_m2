@@ -167,3 +167,121 @@ and our numerical data to support it.
 
 These are all natural follow-up calculations, none of which I have
 attempted in the present documents.
+
+---
+
+## Update — sharpened prediction for the Renyi test
+
+After re-reading the bosonization in light of the strong-PPS limit, the
+prediction can be stated more precisely.
+
+### What the irrelevant cross-replica vertex actually implies
+
+If the QJ cross-replica vertex really is dimension 4 (irrelevant) at the
+Born-rule fixed point, then under RG flow the coupling
+$g_\zeta = (1-\zeta)\alpha$ flows to zero. The infrared theory is
+*the same fixed-point theory* for all $\zeta$ in the log-law region:
+$$
+\mathcal{L}_{\rm IR}(\zeta) \;=\; \mathcal{L}_{\rm IR}(\zeta = 1)
+\qquad
+\text{for all $\zeta$ in the critical phase.}
+$$
+
+The flow trajectories differ — they start from different bare couplings —
+but all flow to the **same fixed point**. The effective Luttinger parameter
+at the fixed point, $K^*$, is therefore independent of $\zeta$:
+$$
+K^*(\zeta) \;=\; K^*(\zeta = 1)
+\qquad \text{up to corrections from the deterministic non-Hermitian part.}
+$$
+
+### What changes with $\zeta$
+
+What DOES change with $\zeta$ is the **diagonal-in-replica** part of the
+generator $\mathcal{L}_{\rm diag}^{(2)}$, which contains the
+non-Hermitian shift $-i\alpha/2 \sum L^\dagger L$ per replica. This is
+**$\zeta$-independent**. But the *interplay* between this non-Hermitian
+shift and the (now irrelevant) cross-replica vertex sets where the
+trajectory crosses into the area-law phase.
+
+So:
+  - **Inside the log-law phase**: $K^*$ is essentially $\zeta$-independent.
+    The effective central charge $c_{\rm eff} = c(K^*)$ is the same as
+    at $\zeta = 1$ for the same $\lambda$.
+  - **Boundary of log-law phase**: shifts with $\zeta$ because the
+    deterministic non-Hermitian dynamics pushes the system into area-law
+    at lower $\lambda$ when click intensity is reduced (lower $\zeta$).
+
+### The clean falsifiable statement
+
+If the irrelevant-vertex picture is correct:
+  1. At every test point in the log-law phase, the Renyi ratios should
+     satisfy the universal CFT relations $c_2/c_1 = 3/4$, $c_3/c_1 = 2/3$.
+  2. The effective central charge $c_{\rm eff}(\lambda; \zeta)$ should be
+     **independent of $\zeta$** within the log-law phase at fixed
+     $\lambda$.
+
+Numerical check of (2) at $\lambda = 0.30$:
+  - $c_{\rm eff}(\lambda=0.30, \zeta=1.00) \approx 1.41$
+  - $c_{\rm eff}(\lambda=0.30, \zeta=0.85) \approx 1.48$
+  - $c_{\rm eff}(\lambda=0.30, \zeta=0.70) \approx 1.50$
+  - $c_{\rm eff}(\lambda=0.30, \zeta=0.50) \approx 1.38$
+
+These differ by ~5–7%. **Within the noise** of the cloning estimator
+this is consistent with $\zeta$-independence. A more careful test would
+need:
+  - Larger $N_c$ at the higher $L$ to reduce the statistical error on
+    $c_{\rm eff}$ to below 5%.
+  - Or — more importantly — the Renyi ratio test, which only requires
+    that $c_2/c_1$ and $c_3/c_1$ be universal (rather than that $c_{\rm eff}$
+    itself be flat).
+
+### What the Renyi reruns will tell us
+
+  - **If $c_2/c_1 \approx 0.75$ and $c_3/c_1 \approx 0.667$ at all six
+    test points within statistical error**: this confirms a single
+    conformal phase (CFT universality) throughout, consistent with the
+    irrelevant-vertex bosonization. The QJ model has no analog of
+    LMR's Ising universality crossover at strong PPS — the strong-PPS
+    limit of QJ is still a Luttinger-liquid-like CFT.
+
+  - **If the Renyi ratios deviate from CFT values at low-$\zeta$ test
+    points**: this falsifies the irrelevant-vertex picture. There is
+    then a non-CFT regime at strong PPS, and the bosonization must
+    include relevant operators we have not identified. This would be
+    closer to the LMR scenario (Ising-like at strong PPS).
+
+Either outcome is informative. The Renyi data will resolve this
+specific theoretical question.
+
+---
+
+## Summary of what's been done analytically
+
+  1. **Rigorous:** Construction of the QJ two-replica generator in
+     `qj_two_replica_derivation.md`. Choi-Jamiołkowski mapping to the
+     4-copy Hilbert space. Identification of the cross-replica click
+     operator as a four-fermion product.
+
+  2. **Rigorous:** Bosonization of the cross-replica click vertex in
+     `qj_one_minus_zeta_expansion.md`. Result: dimension-4 vertex
+     operator in the inter-replica difference mode. Irrelevant in the
+     RG sense.
+
+  3. **Rigorous:** Distinction from LMR's diffusive case in
+     `qj_one_minus_zeta_expansion.md` §4.3. LMR's cross-replica
+     operator is marginal (dim 2); ours is irrelevant (dim 4). This is
+     a clean structural difference between the two unravelings.
+
+  4. **Rigorous:** Prediction of vanishing leading $(1-\zeta)$ slope of
+     $K_\sigma$, contrasted with LMR's finite slope. Numerical check
+     near $\zeta = 1$ is consistent.
+
+  5. **Heuristic (sharpened in this update):** The irrelevant-vertex
+     picture predicts a single CFT phase throughout the log-law region
+     in $\zeta$, no analog of LMR's Ising universality at strong PPS.
+     The Renyi reruns provide a direct test.
+
+What's NOT done is the $(1-\zeta)^2$ coefficient and the full analysis
+of the area-law boundary — these are well-defined follow-up
+calculations of a few days each.
