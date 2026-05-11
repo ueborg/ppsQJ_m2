@@ -285,3 +285,57 @@ specific theoretical question.
 What's NOT done is the $(1-\zeta)^2$ coefficient and the full analysis
 of the area-law boundary — these are well-defined follow-up
 calculations of a few days each.
+
+---
+
+## Further update — dimension correction (NEW)
+
+In `qj_marginal_chiral_correction.md` I identified an error in
+`qj_chiral_vertex_result.md`: the dimension of $V_j$ is **2 (marginal)**,
+not 4 (irrelevant). The factor-of-2 mismatch comes from conflating
+Giamarchi's non-canonical $(\phi, \theta)$ fields with the canonical
+chiral CFT bosons.
+
+The chirality result survives the correction unchanged. In fact, the
+corrected picture is *cleaner*: $V_j$ is a chiral marginal operator, and
+its self-OPE produces only chiral operators (the antiholomorphic stress
+tensor $\bar T$, descendants), all of which **integrate to zero** in the
+2D Euclidean action. So the coupling $g_\zeta$ does not flow at any order,
+and the perturbation is *exactly marginal*.
+
+**Sharpened prediction**: in the thermodynamic limit, $c_{\rm eff}^{\rm QJ}(\zeta) = c_{\rm eff}^{\rm QJ}(\zeta=1)$
+for all $\zeta > 0$ — the phase boundary $\lambda_c$ is independent of
+$\zeta$, with the $(\lambda, \zeta)$ phase diagram having a single
+vertical critical line.
+
+**Finite-$L$ prediction**: the apparent shift $\lambda_c(\zeta, L) - \lambda_c(\zeta=1, L) \sim C(\zeta)/L^2$.
+At $\zeta = 0.30$ the observed shift at $L=128$ is $-0.127$; the prediction
+is that at $L=256$ this shift should be $\sim -0.032$, four times smaller.
+
+The chirality of $d_j$ is **rigorously confirmed at the lattice level**:
+$d_j$ couples only to $k = -\pi/2$ (left Fermi point), with zero
+coupling to $k = +\pi/2$ (right Fermi point). This is convention-independent.
+
+---
+
+## Document map (final)
+
+1. **`qj_two_replica_derivation.md`** (633 lines): rigorous construction
+   of the QJ two-replica generator. Setup.
+2. **`two_replica_QJ_PPS.md`** (376 lines): earlier draft, superseded.
+3. **`qj_bosonization_calculation.md`** (870 lines): first-pass
+   bosonization with self-critique. Identifies multiple operator
+   channels in V_cross.
+4. **`qj_one_minus_zeta_expansion.md`** (570 lines): sharpened
+   bosonization; correctly identifies V_j as a single vertex but with
+   wrong dimension (Δ=4 claimed, actually Δ=2). Numerical check at
+   λ(c=1).
+5. **`qj_chiral_vertex_result.md`** (420 lines): chirality result with
+   wrong dimension (Δ=4). Superseded in §§3-4 by document 6.
+6. **`qj_marginal_chiral_correction.md`** (292 lines, NEW): correction
+   to dimension (Δ=2, marginal) and refinement of the prediction
+   (lattice-corrected finite-L scaling).
+
+For the final reader: documents 1, 5, and 6 are the load-bearing analytical
+content. Document 6 supersedes document 5 in the technical claim (Δ=2)
+but the chirality result and physical conclusions are unchanged.
