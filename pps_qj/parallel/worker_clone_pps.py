@@ -87,10 +87,14 @@ def _run_one_realisation(args: dict) -> dict:
     else:
         cloning_kw   = {}
 
+    # Optional Renyi + correlation-function extraction from env var.
+    # Set PPS_RECORD_RENYI=1 to enable. Backward-compatible: default off.
+    record_renyi = os.environ.get("PPS_RECORD_RENYI", "0") not in ("0", "", "false", "False")
+
     try:
         result: CloningResult = run_cloning(
             model, zeta=zeta, T_total=T, N_c=N_c, rng=rng,
-            show_progress=False, **cloning_kw,
+            show_progress=False, record_renyi=record_renyi, **cloning_kw,
         )
         return {
             "ok":             True,
@@ -105,6 +109,13 @@ def _run_one_realisation(args: dict) -> dict:
             "chi_k":          float(result.chi_k),
             "S_var":          float(result.S_var),
             "covar_Sk":       float(result.covar_Sk),
+            # Renyi entropies + correlation function (NaN/empty if PPS_RECORD_RENYI=0)
+            "S_renyi_2":      float(result.S_renyi_2_mean),
+            "S_renyi_3":      float(result.S_renyi_3_mean),
+            "S_renyi_2_std":  float(result.S_renyi_2_std),
+            "S_renyi_3_std":  float(result.S_renyi_3_std),
+            "corr_decay_r":   np.asarray(result.corr_decay_r, dtype=np.float64),
+            "corr_decay_mean":np.asarray(result.corr_decay_mean, dtype=np.float64),
             # Covariance matrices for B_L
             "final_covs": [np.asarray(c, dtype=np.float64) for c in result.final_covs],
         }
@@ -296,6 +307,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         B_L_stds      = np.full(N_REAL, np.nan)
         n_T_means     = np.full(N_REAL, np.nan)
         chi_ks        = np.full(N_REAL, np.nan)
+        S_renyi_2s    = np.full(N_REAL, np.nan)
+        S_renyi_3s    = np.full(N_REAL, np.nan)
+        S_renyi_2_stds= np.full(N_REAL, np.nan)
+        S_renyi_3_stds= np.full(N_REAL, np.nan)
+        corr_decays_list = []   # list of (r_array, c_array) tuples per realisation
         S_vars        = np.full(N_REAL, np.nan)
         covar_Sks     = np.full(N_REAL, np.nan)
         n_collapses_total    = 0
@@ -314,6 +330,14 @@ def main(argv: Optional[list[str]] = None) -> int:
             ESSs[r]      = float(res["eff_sample_size"])
             n_T_means[r] = float(res.get("n_T_mean", float("nan")))
             chi_ks[r]    = float(res.get("chi_k",    float("nan")))
+            S_renyi_2s[r]    = float(res.get("S_renyi_2", float("nan")))
+            S_renyi_3s[r]    = float(res.get("S_renyi_3", float("nan")))
+            S_renyi_2_stds[r]= float(res.get("S_renyi_2_std", float("nan")))
+            S_renyi_3_stds[r]= float(res.get("S_renyi_3_std", float("nan")))
+            r_arr  = np.asarray(res.get("corr_decay_r",    []), dtype=np.float64)
+            cd_arr = np.asarray(res.get("corr_decay_mean", []), dtype=np.float64)
+            if r_arr.size > 0:
+                corr_decays_list.append((r_arr, cd_arr))
             S_vars[r]    = float(res.get("S_var",    float("nan")))
             covar_Sks[r] = float(res.get("covar_Sk", float("nan")))
             n_js_fallbacks_total += int(res.get("n_js_fallbacks", 0))
@@ -363,6 +387,18 @@ def main(argv: Optional[list[str]] = None) -> int:
             thetas_all=thetas, ESSs_all=ESSs,
             B_L_means_all=B_L_means, B_L_stds_all=B_L_stds,
             n_T_means_all=n_T_means, chi_ks_all=chi_ks,
+            S_renyi_2_mean=float(np.nanmean(S_renyi_2s)) if not np.all(np.isnan(S_renyi_2s)) else float("nan"),
+            S_renyi_3_mean=float(np.nanmean(S_renyi_3s)) if not np.all(np.isnan(S_renyi_3s)) else float("nan"),
+            S_renyi_2_err=float(np.nanstd(S_renyi_2s)/max(1, np.sum(~np.isnan(S_renyi_2s))**0.5)) if not np.all(np.isnan(S_renyi_2s)) else float("nan"),
+            S_renyi_3_err=float(np.nanstd(S_renyi_3s)/max(1, np.sum(~np.isnan(S_renyi_3s))**0.5)) if not np.all(np.isnan(S_renyi_3s)) else float("nan"),
+            S_renyi_2s_all=S_renyi_2s, S_renyi_3s_all=S_renyi_3s,
+            # Translation-averaged correlation: average across realisations, store as ragged.
+            # If any realisation has data, save a single (r_array, c_array) using the longest.
+            corr_decay_r=(corr_decays_list[0][0] if corr_decays_list else np.asarray([])),
+            corr_decay_mean=(
+                np.mean(np.stack([cd for _, cd in corr_decays_list], axis=0), axis=0)
+                if len(corr_decays_list) > 0 else np.asarray([])
+            ),
             S_vars_all=S_vars, covar_Sks_all=covar_Sks,
             n_collapses=n_collapses_total,
             n_valid_S=nS, n_valid_theta=nth, n_valid_B_L=nBL,

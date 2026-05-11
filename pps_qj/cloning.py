@@ -147,6 +147,19 @@ class CloningResult:
     # at t = T.  In a healthy run this is ≳ 0.5·N_c; collapse to ~10–20 even
     # at large N_c indicates genealogical degeneracy and unreliable estimators.
     n_distinct_ancestors: int = -1
+    # --- Renyi entropy diagnostics (snapshot at t = T, averaged over clones) ---
+    # Populated only when run_cloning(...) is called with record_renyi=True.
+    # S_renyi_dict[n] is the ensemble-averaged half-cut Renyi entropy of index n.
+    # NaN-valued when record_renyi=False (default).
+    S_renyi_2_mean: float = float("nan")
+    S_renyi_3_mean: float = float("nan")
+    S_renyi_2_std: float = float("nan")
+    S_renyi_3_std: float = float("nan")
+    # Translation-averaged correlation function C(r) = mean |⟨c_0† c_r⟩|,
+    # averaged over the final clone population. Used for free-Dirac CFT
+    # power-law decay test. Empty if record_renyi=False.
+    corr_decay_r: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    corr_decay_mean: np.ndarray = field(default_factory=lambda: np.asarray([]))
 
 
 def _systematic_resample(
@@ -220,6 +233,7 @@ def run_cloning(
     progress_desc: str = "",
     backward_data: Any = None,
     backend: str = "scalar",
+    record_renyi: bool = False,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -490,6 +504,39 @@ def run_cloning(
         min_ess_frac_pb = float("nan")
     n_distinct_ancestors = int(np.unique(ancestor_ids).size)
 
+    # --- Renyi entropies and correlation function from final population ---
+    S2_mean_val = S3_mean_val = float("nan")
+    S2_std_val = S3_std_val = float("nan")
+    corr_r_arr = np.asarray([])
+    corr_mean_arr = np.asarray([])
+    if record_renyi and len(covs) > 0:
+        try:
+            from .observables.spectrum import (
+                renyi_entropies_batched,
+                single_particle_correlation,
+                translation_averaged_correlation_decay,
+            )
+            ell = int(L) // 2
+            # Renyi: returns (N_c, len(ns))
+            S_nq = renyi_entropies_batched(covs, ell, ns=(1, 2, 3), base=2.0)
+            S2_mean_val = float(np.mean(S_nq[:, 1]))
+            S3_mean_val = float(np.mean(S_nq[:, 2]))
+            S2_std_val  = float(np.std (S_nq[:, 1]))
+            S3_std_val  = float(np.std (S_nq[:, 2]))
+            # Correlation: average across clones, then translation-average
+            r_max = int(L) - 1
+            corr_per_clone = np.zeros((len(covs), r_max), dtype=np.float64)
+            for ci, cv in enumerate(covs):
+                C = single_particle_correlation(cv)
+                _, c_r = translation_averaged_correlation_decay(C, r_max=r_max)
+                corr_per_clone[ci, :] = c_r
+            corr_r_arr = np.arange(1, r_max + 1, dtype=np.float64)
+            corr_mean_arr = np.mean(corr_per_clone, axis=0)
+        except Exception as e:
+            # Don't fail the run; just log and proceed with NaN-valued fields.
+            import warnings
+            warnings.warn(f"record_renyi failed: {e}", RuntimeWarning)
+
     return CloningResult(
         theta_hat=theta_hat,
         S_mean=S_mean, S_std=S_std,
@@ -514,6 +561,12 @@ def run_cloning(
         ess_history=ess_arr,
         min_ess_frac_postburnin=min_ess_frac_pb,
         n_distinct_ancestors=n_distinct_ancestors,
+        S_renyi_2_mean=S2_mean_val,
+        S_renyi_3_mean=S3_mean_val,
+        S_renyi_2_std=S2_std_val,
+        S_renyi_3_std=S3_std_val,
+        corr_decay_r=corr_r_arr,
+        corr_decay_mean=corr_mean_arr,
     )
 
 
