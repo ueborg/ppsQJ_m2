@@ -1,5 +1,5 @@
 # PROJECT CONTEXT — ppsQJ_m2
-<!-- Last updated: 2026-05-11 -->
+<!-- Last updated: 2026-05-12 -->
 <!-- Update this file at the end of every significant work session. -->
 
 ---
@@ -15,6 +15,30 @@ After any session that changes code, results, or decisions, update the relevant
 sections and commit:
 
     git add CONTEXT.md && git commit -m "context: update [brief description]"
+
+### Recommended startup sequence for a new chat
+
+In any new chat where the goal is to continue project work:
+
+1. **Read CONTEXT.md first** (this file). It captures the high-level state.
+2. **Check `git log --oneline -10`** for the most recent commits — anything
+   after the date stamp at the top of this file is newer than what's
+   summarised here.
+3. **Read `theory/STATUS.md`** if the topic is theoretical. That file is the
+   reading guide for the analytical documents in `theory/`.
+4. **Skim §12 ("Recent session log") below** for a chronological list of
+   what was done in recent sessions and what's currently in flight.
+5. **For computational questions**, `pps_qj/cloning.py` and
+   `pps_qj/gaussian_backend.py` are the core code. For numerical algorithm
+   questions, `theory/qj_algorithms_comparison.md` is the canonical
+   reference (waiting-time vs stepped-dt formulations).
+
+The recommended prompt to start a continuation chat is:
+
+    Please read /Users/catlover1337/Documents/ppsQJ_m2/CONTEXT.md with
+    Desktop Commander, then check `git log --oneline -10` for anything
+    newer than the date stamp. Once you've done that, I'll tell you
+    what we're working on.
 
 ---
 
@@ -524,6 +548,11 @@ LaTeX with align environments. Consistent notation with existing sections.
 
 ## 10. THEORY NOTES
 
+> **As of 2026-05-12, the theory directory `theory/` contains a substantial
+> body of analytical work that supersedes some of the heuristics in this
+> section. Start with `theory/STATUS.md` for the current synthesis. The
+> notes below remain useful for the pre-bosonization framing.**
+
 ### Replica bosonization prediction (pre-L=128 expectation)
 
 Two-replica generator for quantum-jump tilted dynamics analyzed. The marginal
@@ -596,18 +625,52 @@ Born-rule statistics, not post-selected ones (see §6 above).
 
 ### Open analytical questions
 
+> **Status updates as of 2026-05-12. See `theory/STATUS.md` and the chiral-vertex
+> documents for the analytical work; the questions below have all been partially
+> addressed.**
+
 1. Does the QJ partial-PPS measure admit a bosonized field-theoretic
-   description analogous to LMR's diffusive case? If so, does it
-   predict Ising → BKT crossover at some ζ̃_QJ? — Would resolve the
-   universality class question.
+   description analogous to LMR's diffusive case? — **Yes, constructed
+   in `theory/qj_two_replica_derivation.md`.** The two-replica generator
+   for the QJ unraveling has a single cross-replica click vertex
+   $V_j = d^{(+,1)}(d^{(-,1)})^\dagger d^{(+,2)}(d^{(-,2)})^\dagger$.
 
-2. Is the log-law phase genuinely a free Dirac CFT (c=1, scaling
-   dimensions match), or just nominally log-law with non-CFT scaling
-   dimensions? — Testable via multi-Renyi extraction (task 2 in §8).
+2. Is the cross-replica vertex relevant or irrelevant? — **Marginal and
+   chiral** (`theory/qj_marginal_chiral_correction.md`). The vertex is
+   a 4-fermion product (dim 2 in 1+1D) and is purely left-moving at
+   half-filling (lattice fact: $d_j$ has zero coupling to $k=+\pi/2$).
+   Chiral + marginal means the perturbation is *exactly marginal* — no
+   second-order RG flow because the self-OPE produces only
+   antiholomorphic operators that integrate to zero.
 
-3. Does the absence of sharp MIPT in monitored free fermions (Li 2025;
-   Fava 2023) extend to all ζ, or does strong PPS restore a sharp
-   transition (as the sharpness data suggests)? — Open question.
+3. What does this predict for $c_{\rm eff}(\lambda, \zeta)$? — **In the
+   thermodynamic limit, $c_{\rm eff}$ is $\zeta$-independent in the
+   critical phase.** The phase diagram in the $(\lambda, \zeta)$ plane
+   has a single vertical critical line $\lambda = \lambda_c(\zeta=1)
+   \approx 0.364$ — no $\zeta$-dependent shift.
+
+4. How does this reconcile with the observed sharp drop in
+   $\lambda(c=1)$ at $\zeta \lesssim 0.5$? — **Finite-$L$ artifact from
+   sub-leading non-chiral lattice corrections.** Prediction:
+   $\lambda_c(\zeta, L) - \lambda_c(\zeta=1, L) \sim C(\zeta)/L^2$.
+   At $\zeta = 0.30$, $L=128$ shift is $-0.127$; predicted shift at
+   $L=256$ is $\sim -0.032$ (4× smaller). **Testable with one more
+   production run at $L=256$**.
+
+5. Does the absence of sharp MIPT in monitored free fermions (Li 2025;
+   Fava 2023) extend to all ζ? — **The chirality picture says yes**:
+   the QJ unraveling has a single conformal phase throughout the
+   $(\lambda, \zeta)$ plane (modulo finite-$L$ corrections). The
+   Renyi reruns (running now) test this directly via the universal
+   CFT ratios $c_2/c_1 = 3/4$, $c_3/c_1 = 2/3$.
+
+6. **Open**: full strong-PPS RG analysis (the analog of LMR's Section V.C).
+   Two alternative scenarios remain on the table if the $1/L^2$ scaling
+   from question 4 fails: (a) marginally-relevant lattice corrections
+   drive a BKT-type transition at finite $\zeta_c$; (b) "chiral pinning"
+   produces an intermediate $c=1/2$ phase at strong PPS. Distinguished
+   by the directly-fit $c_{\rm eff}$ at strong-PPS Renyi test points
+   (is it $1$, $1/2$, or $0$?).
 
 ---
 
@@ -637,3 +700,135 @@ In `/mnt/user-data/outputs/`:
 - `dganit_method2_analysis.md` — refutation of Method 2 proposal
 - `dganit_method2_NT_test.py` — runnable reproduction script
 - `dganit_method2_spin_half.py` — first-WT distribution test
+
+In `theory/` (analytical work — added 2026-05-11/12):
+- `STATUS.md` — **read this first.** Reading guide and synthesis of the
+  bosonization analysis. Updated with the chirality result and the
+  $1/L^2$ finite-$L$ prediction.
+- `qj_two_replica_derivation.md` — rigorous construction of the QJ
+  two-replica generator $\mathcal{L}_\zeta^{(2)}$.
+- `qj_one_minus_zeta_expansion.md` — sharpened bosonization;
+  identifies $V_j$ as a single vertex but with wrong dimension
+  ($\Delta=4$ claimed, corrected to 2 in `qj_marginal_chiral_correction.md`).
+- `qj_chiral_vertex_result.md` — chirality of $V_j$ established
+  (algebraic + microscopic). Dimension claim ($\Delta=4$) is superseded.
+- `qj_marginal_chiral_correction.md` — **load-bearing for the
+  current analytical claim.** Corrects $\Delta(V_j) = 2$ (marginal),
+  rigorously verifies the chirality at the lattice level, shows
+  chiral-marginal vertices are exactly marginal (no second-order
+  flow), and predicts $\lambda_c$ shift $\sim 1/L^2$ scaling.
+- `qj_bosonization_calculation.md` — earlier-draft, longer
+  bosonization document with self-critique and channel decomposition
+  of $V_j$. Largely superseded but worth reading for the empirical
+  comparisons in §10.
+- `qj_algorithms_comparison.md` — clarifying note on the equivalence
+  between waiting-time (continuous-time) and stepped-$\Delta t$
+  (discrete-time) quantum-jump algorithms. Includes the relationship
+  to Dganit's implementation.
+- `two_replica_QJ_PPS.md` — earlier draft, superseded.
+
+---
+
+## 12. RECENT SESSION LOG (chronological, newest first)
+
+### 2026-05-12: algorithms comparison note + CONTEXT.md update (this session)
+
+Added `theory/qj_algorithms_comparison.md` clarifying the relationship
+between Utku's continuous-time waiting-time algorithm and Dganit's
+discrete-time stepped-$\Delta t$ algorithm. Short summary: they target
+the same stochastic Schrödinger equation; the waiting-time algorithm is
+the $\Delta t \to 0$ limit of the stepped algorithm. The stepped
+algorithm has $\mathcal{O}(\Delta t)$ bias; ours has no temporal-grid
+bias, only brentq tolerance ($10^{-6}$). For our specific problem (free
+fermions, per-jump PPS tilt, large $T$ between clicks), the waiting-time
+algorithm is both cleaner and faster.
+
+Also updated this CONTEXT.md to point at the new theory directory and
+include explicit startup instructions for continuation chats.
+
+### 2026-05-12: chirality + dimension correction
+
+Two new theory documents, plus a sharpened prediction.
+
+**Established:**
+- The bond annihilation operator $d_j$ at half-filling is **purely
+  left-moving** at the lattice level. In momentum space, $d_j$ has
+  coefficient $g_c(k) = \tfrac{1}{2}(1 + ie^{ik})$ on $c_k$; at
+  $k = +\pi/2$ this is $1 + i\cdot i = 0$ exactly. Convention-independent.
+- The cross-replica click vertex $V_j$ (product of 4 $d$ operators) has
+  scaling dimension 2 (marginal in 1+1D), not 4. The previous
+  $\Delta = 4$ claim came from a factor-of-2 normalization mismatch
+  between Giamarchi's non-canonical fields and standard chiral CFT
+  bosons. Direct fermion count: $4 \times 1/2 = 2$.
+- A chiral marginal operator's self-OPE produces only chiral
+  (antiholomorphic) operators, all of which integrate to zero in 2D
+  Euclidean. So the perturbation $g_\zeta \int V_j$ is **exactly
+  marginal** — no flow at any order.
+
+**Sharpened prediction:** in the thermodynamic limit,
+$c_{\rm eff}(\lambda; \zeta) = c_{\rm eff}(\lambda; \zeta = 1)$ for every
+$\zeta > 0$ in the critical phase. The phase boundary $\lambda_c$ is
+independent of $\zeta$ — a single vertical line in the $(\lambda, \zeta)$
+phase diagram, not a curve.
+
+**Falsifiable finite-$L$ prediction:** observed shift $\lambda_c(\zeta, L) - \lambda_c(\zeta=1, L) \sim C(\zeta)/L^2$
+from sub-leading non-chiral lattice corrections. At $\zeta = 0.30$,
+$L = 128$ shift is $-0.127$; at $L = 256$ predicted shift is $\sim -0.032$
+(4× smaller). Testable with one more production run.
+
+### 2026-05-11 (evening): bosonization framework
+
+First-pass bosonization of the QJ two-replica generator. Established
+the cross-replica vertex $V_j \sim \exp[2i(\Theta_D^\rho - \Phi_D^\rho)]$
+in the inter-replica difference mode. Initial dimension claim
+($\Delta = 4$, irrelevant) corrected the following day. Documents:
+`qj_two_replica_derivation.md`, `qj_one_minus_zeta_expansion.md`,
+`qj_chiral_vertex_result.md`.
+
+### 2026-05-11 (afternoon): refutation of Method 2
+
+Conclusive numerical refutation of Dganit's "Method 2" (dual-state
+lookahead with reduced rate $\zeta\lambda_t$ and unmodified $H_{\rm eff}$).
+The multi-jump $N_T$ test at $\zeta = 0.5$, $T = 20$ gave
+$\langle N\rangle_{\rm M2} = 9.64$ vs Born $9.74$ vs true PPS $4.55$.
+Method 2 reproduces Born-rule statistics, not PPS. Documents in
+`outputs/dganit_method2_*`.
+
+### 2026-05-08 to 2026-05-10: L=128 production
+
+L=128 resubmission completed under the Cholesky + xtol +
+PPS_DTAU_MULT=2.0 optimisations. All 1920 tasks finished, no
+collapses. Aggregate file `agg_final.pkl`. The phase diagram (§6)
+became the load-bearing result of the project.
+
+---
+
+## 13. CURRENTLY IN FLIGHT
+
+As of 2026-05-12:
+
+1. **Renyi entropy reruns on Habrok** (30 strategic tasks):
+   6 $(\lambda, \zeta)$ test points × 5 system sizes
+   $L \in \{32, 48, 64, 96, 128\}$. Test points:
+     - $(0.30, 1.00), (0.35, 1.00), (0.45, 1.00)$ — Born-rule critical region
+     - $(0.325, 0.50), (0.50, 0.50)$ — intermediate-PPS
+     - $(0.10, 0.20)$ — strong-PPS
+
+   Job submitted via `slurm/submit_renyi_targets.sh`. When complete:
+   ```
+   python scripts/analyze_renyi_targets.py /scratch/s4629701/pps_qj/pps_clone_renyi/
+   ```
+   The predictions to test:
+     - $c_2/c_1 = 3/4$, $c_3/c_1 = 2/3$ at every test point if the
+       chirality picture holds (all six points in one conformal phase).
+     - At the strong-PPS test points $(0.10, 0.20)$ and $(0.325, 0.50)$:
+       does the directly-fit $c_{\rm eff}$ equal $1$ (single conformal
+       phase, chirality picture), $1/2$ (chiral pinning intermediate
+       phase), or near $0$ (full area law, chirality picture fails)?
+
+2. **Email to Dganit re: Method 2 refutation** — not yet sent. Diplomatic
+   variant drafted (cf. `outputs/dganit_method2_email_*`). Pending Utku's
+   choice and send.
+
+3. **Exact-numerics validation at L=8** — pending (Utku's planned
+   personal-review work).
