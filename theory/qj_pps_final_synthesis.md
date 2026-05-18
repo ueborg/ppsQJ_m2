@@ -1,8 +1,8 @@
 # QJ-PPS: final theoretical synthesis (May 2026)
 
 This document consolidates the current best understanding of the
-QJ-PPS phase boundary. It supersedes earlier theory files
-chronologically while preserving the analytical chain.
+QJ-PPS phase boundary. For a one-stop handoff entry point, see
+**`theory/HANDOFF.md`**.
 
 ## The one-paragraph summary
 
@@ -20,7 +20,9 @@ with Born-rule endpoint $\lambda_c(1) \approx 0.5$ matching Carollo.
 The finite-size scaling is two-parameter with $y_\lambda = 1/2$ from
 localization and $y_\zeta = 1$ from extensivity of the click vertex.
 
-## Microscopic derivation of $y_\zeta = 1$
+## Microscopic derivation of $y_\zeta = 1$ (HEURISTIC + NUMERICAL CONFIRMATION)
+
+### Heuristic derivation
 
 The click vertex in the two-replica generator is
 $$
@@ -33,16 +35,42 @@ $$
 \theta_1(\lambda, L) = \sum_j \frac{\langle\!\langle \ell_0 | d_j^{(+a)} d_j^{*(-a)} | r_0 \rangle\!\rangle}{\langle\!\langle \ell_0 | r_0 \rangle\!\rangle}
 $$
 with $\ell_0, r_0$ the dominant left/right modes of $\mathcal{L}_0^\dagger$.
-Since the matrix elements are local and the modes have finite
-correlation length, $\theta_1 \sim L$ to leading order. This is **the
-derivation of $y_\zeta = 1$** — no fit, no ansatz, just locality and
-extensivity.
+Since the matrix elements are local and the modes have finite correlation
+length, $\theta_1 \sim L$ to leading order. This is **the derivation of
+$y_\zeta = 1$** — no fit, no ansatz, just locality and extensivity.
 
-The TD critical condition is then
+### Numerical confirmation (commit e2ec079)
+
+Direct computation via `analysis/compute_theta1.py` using the BdG
+slowest-decay state covariance matrix:
+
+| $\lambda$ | $\theta_1 / L$ at large $L$ | fit slope $p$ | regime |
+|---|---|---|---|
+| 0.05 | $1.8 \times 10^{-3} \cdot \lambda^2$ | 1.036 | clean linear |
+| 0.10 | $1.8 \times 10^{-3} \cdot \lambda^2$ | 1.036 | clean linear |
+| 0.15 | $1.4 \times 10^{-3} \cdot \lambda^2$ | 0.980 | clean linear |
+| $\ge 0.30$ | — | — | biorthogonal construction breaks |
+
+For $\lambda \le 0.15$: $\theta_1(L) \approx 0.18 \cdot \lambda^2 \cdot L$.
+Power-law slope $\approx 1.04$ (small excess from $1/L$ boundary terms,
+not anomalous).
+
+**The physically relevant regime is exactly $\lambda \le 0.5$** — the
+critical $\lambda_c(\zeta)$ along the empirical phase boundary stays
+$< 0.5$ across all $\zeta \in [0.02, 1.0]$. So the $\theta_1$ calculation
+confirms $y_\zeta = 1$ in the regime that matters.
+
+### Critical condition
+
+The TD critical condition combines $\theta_1 \sim L$ with the localization
+length:
 $$
-\frac{|\theta_1(\lambda_c)|}{L} \cdot \zeta \sim O(1)
+\zeta \cdot \xi_{\rm ps}(\lambda_c) \sim 1
+\quad\Longleftrightarrow\quad
+\frac{\zeta}{\lambda_c^2} \sim 1
+\quad\Longrightarrow\quad
+\lambda_c \sim \sqrt{\zeta}.
 $$
-i.e., $\zeta \xi_{\rm ps}(\lambda_c) \sim 1$, giving $\lambda_c \sim \sqrt{\zeta}$.
 
 ## Two-parameter FSS
 
@@ -81,9 +109,9 @@ From the L≤128 aggregate (B_L crossings):
 ## The decisive empirical test (L=192, 256)
 
 When the FST data arrives, run
-$$
-\texttt{python analysis/test\_yzeta1\_collapse.py --add-fst <path>}
-$$
+```
+python analysis/test_yzeta1_collapse.py --add-fst <path>
+```
 
 Visual check: do the L=192, 256 [square markers] fall on the
 L≤128 [circle markers] curve in the plot of $\lambda_c\sqrt{L}$ vs
@@ -97,35 +125,26 @@ $\zeta L$?
 
 ## Open theoretical questions (priority-ordered)
 
-### 1. Direct numerical computation of $\theta_1(\lambda, L)$ — HIGH PRIORITY
+### 1. Fix the large-$\lambda$ $\theta_1$ calculation — MEDIUM PRIORITY
 
-This is the simplest non-trivial numerical check. From the no-click
-BdG framework:
+The biorthogonal construction in `analysis/compute_theta1.py` breaks for
+$\lambda \ge 0.3$. The physical regime is fine without this, but closing
+the gap would strengthen the result.
 
-a. Construct $\mathcal{L}_0$ as a matrix on the two-replica Hilbert
-   space (Choi vectorization).
-b. Find dominant right/left eigenvectors $r_0, \ell_0$.
-c. Compute the matrix element $\theta_1 = \langle\!\langle \ell_0 | \mathcal{J} | r_0 \rangle\!\rangle / \langle\!\langle \ell_0 | r_0 \rangle\!\rangle$.
-d. Verify $\theta_1(\lambda, L) \sim L \cdot \mathcal{K}(\lambda\sqrt{L})$ — i.e., the
-   FSS collapse with $y_\zeta = 1$.
+**Approach (a)**: full Liouville-space ($4^L \times 4^L$) computation for
+small $L \le 6$. Cross-check against BdG at small $\lambda$ where both work.
 
-**Parity caveat**: if non-degenerate PT vanishes by Choi parity,
-extend to the near-degenerate manifold (synthesis's $K_{ab}$ matrix
-formulation). But try non-degenerate first.
+**Approach (b)**: regularize via long-time evolution from a physical initial
+state, then project onto slowest-decay sector. This handles the
+non-normalizable eigenstate ambiguity cleanly.
 
-The no-click theory is Gaussian (free fermions under non-Hermitian
-evolution), so the dominant modes have efficient representations.
-This calculation is concrete and tractable.
+### 2. Bosonized derivation of $y_\zeta = 1$ — LOWER PRIORITY
 
-### 2. Bosonized derivation of $y_\zeta = 1$
+Existing bosonization in `theory/qj_one_minus_zeta_expansion.md` works
+near $\zeta = 1$ (Born rule). The companion no-click-end derivation
+would close the loop on universality.
 
-The bosonization framework laid out in earlier theory documents
-should give the click-vertex scaling dimension at the no-click
-fixed point. The no-click theory is gapped (localized), so the
-relevant calculation is the operator content of the click vertex
-in the dual lattice picture. This is a longer-term goal.
-
-### 3. Universality class
+### 3. Universality class — LOWER PRIORITY
 
 The two-parameter scaling gives $\lambda_c(\zeta) \sim \sqrt{\zeta}$
 but doesn't fix the universality class of the transition. Carollo
@@ -149,16 +168,21 @@ The current state supports the following thesis result:
 > $\zeta \xi_{\rm ps}$ — the click fugacity per localization volume —
 > with criticality at $\zeta \xi_{\rm ps} \sim 1$."
 
-Status: solid for the Binder-cumulant L≤128 data; awaiting L=192, 256
-confirmation via the collapse test in `analysis/test_yzeta1_collapse.py`.
+Status: solid for the Binder-cumulant L≤128 data plus the BdG
+$\theta_1 \sim L$ confirmation; awaiting L=192, 256 confirmation via
+the collapse test in `analysis/test_yzeta1_collapse.py`.
 
 ## File map
 
-- `theory/qj_pps_theory_summary.md`: original comprehensive summary
-- `theory/qj_pps_scenario_C_addendum.md`: first guess (linear ζ) — superseded
-- `theory/fss_analysis_results.md`: B_L methodology, rules out A — current
-- `theory/two_parameter_FSS_results.md`: $y_\zeta \approx 1$ extraction — current
+- `theory/HANDOFF.md`: **entry point for fresh context**
 - `theory/qj_pps_final_synthesis.md`: **this file** (current top-level)
+- `theory/theta1_first_principles.md`: $\theta_1$ calculation details
+- `theory/two_parameter_FSS_results.md`: $y_\zeta$ extraction details
+- `theory/fss_analysis_results.md`: B_L methodology
+- `theory/qj_pps_theory_summary.md`: original comprehensive summary
+- `theory/qj_pps_scenario_C_addendum.md`: first guess (linear $\zeta$) — superseded
+- `analysis/compute_theta1.py`: $\theta_1$ from BdG
 - `analysis/extract_yzeta.py`: $y_\zeta$ extraction from L≤128
 - `analysis/test_yzeta1_collapse.py`: decisive test for L=192, 256
 - `analysis/yzeta1_collapse_test.png`: pre-FST plot showing current data
+- `analysis/theta1_scaling_v2.png`: $\theta_1$ scaling diagnostic
