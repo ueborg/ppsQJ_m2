@@ -522,3 +522,130 @@ if __name__ == "__main__":
     else:
         print(f"unknown grid type: {which}")
         sys.exit(1)
+
+
+# ======================================================================
+# Clone v2 finite-size test grid (84 tasks) — L=192, L=256 extension
+# ======================================================================
+# Purpose
+# -------
+# Distinguish two scenarios for the empirical separatrix at zeta ~ 0.143
+# observed in the L<=128 aggregate:
+#
+#   Scenario A (Ising universality, lambda_c=0.5 robust for zeta>0):
+#     the apparent separatrix is a non-universal correction-to-scaling
+#     feature where the leading 1/L amplitude B(zeta) crosses zero.
+#     At L=192,256 the drift in lambda_c should REVERSE at small zeta
+#     and start pointing back toward lambda_c=0.5.
+#
+#   Scenario B (genuine 2D phase diagram):
+#     the separatrix at zeta_c~0.143 is a true RG fixed point.
+#     The drift sign at small zeta stays negative; lambda_c flows
+#     toward 0 in the thermodynamic limit.
+#
+# Grid
+# ----
+#   L:    [192, 256]                                          (2 sizes)
+#   lam:  [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]          (7 points)
+#         focused on the empirical lambda_c range.
+#   zeta: [0.05, 0.10, 0.14, 0.18, 0.50, 1.00]                (6 points)
+#         four densely cover the separatrix region 0.10..0.18,
+#         plus zeta=0.05 (deep into the apparently-area-law region) and
+#         zeta=0.50, 1.00 as Ising anchors.
+#
+# Total: 2 x 7 x 6 = 84 tasks.  Task ids 0..83.
+#
+# N_c and time horizons
+# ---------------------
+# Aggressive reductions vs the v2 main grid; the goal here is to extract
+# c_eff at a fixed handful of (lam, zeta) points and compare against the
+# (32,64) and (64,128) drift-sign pattern, not a fully-converged scan.
+#
+#   L=192: N_c=80,  T_cap=80
+#   L=256: N_c=40,  T_cap=50
+#
+# Worst-case wall time at L=256, alpha=0.05 (slowest task):
+#   T=50, dtau ~ 0.039, K ~ 1280 steps
+#   per step at L=256 (L^4.8 cache-thrashing estimate): ~11 s
+#   per task ~ 1280 * 11 * 40 / 5 = 113 000 s = 31 h
+#   Wall time 36:00:00 covers this with margin.
+# ======================================================================
+
+L_CLONE_FST: List[int] = [192, 256]
+
+LAMBDA_VALS_FST: List[float] = [
+    0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
+]  # 7 points focused around the empirical lambda_c range
+
+ZETA_VALS_FST: List[float] = [
+    0.05, 0.10, 0.14, 0.18,  # dense across the separatrix
+    0.50, 1.00,              # Ising anchors
+]  # 6 points
+
+_N_LAM_FST  = len(LAMBDA_VALS_FST)   # 7
+_N_ZETA_FST = len(ZETA_VALS_FST)     # 6
+_PER_L_FST  = _N_LAM_FST * _N_ZETA_FST  # 42
+
+
+def nc_for_L_fst(L: int) -> int:
+    return {192: 80, 256: 40}[L]
+
+
+def time_horizon_fst(L: int, alpha: float) -> float:
+    """Tighter cap than time_horizon_v2: T<=80 for L=192, T<=50 for L=256."""
+    base = max(30.0, 5.0 / max(alpha, 1e-9))
+    T = float(max(base, 2.0 * L))
+    if L >= 256:
+        T = min(T, 50.0)
+    elif L >= 192:
+        T = min(T, 80.0)
+    return T
+
+
+def make_clone_fst_grid() -> List[dict]:
+    """All (L, lambda, zeta) parameter combinations for the FST grid.
+
+    Task ids are assigned in (L outer, lambda middle, zeta inner) order, so
+    tasks for each L form a contiguous block of 42 ids.
+    """
+    grid: List[dict] = []
+    task_id = 0
+    for L in L_CLONE_FST:
+        for lam in LAMBDA_VALS_FST:
+            for zeta in ZETA_VALS_FST:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_fst(L, alpha)
+                grid.append(dict(
+                    task_id=task_id,
+                    L=int(L),
+                    lam=float(lam),
+                    alpha=alpha,
+                    w=w,
+                    zeta=float(zeta),
+                    T=float(T),
+                    N_c=int(nc_for_L_fst(L)),
+                    seed=_seed(L, lam, zeta),
+                ))
+                task_id += 1
+    return grid
+
+
+def task_params_clone_fst(task_id: int) -> dict:
+    grid = make_clone_fst_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(
+            f"Clone-FST task_id {task_id} out of range [0, {len(grid)})"
+        )
+    return grid[task_id]
+
+
+def n_tasks_clone_fst() -> int:
+    return len(L_CLONE_FST) * _N_LAM_FST * _N_ZETA_FST  # 84
+
+
+def clone_fst_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_task_id, last_task_id) inclusive for the FST grid."""
+    return {
+        L: (i * _PER_L_FST, (i + 1) * _PER_L_FST - 1)
+        for i, L in enumerate(L_CLONE_FST)
+    }
