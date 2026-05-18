@@ -1,4 +1,4 @@
-# QJ-PPS project handoff (as of 2026-05-18, commit e2ec079)
+# QJ-PPS project handoff (as of 2026-05-18, post parity-resolved correction)
 
 Single entry-point document for resuming this project in a fresh chat.
 If you're a new assistant instance picking this up, read this first.
@@ -57,18 +57,25 @@ Born-rule endpoint $\lambda_c(1) \approx 0.5$ matches Carollo (PRA 2018).
 | 1 | $\xi_{\rm ps} \sim \lambda^{-2}$ | non-Hermitian SSH-Majorana BdG (Path A/B analysis) | Rigorous |
 | 2 | $y_\lambda = 1/2$ | Step 1 | Rigorous |
 | 3 | Click vertex extensive over bonds | $\mathcal{G}_{\rm click} = \zeta\alpha\sum_j d_j^{(+a)}d_j^{*(-a)}$ | Manifest |
-| 4 | $\theta_1(\lambda, L) \sim L$ | Numerical, BdG slowest-decay state | **Confirmed for $\lambda \le 0.15$** |
-| 5 | $y_\zeta = 1$ | Steps 3 + 4 + locality of no-click theory | Confirmed |
+| 4a | $Q_{\rm BdG}(\lambda, L) \sim \lambda^2 L$ (BdG no-click activity) | Numerical, BdG slowest-decay state | Confirmed for $\lambda \le 0.15$; **NOT the SCGF derivative** (see 4b) |
+| 4b | $\theta_1^{\rm SCGF} = 0$ exactly by fermion parity | Liouville-exact perturbation, parity selection rule | **Rigorous** — supersedes the old 4 → 5 link |
+| 4c | 2×2 parity-doublet effective generator reproduces full $\mathcal{L}_\zeta$ leading eigenvalue to $10^{-8}$ at small $\zeta$ | `analysis/parity_resolved_theta.py`, L=4-7 | **Strong numerical confirmation** of the parity-mixing mechanism |
+| 5 | $y_\zeta = 1$ from cross-Choi operator dimension $\Delta_\zeta = 1$ | CFT level-spacing argument: $\Delta E_\zeta / \Delta E_{\rm CFT} \sim g_\zeta L$ | Derived (analytical); **independent of $K_{\rm eff}$ exponent** |
 | 6 | $\zeta\xi_{\rm ps} \sim 1$ critical condition | Steps 1-5 | Derived |
 | 7 | $\lambda_c(\zeta) \sim \sqrt{\zeta}$ | Step 6 | Predicted |
-| 8 | Empirical $\phi \approx 1/2$ from Binder data | $L \le 128$ aggregate, B_L crossings | **Confirmed in range $\phi \in [0.5, 0.7]$** |
+| 8 | Empirical $\phi \approx 1/2$ from Binder data | $L \le 128$ aggregate, B_L crossings | Confirmed in range $\phi \in [0.5, 0.7]$ |
 | 9 | $L = 192, 256$ confirmation | FSS collapse test | **Pending FST data** |
 
 Caveats:
-- Step 4 only works for $\lambda \le 0.15$ due to biorthogonal construction
-  breakdown at large $\lambda$ (gives unphysical covariance). The relevant
-  $\lambda_c$ values are all $< 0.5$ across the data, so the critical regime
-  is well inside the clean range.
+- Step 4a (BdG activity) only works for $\lambda \le 0.15$ due to
+  biorthogonal construction breakdown at large $\lambda$. **This is no
+  longer central**: the BdG number is a useful activity diagnostic but is
+  not the SCGF derivative, so its breakdown at large $\lambda$ is not a
+  gap in the chain.
+- Step 5 used to be derived from "Steps 3 + 4 + locality of no-click
+  theory" — that route is now retired. The correct route is the CFT/RG
+  argument: $\Delta_\zeta = 1 \Rightarrow y_\zeta = 2 - \Delta_\zeta = 1$.
+  See `theory/theta1_first_principles.md`, Correction section.
 - Step 8 has uncertainty: $\phi \in [0.5, 0.7]$ across extraction methods.
   $\phi = 1/2$ is the cleanest theoretical value and is consistent with all
   three methods within error.
@@ -110,7 +117,7 @@ Carollo's 0.5 exactly. All subsequent analysis uses B_L.
 
 ### 1. Push commits to GitHub (LOCAL TERMINAL REQUIRED)
 
-There are 6 commits ahead of origin/main on local. `osascript` can't access
+There are 8 commits ahead of origin/main on local. `osascript` can't access
 the SSH keychain on macOS, so this must be done from the user's terminal:
 ```
 cd ~/Documents/ppsQJ_m2 && git push
@@ -118,6 +125,8 @@ cd ~/Documents/ppsQJ_m2 && git push
 
 Commits to push (most recent first):
 ```
+HEAD     Parity-resolved correction: theta_1^SCGF = 0 by parity; 2x2 effective theory
+9d3f8a5  HANDOFF.md entry point + final synthesis updated
 e2ec079  First-principles confirmation of y_zeta=1 via theta_1
 510bbe3  Final synthesis: y_zeta=1 from extensivity, λ_c~√ζ
 4c6785b  Refined FSS: two-parameter scaling
@@ -156,22 +165,40 @@ Visual verdict: do the $L = 192, 256$ [square] markers fall on the $L \le 128$
 
 ## Open theoretical questions (priority-ordered)
 
-### A. Fix the large-$\lambda$ $\theta_1$ calculation
+### A. ~~Fix the large-$\lambda$ $\theta_1$ calculation~~ — RESOLVED (May 2026)
 
-The biorthogonal construction in `analysis/compute_theta1.py` produces
-unphysical covariance matrices (eigenvalues $> 1$, bond parity expectations
-$> 1$) for $\lambda \ge 0.5$. Two paths to fix:
+**Update**: this question is closed in a way that revises the framing of
+the whole chain. The exact Liouville-space SCGF derivative
+($\theta_1^{\rm SCGF}$) vanishes identically by fermion-parity selection,
+at every $\lambda$. The BdG quantity $Q_{\rm BdG} \sim \lambda^2 L$ is
+the **no-click activity** $\alpha \sum_j \langle J_j^\dagger J_j\rangle$,
+not the SCGF derivative — so its large-$\lambda$ breakdown is no longer
+a gap in the chain. See `theory/theta1_first_principles.md` (Correction
+section), `analysis/compute_theta1_exact.py`,
+`analysis/parity_resolved_theta.py`. The corrected $y_\zeta = 1$
+derivation routes through the cross-Choi operator dimension
+$\Delta_\zeta = 1$ and the CFT finite-size level-spacing argument
+(see `theory/theta1_first_principles.md`, "How y_zeta = 1 is actually
+derived").
 
-(a) For small $L$ (say $L \le 6$), construct the full $4^L$-dimensional
-Liouvillian as a matrix, find dominant left/right eigenvectors, compute
-$\theta_1 = \langle\!\langle \ell_0 | \mathcal{J} | r_0 \rangle\!\rangle / \langle\!\langle \ell_0 | r_0 \rangle\!\rangle$
-directly. Cross-check against BdG at small $\lambda$.
+### A'. Verify $\Delta_\zeta = 1$ directly via the cross-Choi two-point function
 
-(b) Regularize the non-Hermitian eigenstate construction. The "slowest
-decaying" state at large $\lambda$ might require time-evolution from a
-physical initial state and projection, rather than naive eigenvector picking.
+The corrected $y_\zeta = 1$ derivation rests on $\Delta_\zeta = 1$, which
+is currently supported by the bosonization argument
+($\Delta[d] = 1/2 \Rightarrow \Delta[d^{(+)} d^{*(-)}] = 1$) and by the
+Binder FSS empirical data, but not directly measured on the lattice.
 
-Either path closes the loop for $\lambda \in [0.3, 1.0]$.
+The cleanest microscopic verification is the equal-time cross-Choi
+correlator at $\lambda = 0$ (no-click multicritical point):
+$$
+C(r) = \langle O_\zeta(r)\,O_\zeta(0)\rangle, \qquad
+O_\zeta(x) = d^{(+)}(x)\,d^{*(-)}(x).
+$$
+For $\Delta_\zeta = 1$ we predict $C(r) \sim r^{-2}$. This bypasses
+parity-doublet one-point subtleties, edge-Majorana contamination, and
+even/odd $L$ structure that complicate $K_{\rm eff}(L)$. Tractable on
+the Gaussian free-fermion manifold at small $L$ using two-replica
+covariance matrices (no superoperator blowup needed).
 
 ### B. Extract universality class along $\lambda_c(\zeta)$
 
@@ -182,18 +209,31 @@ class) or drifting? Use existing aggregate, extend `analysis/extract_yzeta.py`.
 
 ### C. Bosonization derivation of $y_\zeta = 1$
 
-The current derivation is "extensivity + locality". A proper RG derivation
-at the no-click fixed point (which is gapped/localized) would close the loop
-on universality. The existing bosonization in `theory/qj_one_minus_zeta_expansion.md`
-and friends approaches this from the Born-rule end, but the no-click-end
-derivation is the natural counterpart.
+**Update (May 2026)**: this is now the central analytical route to
+$y_\zeta = 1$ rather than a future check. The derivation:
+$\Delta[d] = 1/2$ (Majorana field) $\Rightarrow$ $\Delta[d^{(+)} d^{*(-)}] = 1$
+$\Rightarrow$ $y_\zeta = 2 - \Delta_\zeta = 1$. The remaining gap is
+**verifying $\Delta_\zeta = 1$ directly on the lattice** — that's what
+Open Question A' (above) is for.
 
-### D. Sub-leading $1/L$ corrections in $\theta_1$
+The earlier bosonization machinery in
+`theory/qj_one_minus_zeta_expansion.md` etc. approaches the problem from
+the Born-rule end and gives a $\Delta = 4$ vertex relevant there; the
+no-click-end derivation gives $\Delta_\zeta = 1$ at the multicritical
+fixed point, which is the relevant one for the small-$\zeta$ scaling.
+
+### D. Sub-leading $1/L$ corrections in $Q_{\rm BdG}$ (low priority)
 
 The empirical slope $p = 1.04$ (instead of exactly 1.0) at small $\lambda$
-suggests $\theta_1 = A L + B + O(1/L)$. A clean linear fit with explicit
-boundary term would pin down both $A$ and $B$ and confirm the leading $L$
-scaling cleanly.
+in the BdG activity $Q_{\rm BdG}(\lambda, L)$ suggests
+$Q_{\rm BdG} = A L + B + O(1/L)$ — a boundary correction from the
+OBC chain ends. A clean linear fit with explicit boundary term would
+pin down both $A$ and $B$.
+
+**Low priority** because $Q_{\rm BdG}$ is now a side diagnostic
+(no-click activity), not a step in the $y_\zeta = 1$ derivation. The
+$L$-extensivity is still meaningful as a check that the activity is
+bulk-like, but it doesn't enter the FSS chain.
 
 ## Conventions
 
@@ -229,7 +269,9 @@ scaling cleanly.
 
 | File | Purpose |
 |---|---|
-| `analysis/compute_theta1.py` | $\theta_1$ from BdG slowest-decay state |
+| `analysis/compute_theta1.py` | $Q_{\rm BdG}$ (no-click activity) from BdG slowest-decay state — **note: this is NOT $\theta_1^{\rm SCGF}$**; see `compute_theta1_exact.py` |
+| `analysis/compute_theta1_exact.py` | Full-Liouville $\theta_1^{\rm SCGF}$ via four methods (perturbation, FD polynomial fit, BdG cross-check, $H_{\rm eff}$ matrix element). Confirms $\theta_1^{\rm SCGF} = 0$ by parity at $L \le 6$ |
+| `analysis/parity_resolved_theta.py` | Parity-resolved 2×2 effective generator; computes $\theta_\pm$, $K_{+-}$, $K_{-+}$, $K_{\rm eff}$, $\delta_{\rm par}$ at $L = 4, 5, 6, 7$. **Validates the parity-mixing mechanism to $10^{-8}$.** |
 | `analysis/extract_yzeta.py` | Extract $y_\zeta$ from B_L crossings (3 methods) |
 | `analysis/test_yzeta1_collapse.py` | **Decisive test ready for FST data** (use `--add-fst`) |
 | `analysis/test_fss_collapse.py` | Original c_eff-based test (kept for reference) |
@@ -238,7 +280,8 @@ scaling cleanly.
 
 | File | What it shows |
 |---|---|
-| `theta1_scaling_v2.png` | $\theta_1$ vs $L$ for various $\lambda$ — confirms $\theta_1 \sim L$ at small $\lambda$ |
+| `theta1_scaling_v2.png` | $Q_{\rm BdG}$ vs $L$ for various $\lambda$ — confirms $Q_{\rm BdG} \sim L$ at small $\lambda$ (activity diagnostic, not SCGF) |
+| `parity_resolved.png` | Parity-resolved diagnostics: $K_{\rm eff}(L)$, $\delta_{\rm par}(L)$, $\kappa_{L=5,7}$, effective $\theta_2$ |
 | `yzeta_extraction.png` | $y_\zeta$ optimization via collapse residual + slice fits |
 | `yzeta1_collapse_test.png` | Current $L \le 128$ data in predicted scaling |
 | `fss_final.png` | Comprehensive Binder analysis |
