@@ -31,8 +31,24 @@ from pps_qj.gaussian_backend import build_gaussian_chain_model
 from pps_qj.parallel.grid_pps import (
     _seed,
     nc_for_L_fst,
+    nc_for_L_v2,
     time_horizon_fst,
+    time_horizon_v2,
 )
+
+
+def _nc_for_L(L: int) -> int:
+    """N_c dispatcher: v2 schedule for L<=128, FST schedule for L>=192."""
+    if L <= 128:
+        return nc_for_L_v2(L)
+    return nc_for_L_fst(L)
+
+
+def _time_horizon(L: int, alpha: float) -> float:
+    """T dispatcher: v2 for L<=128, FST (tighter cap) for L>=192."""
+    if L <= 128:
+        return time_horizon_v2(L, alpha)
+    return time_horizon_fst(L, alpha)
 from pps_qj.parallel.worker_clone_pps import (
     N_REAL,
     _n_workers_from_env,
@@ -73,8 +89,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     alpha     = lam                   # our convention: lam = alpha, w = 1 - lam
     w         = 1.0 - lam
-    T         = time_horizon_fst(L, alpha)
-    N_c       = nc_for_L_fst(L)
+    T         = _time_horizon(L, alpha)
+    N_c       = _nc_for_L(L)
     seed      = _seed(L, lam, zeta)
     n_workers = _n_workers_from_env()
 
