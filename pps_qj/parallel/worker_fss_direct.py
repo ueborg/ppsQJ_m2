@@ -53,6 +53,7 @@ from pps_qj.parallel.worker_clone_pps import (
     N_REAL,
     _n_workers_from_env,
     _run_one_realisation,
+    _batched_compute_B_L,
     _nanstat,
     _write_summary_atomic,
 )
@@ -130,6 +131,18 @@ def main(argv: Optional[list[str]] = None) -> int:
     n_T_mean, *_              = _agg("n_T_mean")
     chi_k_m, *_               = _agg("chi_k")
 
+    # Binder cumulant B_L — requires L divisible by 4 and final_covs present
+    can_compute_B_L = (L % 4 == 0)
+    B_L_means = np.full(len(real_results), np.nan)
+    if can_compute_B_L:
+        for r, res in enumerate(real_results):
+            if res.get("final_covs"):
+                bl = _batched_compute_B_L(res["final_covs"], L)
+                fm = np.isfinite(bl)
+                if fm.any():
+                    B_L_means[r] = float(np.mean(bl[fm]))
+    B_L_mean, _, B_L_err, _ = _nanstat(B_L_means)
+
     elapsed = time.time() - t_start
     print(
         f"  done: S={S_mean:.4f}±{S_err:.4f}  elapsed={elapsed/3600:.2f}h",
@@ -141,6 +154,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         L=L, lam=lam, alpha=alpha, w=w, zeta=zeta, T=T, N_c=N_c,
         S_mean=S_mean, S_std=S_std_r, S_err=S_err,
         S_var=S_var_m, n_T_mean=n_T_mean, chi_k=chi_k_m,
+        B_L_mean=B_L_mean, B_L_err=B_L_err,
         elapsed=elapsed,
     )
 
