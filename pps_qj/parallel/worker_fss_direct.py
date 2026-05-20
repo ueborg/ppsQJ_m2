@@ -171,7 +171,14 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     _write_summary_atomic(summary_file, dict(
         L=L, lam=lam, alpha=alpha, w=w, zeta=zeta, T=T, N_c=N_c,
-        S_mean=float(S_mean), S_err=float(S_err), elapsed=elapsed,
+        S_mean=float(S_mean), S_err=float(S_err),
+        S_var=float(S_var_m),
+        n_T_mean=float(n_T_mean),
+        chi_k=float(chi_k_m),
+        B_L_mean=float(B_L_mean), B_L_err=float(B_L_err),
+        S_renyi_2_mean=float(S_renyi_2_mean), S_renyi_2_err=float(S_renyi_2_err),
+        S_renyi_3_mean=float(S_renyi_3_mean), S_renyi_3_err=float(S_renyi_3_err),
+        elapsed=elapsed,
     ))
 
     return 0
