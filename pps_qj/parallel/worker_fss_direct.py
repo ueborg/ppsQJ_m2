@@ -38,16 +38,21 @@ from pps_qj.parallel.grid_pps import (
 
 
 def _nc_for_L(L: int) -> int:
-    """N_c dispatcher: v2 schedule for L<=128, FST schedule for L>=192."""
+    """N_c dispatcher: v2 schedule for L<=128, FST for L=192/256, custom for L=384."""
     if L <= 128:
         return nc_for_L_v2(L)
+    if L == 384:
+        return 20  # ~31h per task; keep population small to fit wall time
     return nc_for_L_fst(L)
 
 
 def _time_horizon(L: int, alpha: float) -> float:
-    """T dispatcher: v2 for L<=128, FST (tighter cap) for L>=192."""
+    """T dispatcher: v2 for L<=128, FST for L=192/256, custom for L=384."""
     if L <= 128:
         return time_horizon_v2(L, alpha)
+    if L == 384:
+        base = max(30.0, 5.0 / max(alpha, 1e-9))
+        return min(float(max(base, 2.0 * L)), 40.0)
     return time_horizon_fst(L, alpha)
 from pps_qj.parallel.worker_clone_pps import (
     N_REAL,
@@ -143,6 +148,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                     B_L_means[r] = float(np.mean(bl[fm]))
     B_L_mean, _, B_L_err, _ = _nanstat(B_L_means)
 
+    # Renyi entropies (only present if PPS_RECORD_RENYI=1)
+    S_renyi_2_mean, _, S_renyi_2_err, _ = _agg("S_renyi_2")
+    S_renyi_3_mean, _, S_renyi_3_err, _ = _agg("S_renyi_3")
+
     elapsed = time.time() - t_start
     print(
         f"  done: S={S_mean:.4f}±{S_err:.4f}  elapsed={elapsed/3600:.2f}h",
@@ -155,6 +164,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         S_mean=S_mean, S_std=S_std_r, S_err=S_err,
         S_var=S_var_m, n_T_mean=n_T_mean, chi_k=chi_k_m,
         B_L_mean=B_L_mean, B_L_err=B_L_err,
+        S_renyi_2_mean=S_renyi_2_mean, S_renyi_2_err=S_renyi_2_err,
+        S_renyi_3_mean=S_renyi_3_mean, S_renyi_3_err=S_renyi_3_err,
         elapsed=elapsed,
     )
 
