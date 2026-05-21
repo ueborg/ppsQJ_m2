@@ -47,13 +47,22 @@ def _nc_for_L(L: int) -> int:
 
 
 def _time_horizon(L: int, alpha: float) -> float:
-    """T dispatcher: v2 for L<=128, FST for L=192/256, custom for L=384."""
+    """T dispatcher: v2 for L<=128, min(T_fst, L/2) for L>=192.
+
+    The FST caps (T=80 at L=192, T=50 at L=256) are too aggressive near the
+    critical point where equilibration requires T ~ L/v ~ L/2.
+    We enforce T >= L/2 to ensure convergence at the cost of extra wall time.
+    """
     if L <= 128:
         return time_horizon_v2(L, alpha)
     if L == 384:
         base = max(30.0, 5.0 / max(alpha, 1e-9))
-        return min(float(max(base, 2.0 * L)), 40.0)
-    return time_horizon_fst(L, alpha)
+        # T_min = L/2 = 192 but cap at 120 to keep wall time <72h
+        return float(max(min(base, 120.0), L / 2))
+    # L=192, 256: enforce T >= L/2 (96 and 128 respectively)
+    T_fst = time_horizon_fst(L, alpha)
+    T_min = float(L) / 2.0
+    return max(T_fst, T_min)
 from pps_qj.parallel.worker_clone_pps import (
     N_REAL,
     _n_workers_from_env,
@@ -141,11 +150,23 @@ def main(argv: Optional[list[str]] = None) -> int:
     B_L_means = np.full(len(real_results), np.nan)
     if can_compute_B_L:
         for r, res in enumerate(real_results):
-            if res.get("final_covs"):
-                bl = _batched_compute_B_L(res["final_covs"], L)
-                fm = np.isfinite(bl)
-                if fm.any():
-                    B_L_means[r] = float(np.mean(bl[fm]))
+            covs = res.get("final_covs")
+            # Explicit length check: empty list is falsy and means the population
+            # collapsed to 0 clones without raising CloningCollapse.
+            if covs is not None and len(covs) > 0:
+                # Filter clones with NaN/Inf in their covariance matrix — can
+                # occur near criticality at large L due to floating-point drift.
+                clean = [c for c in covs
+                         if np.isfinite(c).all()]
+                if len(clean) == 0:
+                    continue
+                try:
+                    bl = _batched_compute_B_L(clean, L)
+                    fm = np.isfinite(bl)
+                    if fm.any():
+                        B_L_means[r] = float(np.mean(bl[fm]))
+                except Exception:
+                    pass  # keep NaN for this realisation
     B_L_mean, _, B_L_err, _ = _nanstat(B_L_means)
 
     # Renyi entropies (only present if PPS_RECORD_RENYI=1)
