@@ -649,3 +649,129 @@ def clone_fst_task_id_ranges() -> dict[int, tuple[int, int]]:
         L: (i * _PER_L_FST, (i + 1) * _PER_L_FST - 1)
         for i, L in enumerate(L_CLONE_FST)
     }
+
+
+# ======================================================================
+# Slope-test grid (added 2026-05-26)
+# ======================================================================
+# Purpose: discriminate Möbius slope 1/8 from naive NLSM slope 1/4 at
+# ζ → 1, by providing precise λ_c(ζ) at ζ ∈ {0.70,0.80,0.90}.
+#
+# Design:
+#   Part A: ζ ∈ {0.80, 0.90} at L ∈ {8..128}     — fills gaps in v2 grid
+#   Part B: ζ ∈ {0.70, 0.80, 0.90} at L ∈ {192,256} — precision step
+#
+# Task layout (L outer, λ middle, ζ inner):
+#   Part A: 8 L-values × 24 λ × 2 ζ  = 384 tasks  (IDs   0..383)
+#   Part B: 2 L-values × 24 λ × 3 ζ  = 144 tasks  (IDs 384..527)
+#   Total: 528 tasks
+#
+# λ-points: reuse LAMBDA_VALS_V2 (24 points, includes fine grid near λ_c)
+# N_c / time_horizon: reuse nc_for_L_v2 for L≤128, nc_for_L_fst for L≥192
+# Seeds: unique — ζ=0.80,0.90 were absent from all prior grids.
+# ======================================================================
+
+_ZETA_SLOPE_SMALL: List[float] = [0.80, 0.90]
+_ZETA_SLOPE_LARGE: List[float] = [0.70, 0.80, 0.90]
+_L_SLOPE_SMALL: List[int]      = L_CLONE_V2           # [8,16,24,32,48,64,96,128]
+_L_SLOPE_LARGE: List[int]      = [192, 256]
+
+_N_SLOPE_SMALL = len(_L_SLOPE_SMALL) * len(LAMBDA_VALS_V2) * len(_ZETA_SLOPE_SMALL)  # 384
+_N_SLOPE_LARGE = len(_L_SLOPE_LARGE) * len(LAMBDA_VALS_V2) * len(_ZETA_SLOPE_LARGE)  # 144
+_N_SLOPE_TOTAL = _N_SLOPE_SMALL + _N_SLOPE_LARGE  # 528
+
+
+def _nc_slope(L: int) -> int:
+    """N_c for the slope-test grid, consistent with existing schedules."""
+    if L in {8, 16, 24, 32, 48, 64, 96, 128}:
+        return nc_for_L_v2(L)
+    return {192: 80, 256: 40}[L]
+
+
+def _time_horizon_slope(L: int, alpha: float) -> float:
+    """Time horizon for slope-test grid."""
+    if L <= 128:
+        return time_horizon_v2(L, alpha)
+    return time_horizon_fst(L, alpha)
+
+
+def make_clone_slope_grid() -> List[dict]:
+    """All (L, λ, ζ) parameter combinations for the slope-test scan.
+
+    Task ids are assigned in (L outer, λ middle, ζ inner) order.
+    Part A fills task ids 0..383; Part B fills 384..527.
+    """
+    grid: List[dict] = []
+    task_id = 0
+
+    # Part A: new ζ values at existing L≤128 sizes
+    for L in _L_SLOPE_SMALL:
+        for lam in LAMBDA_VALS_V2:
+            for zeta in _ZETA_SLOPE_SMALL:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = _time_horizon_slope(L, alpha)
+                grid.append(dict(
+                    task_id=task_id,
+                    L=int(L),
+                    lam=float(lam),
+                    alpha=alpha,
+                    w=w,
+                    zeta=float(zeta),
+                    T=float(T),
+                    N_c=int(_nc_slope(L)),
+                    seed=_seed(L, lam, zeta),
+                ))
+                task_id += 1
+
+    # Part B: large-L precision runs
+    for L in _L_SLOPE_LARGE:
+        for lam in LAMBDA_VALS_V2:
+            for zeta in _ZETA_SLOPE_LARGE:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = _time_horizon_slope(L, alpha)
+                grid.append(dict(
+                    task_id=task_id,
+                    L=int(L),
+                    lam=float(lam),
+                    alpha=alpha,
+                    w=w,
+                    zeta=float(zeta),
+                    T=float(T),
+                    N_c=int(_nc_slope(L)),
+                    seed=_seed(L, lam, zeta),
+                ))
+                task_id += 1
+
+    assert len(grid) == _N_SLOPE_TOTAL, (
+        f"Slope grid size mismatch: {len(grid)} != {_N_SLOPE_TOTAL}"
+    )
+    return grid
+
+
+def task_params_clone_slope(task_id: int) -> dict:
+    grid = make_clone_slope_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(
+            f"Slope task_id {task_id} out of range [0, {len(grid)})"
+        )
+    return grid[task_id]
+
+
+def n_tasks_clone_slope() -> int:
+    return _N_SLOPE_TOTAL  # 528
+
+
+def clone_slope_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_task_id, last_task_id) inclusive for the slope grid.
+
+    Returns a dict for all L values in the grid (both Part A and Part B).
+    """
+    out: dict[int, tuple[int, int]] = {}
+    grid = make_clone_slope_grid()
+    from collections import defaultdict
+    by_L: dict[int, list[int]] = defaultdict(list)
+    for p in grid:
+        by_L[p["L"]].append(p["task_id"])
+    for L, ids in sorted(by_L.items()):
+        out[L] = (min(ids), max(ids))
+    return out

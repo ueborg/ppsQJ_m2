@@ -44,7 +44,10 @@ import numpy as np
 
 from pps_qj.cloning import CloningCollapse, CloningResult, run_cloning
 from pps_qj.gaussian_backend import build_gaussian_chain_model
-from pps_qj.parallel.grid_pps import task_params_clone
+from pps_qj.parallel.grid_pps import (
+    task_params_clone,
+    task_params_clone_slope,
+)
 
 N_REAL = 5
 
@@ -233,10 +236,28 @@ def main(argv: Optional[list[str]] = None) -> int:
         argv = sys.argv[1:]
     if len(argv) < 2:
         raise SystemExit(
-            "usage: python -m pps_qj.parallel.worker_clone_pps <task_id> <output_dir>"
+            "usage: python -m pps_qj.parallel.worker_clone_pps <task_id> <output_dir> [--grid slope]"
         )
     task_id    = int(argv[0])
     output_dir = Path(argv[1])
+
+    # Optional grid selector: --grid slope dispatches to the slope-test grid.
+    # Default (no flag) uses the original v1 clone grid for backward compat.
+    grid_name = "v1"
+    remaining = argv[2:]
+    for i, arg in enumerate(remaining):
+        if arg == "--grid" and i + 1 < len(remaining):
+            grid_name = remaining[i + 1]
+            break
+
+    _GRID_DISPATCH = {
+        "v1":    task_params_clone,
+        "slope": task_params_clone_slope,
+    }
+    if grid_name not in _GRID_DISPATCH:
+        raise SystemExit(f"Unknown --grid value '{grid_name}'. Choices: {list(_GRID_DISPATCH)}")
+    _task_params = _GRID_DISPATCH[grid_name]
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_file  = output_dir / f"clone_{task_id:05d}.npz"
@@ -248,7 +269,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 0
 
     t_start = time.time()
-    task   = task_params_clone(task_id)
+    task   = _task_params(task_id)
     L      = int(task["L"])
     lam    = float(task["lam"])
     alpha  = float(task["alpha"])
