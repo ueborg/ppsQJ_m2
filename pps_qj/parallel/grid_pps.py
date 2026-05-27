@@ -519,6 +519,23 @@ if __name__ == "__main__":
         print("L task_id ranges:")
         for L, (lo, hi) in zeta0_task_id_ranges().items():
             print(f"  L={L:4d}  tasks {lo:2d}..{hi:2d}")
+    elif which == "clone_dense":
+        g = make_clone_dense_grid()
+        print(f"n_tasks_clone_dense = {n_tasks_clone_dense()} (expected 4112)")
+        print(f"first: {g[0]}")
+        print(f"last : {g[-1]}")
+        print(f"λ grid SMALL  ({len(LAMBDA_VALS_DENSE_SMALL)} pts): {[round(x,4) for x in LAMBDA_VALS_DENSE_SMALL]}")
+        print(f"λ grid MEDIUM ({len(LAMBDA_VALS_DENSE_MEDIUM)} pts): {[round(x,4) for x in LAMBDA_VALS_DENSE_MEDIUM]}")
+        print(f"λ grid LARGE  ({len(LAMBDA_VALS_DENSE_LARGE)} pts): {[round(x,4) for x in LAMBDA_VALS_DENSE_LARGE]}")
+        print(f"ζ grid SMALL  ({len(ZETA_VALS_DENSE_SMALL)} pts): {ZETA_VALS_DENSE_SMALL}")
+        print(f"ζ grid MEDIUM ({len(ZETA_VALS_DENSE_MEDIUM)} pts): {ZETA_VALS_DENSE_MEDIUM}")
+        print(f"ζ grid LARGE  ({len(ZETA_VALS_DENSE_LARGE)} pts): {ZETA_VALS_DENSE_LARGE}")
+        print(f"Per-L tasks: {_N_DENSE_PER_L} (= {len(LAMBDA_VALS_DENSE_SMALL)}×{len(ZETA_VALS_DENSE_SMALL)} "
+              f"+ {len(LAMBDA_VALS_DENSE_MEDIUM)}×{len(ZETA_VALS_DENSE_MEDIUM)} "
+              f"+ {len(LAMBDA_VALS_DENSE_LARGE)}×{len(ZETA_VALS_DENSE_LARGE)})")
+        print("L task_id ranges:")
+        for L, (lo, hi) in clone_dense_task_id_ranges().items():
+            print(f"  L={L:4d}  tasks {lo:4d}..{hi:4d}  N_c={nc_for_L_dense(L)}")
     else:
         print(f"unknown grid type: {which}")
         sys.exit(1)
@@ -775,3 +792,196 @@ def clone_slope_task_id_ranges() -> dict[int, tuple[int, int]]:
     for L, ids in sorted(by_L.items()):
         out[L] = (min(ids), max(ids))
     return out
+
+
+
+# ======================================================================
+# Clone-dense grid (added 2026-05-27)
+# ======================================================================
+# Purpose: high-statistics fine-grid scan for λ_c(ζ) phase-boundary
+# refinement and clean CMI / Renyi crossing analysis.  Builds on v2 data
+# but with:
+#   • 21 ζ values (5 small, 8 medium, 8 large) — vs. v2's 10
+#   • Dense λ grid in the predicted crossing band per ζ region
+#   • 2×/2×/3× N_c bump (asymmetric, weighted to larger L)
+#   • Full CMI tripartition components saved per (L, λ, ζ)
+#   • Renyi-2 and Renyi-3 entropies (PPS_RECORD_RENYI=1 required at submit)
+#
+# Task ordering (L outer, region middle, ζ inner) — see
+# make_clone_dense_grid() for the exact layout.  Each L contributes
+# 130 + 192 + 192 = 514 tasks, giving 4112 total.
+#
+# L task_id ranges:
+#   L=8:    0..  513     L=48: 2056..2569
+#   L=16: 514..1027     L=64: 2570..3083
+#   L=24:1028..1541     L=96: 3084..3597
+#   L=32:1542..2055     L=128:3598..4111
+#
+# Per-L total = 130 (small) + 192 (medium) + 192 (large) = 514 tasks
+# ======================================================================
+
+L_CLONE_DENSE: List[int] = [8, 16, 24, 32, 48, 64, 96, 128]
+
+# --- λ grids per ζ region ----------------------------------------------
+# Small ζ (predicted λ_c ≈ 0.06–0.18): dense low-λ coverage
+LAMBDA_VALS_DENSE_SMALL: List[float] = sorted(set(
+    np.linspace(0.01, 0.06, 6).tolist()      # 6 dense low-λ points
+    + np.linspace(0.07, 0.30, 16).tolist()    # 16 in the crossing band
+    + np.linspace(0.35, 0.60, 4).tolist()     # 4 in area phase for crossing
+))  # 26 λ-points (after dedup/sort)
+
+# Medium ζ (predicted λ_c ≈ 0.25–0.45): crossing band recentred
+LAMBDA_VALS_DENSE_MEDIUM: List[float] = sorted(set(
+    np.linspace(0.10, 0.20, 4).tolist()
+    + np.linspace(0.22, 0.45, 16).tolist()    # crossing band
+    + np.linspace(0.48, 0.65, 4).tolist()
+))  # 24 λ-points
+
+# Large ζ (predicted λ_c ≈ 0.45–0.50, approaching Born endpoint):
+LAMBDA_VALS_DENSE_LARGE: List[float] = sorted(set(
+    np.linspace(0.20, 0.35, 4).tolist()
+    + np.linspace(0.38, 0.55, 16).tolist()    # crossing band around λ_c~0.45–0.50
+    + np.linspace(0.58, 0.70, 4).tolist()
+))  # 24 λ-points
+
+# --- ζ grids -----------------------------------------------------------
+ZETA_VALS_DENSE_SMALL:  List[float] = [0.02, 0.05, 0.08, 0.10, 0.15]                                 # 5
+ZETA_VALS_DENSE_MEDIUM: List[float] = [0.18, 0.22, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]               # 8
+ZETA_VALS_DENSE_LARGE:  List[float] = [0.55, 0.65, 0.70, 0.75, 0.80, 0.85, 0.92, 1.00]               # 8
+
+_N_DENSE_PER_L = (
+    len(LAMBDA_VALS_DENSE_SMALL)  * len(ZETA_VALS_DENSE_SMALL)
+    + len(LAMBDA_VALS_DENSE_MEDIUM) * len(ZETA_VALS_DENSE_MEDIUM)
+    + len(LAMBDA_VALS_DENSE_LARGE)  * len(ZETA_VALS_DENSE_LARGE)
+)  # = 26*5 + 24*8 + 24*8 = 130 + 192 + 192 = 514
+
+# Seed offset to keep dense seeds disjoint from v2/FST/slope seeds.
+# Base _seed(L, lam, zeta) values reach ~1.3e9 at L=128; realisation seeds
+# in worker extend by +r*999_983 for r ∈ [0, N_REAL=5).  Adding 7e9 puts
+# all dense (base + realisation) seeds in [7e9, 8.4e9], safely disjoint
+# from v2/FST/slope (≤ ~1.3e9).
+_DENSE_SEED_OFFSET = 7_000_000_000
+
+
+def _seed_dense(L: int, lam: float, zeta: float) -> int:
+    """Seed for the dense grid, offset to guarantee independence from v2."""
+    return _seed(L, lam, zeta) + _DENSE_SEED_OFFSET
+
+
+def nc_for_L_dense(L: int) -> int:
+    """N_c schedule for the dense grid.
+
+    Asymmetric 2×/2×/3× bump weighted toward larger L (vs. v2 schedule):
+      L=8:  4000  (2× of v2 2000)        L=48:  600  (2×)
+      L=16: 2000  (2×)                    L=64:  400  (2×)
+      L=24: 1600  (2×)                    L=96:  450  (3×)
+      L=32: 1000  (2×)                    L=128: 300  (3×)
+
+    Statistical errors on Binder cumulants scale as 1/sqrt(N_c), so
+    √2 ≈ 1.41× tighter at small/medium L and √3 ≈ 1.73× at L=96, 128
+    where v2 was statistics-limited.
+    """
+    return {
+        8:   4000,
+        16:  2000,
+        24:  1600,
+        32:  1000,
+        48:   600,
+        64:   400,
+        96:   450,
+        128:  300,
+    }[L]
+
+
+def time_horizon_dense(L: int, alpha: float) -> float:
+    """T(L, α) for the dense grid — same caps as v2.
+
+    The v2 caps were derived from steady-state convergence tests and have
+    not been re-derived for higher N_c; same caps apply since saturation
+    time is independent of N_c.
+    """
+    return time_horizon_v2(L, alpha)
+
+
+def make_clone_dense_grid() -> List[dict]:
+    """Unified dense grid: 8 L × (5+8+8) ζ × (26 or 24) λ = 4112 tasks.
+
+    Task ordering: L outer, region middle (small→medium→large), ζ inner.
+    Within each region, λ middle / ζ inner.
+
+    L task-ID layout:
+      L_i contributes tasks [i*514, (i+1)*514).  Within an L-block:
+        - tasks [0, 130)   : small-ζ region (26 λ × 5 ζ)
+        - tasks [130, 322) : medium-ζ region (24 λ × 8 ζ)
+        - tasks [322, 514) : large-ζ region (24 λ × 8 ζ)
+    """
+    grid: List[dict] = []
+    task_id = 0
+    for L in L_CLONE_DENSE:
+        N_c = int(nc_for_L_dense(L))
+
+        # Small-ζ block
+        for lam in LAMBDA_VALS_DENSE_SMALL:
+            for zeta in ZETA_VALS_DENSE_SMALL:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_dense(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=N_c,
+                    seed=_seed_dense(L, lam, zeta),
+                ))
+                task_id += 1
+
+        # Medium-ζ block
+        for lam in LAMBDA_VALS_DENSE_MEDIUM:
+            for zeta in ZETA_VALS_DENSE_MEDIUM:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_dense(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=N_c,
+                    seed=_seed_dense(L, lam, zeta),
+                ))
+                task_id += 1
+
+        # Large-ζ block
+        for lam in LAMBDA_VALS_DENSE_LARGE:
+            for zeta in ZETA_VALS_DENSE_LARGE:
+                alpha, w = _alpha_w_from_lam(lam)
+                T = time_horizon_dense(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=N_c,
+                    seed=_seed_dense(L, lam, zeta),
+                ))
+                task_id += 1
+
+    expected = len(L_CLONE_DENSE) * _N_DENSE_PER_L
+    assert len(grid) == expected, (
+        f"Dense grid size mismatch: {len(grid)} != {expected}"
+    )
+    return grid
+
+
+def task_params_clone_dense(task_id: int) -> dict:
+    grid = make_clone_dense_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(
+            f"Dense task_id {task_id} out of range [0, {len(grid)})"
+        )
+    return grid[task_id]
+
+
+def n_tasks_clone_dense() -> int:
+    return len(L_CLONE_DENSE) * _N_DENSE_PER_L  # = 4112
+
+
+def clone_dense_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_task_id, last_task_id) inclusive for the dense grid."""
+    return {
+        L: (i * _N_DENSE_PER_L, (i + 1) * _N_DENSE_PER_L - 1)
+        for i, L in enumerate(L_CLONE_DENSE)
+    }

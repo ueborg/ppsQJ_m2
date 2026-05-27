@@ -163,11 +163,32 @@ def _save_partial(partial_file: Path, completed: dict[int, dict]) -> None:
 # Batched B_L
 # ---------------------------------------------------------------------------
 
-def _batched_compute_B_L(covs_list: list[np.ndarray], L: int) -> np.ndarray:
-    """Batched B_L = S_topo * S_half across the final clone population."""
+def _batched_compute_B_L(covs_list: list[np.ndarray], L: int) -> dict:
+    """Batched CMI components and B_L across the final clone population.
+
+    Tripartition on Majorana indices [0, 3L/2):
+        A = [0,   L/2)
+        B = [L/2, L)
+        C = [L,   3L/2)
+
+    Returns
+    -------
+    dict with per-clone arrays of shape (N_c,):
+        S_AB, S_BC, S_B, S_ABC : subsystem entropies for the tripartition
+        CMI  = S_AB + S_BC - S_B - S_ABC        (CMI of A:C | B)
+        B_L  = CMI * S_AB                       (original Binder-like proxy)
+
+    Returns dict of NaN-filled arrays on L not divisible by 4 or on
+    LinAlgError (with B_L recoverable from the single-cov fallback path).
+    """
     N_c = len(covs_list)
+    _keys = ("S_AB", "S_BC", "S_B", "S_ABC", "CMI", "B_L")
+
+    def _nan_out() -> dict:
+        return {k: np.full(N_c, np.nan, dtype=np.float64) for k in _keys}
+
     if L % 4 != 0:
-        return np.full(N_c, np.nan, dtype=np.float64)
+        return _nan_out()
 
     gamma_batch = np.stack(
         [np.asarray(c, dtype=np.float64) for c in covs_list], axis=0
@@ -175,10 +196,10 @@ def _batched_compute_B_L(covs_list: list[np.ndarray], L: int) -> np.ndarray:
     hL = L // 2
     tL = 3 * L // 2
 
-    sub_AB  = gamma_batch[:, :L,       :L      ]
-    sub_BD  = gamma_batch[:, hL:hL+L,  hL:hL+L]
-    sub_B   = gamma_batch[:, hL:L,     hL:L    ]
-    sub_ABD = gamma_batch[:, :tL,      :tL     ]
+    sub_AB  = gamma_batch[:, :L,       :L      ]   # A∪B : modes [0,    L)
+    sub_BC  = gamma_batch[:, hL:hL+L,  hL:hL+L ]   # B∪C : modes [L/2,  3L/2)
+    sub_B   = gamma_batch[:, hL:L,     hL:L    ]   # B   : modes [L/2,  L)
+    sub_ABC = gamma_batch[:, :tL,      :tL     ]   # A∪B∪C: modes [0,   3L/2)
 
     def _batch_entropy(sub: np.ndarray) -> np.ndarray:
         ell = sub.shape[-1] // 2
@@ -189,21 +210,29 @@ def _batched_compute_B_L(covs_list: list[np.ndarray], L: int) -> np.ndarray:
         return -np.sum(p_p * np.log2(p_p) + p_m * np.log2(p_m), axis=-1)
 
     try:
-        S_AB  = _batch_entropy(sub_AB)
-        S_BD  = _batch_entropy(sub_BD)
-        S_B   = _batch_entropy(sub_B)
-        S_ABD = _batch_entropy(sub_ABD)
-        return ((S_AB + S_BD - S_B - S_ABD) * S_AB).astype(np.float64)
+        S_AB  = _batch_entropy(sub_AB).astype(np.float64)
+        S_BC  = _batch_entropy(sub_BC).astype(np.float64)
+        S_B   = _batch_entropy(sub_B).astype(np.float64)
+        S_ABC = _batch_entropy(sub_ABC).astype(np.float64)
+        CMI   = (S_AB + S_BC - S_B - S_ABC).astype(np.float64)
+        B_L   = (CMI * S_AB).astype(np.float64)
+        return {
+            "S_AB": S_AB, "S_BC": S_BC, "S_B": S_B, "S_ABC": S_ABC,
+            "CMI":  CMI,  "B_L":  B_L,
+        }
     except np.linalg.LinAlgError:
+        # Fallback: per-clone via single-cov observables. We only know B_L
+        # from this path; mark component entropies as NaN so downstream
+        # analysis won't silently mix the two paths.
         from pps_qj.observables import compute_all_observables
-        out = np.empty(N_c, dtype=np.float64)
+        out = _nan_out()
         for i, cov in enumerate(covs_list):
             try:
-                out[i] = float(compute_all_observables(
+                out["B_L"][i] = float(compute_all_observables(
                     np.asarray(cov, dtype=np.float64), L, []
                 )["B_L"])
             except Exception:
-                out[i] = np.nan
+                out["B_L"][i] = np.nan
         return out
 
 
@@ -264,9 +293,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     summary_file = output_dir / f"summary_clone_{task_id:05d}.json"
     partial_file = output_dir / f"clone_{task_id:05d}_partial.pkl"
 
-    if output_file.exists():
+    force_rerun = os.environ.get("PPS_FORCE_RERUN", "0") not in ("0", "", "false", "False")
+    if output_file.exists() and not force_rerun:
         print(f"clone task {task_id}: already done, skipping", flush=True)
         return 0
+    if output_file.exists() and force_rerun:
+        print(f"clone task {task_id}: PPS_FORCE_RERUN=1 — overwriting existing output", flush=True)
 
     t_start = time.time()
     task   = _task_params(task_id)
@@ -326,6 +358,17 @@ def main(argv: Optional[list[str]] = None) -> int:
         ESSs          = np.full(N_REAL, np.nan)
         B_L_means     = np.full(N_REAL, np.nan)
         B_L_stds      = np.full(N_REAL, np.nan)
+        # CMI tripartition components (per-realisation means/stds across clones)
+        CMI_means     = np.full(N_REAL, np.nan)
+        CMI_stds      = np.full(N_REAL, np.nan)
+        S_AB_means    = np.full(N_REAL, np.nan)
+        S_AB_stds     = np.full(N_REAL, np.nan)
+        S_BC_means    = np.full(N_REAL, np.nan)
+        S_BC_stds     = np.full(N_REAL, np.nan)
+        S_B_means     = np.full(N_REAL, np.nan)
+        S_B_stds      = np.full(N_REAL, np.nan)
+        S_ABC_means   = np.full(N_REAL, np.nan)
+        S_ABC_stds    = np.full(N_REAL, np.nan)
         n_T_means     = np.full(N_REAL, np.nan)
         chi_ks        = np.full(N_REAL, np.nan)
         S_renyi_2s    = np.full(N_REAL, np.nan)
@@ -364,11 +407,25 @@ def main(argv: Optional[list[str]] = None) -> int:
             n_js_fallbacks_total += int(res.get("n_js_fallbacks", 0))
 
             if can_compute_B_L:
-                bl = _batched_compute_B_L(res["final_covs"], L)
+                comps = _batched_compute_B_L(res["final_covs"], L)
+                bl = comps["B_L"]
                 fm = np.isfinite(bl)
                 if fm.any():
                     B_L_means[r] = float(np.mean(bl[fm]))
                     B_L_stds[r]  = float(np.std(bl[fm]))
+                # CMI tripartition components — mean/std across clones
+                for _name, _arr_means, _arr_stds in (
+                    ("CMI",   CMI_means,   CMI_stds),
+                    ("S_AB",  S_AB_means,  S_AB_stds),
+                    ("S_BC",  S_BC_means,  S_BC_stds),
+                    ("S_B",   S_B_means,   S_B_stds),
+                    ("S_ABC", S_ABC_means, S_ABC_stds),
+                ):
+                    _val = comps[_name]
+                    _fm  = np.isfinite(_val)
+                    if _fm.any():
+                        _arr_means[r] = float(np.mean(_val[_fm]))
+                        _arr_stds[r]  = float(np.std(_val[_fm]))
 
             print(
                 f"  real {r+1}: S={S_means[r]:.4f}, θ={thetas[r]:.4f}, "
@@ -381,6 +438,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         theta_mean,  _, theta_err, nth      = _nanstat(thetas)
         ESS_mean,    _, _,        _         = _nanstat(ESSs)
         B_L_mean, _,  B_L_err,   nBL       = _nanstat(B_L_means)
+        # CMI tripartition reductions
+        CMI_mean,  _, CMI_err,  _           = _nanstat(CMI_means)
+        S_AB_mean, _, S_AB_err, _           = _nanstat(S_AB_means)
+        S_BC_mean, _, S_BC_err, _           = _nanstat(S_BC_means)
+        S_B_mean,  _, S_B_err,  _           = _nanstat(S_B_means)
+        S_ABC_mean,_, S_ABC_err,_           = _nanstat(S_ABC_means)
         n_T_mean, _,  n_T_err,   _         = _nanstat(n_T_means)
         chi_k_mean, _, chi_k_err, _         = _nanstat(chi_ks)
         S_var_mean, _, S_var_err, _         = _nanstat(S_vars)
@@ -398,6 +461,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             theta_mean=theta_mean, theta_err=theta_err,
             ESS_mean=ESS_mean,
             B_L_mean=B_L_mean, B_L_err=B_L_err,
+            # CMI tripartition components — for cleaner Binder-like crossings
+            CMI_mean=CMI_mean, CMI_err=CMI_err,
+            S_AB_mean=S_AB_mean, S_AB_err=S_AB_err,
+            S_BC_mean=S_BC_mean, S_BC_err=S_BC_err,
+            S_B_mean=S_B_mean,   S_B_err=S_B_err,
+            S_ABC_mean=S_ABC_mean, S_ABC_err=S_ABC_err,
             # New observables
             n_T_mean=n_T_mean, n_T_err=n_T_err,
             chi_k_mean=chi_k_mean, chi_k_err=chi_k_err,
@@ -407,6 +476,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             S_means_all=S_means, S_stds_all=S_stds,
             thetas_all=thetas, ESSs_all=ESSs,
             B_L_means_all=B_L_means, B_L_stds_all=B_L_stds,
+            # Per-realization CMI components
+            CMI_means_all=CMI_means,    CMI_stds_all=CMI_stds,
+            S_AB_means_all=S_AB_means,  S_AB_stds_all=S_AB_stds,
+            S_BC_means_all=S_BC_means,  S_BC_stds_all=S_BC_stds,
+            S_B_means_all=S_B_means,    S_B_stds_all=S_B_stds,
+            S_ABC_means_all=S_ABC_means, S_ABC_stds_all=S_ABC_stds,
             n_T_means_all=n_T_means, chi_ks_all=chi_ks,
             S_renyi_2_mean=float(np.nanmean(S_renyi_2s)) if not np.all(np.isnan(S_renyi_2s)) else float("nan"),
             S_renyi_3_mean=float(np.nanmean(S_renyi_3s)) if not np.all(np.isnan(S_renyi_3s)) else float("nan"),
@@ -432,6 +507,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             S_mean=S_mean, S_err=S_err,
             theta_mean=theta_mean, theta_err=theta_err,
             B_L_mean=B_L_mean, B_L_err=B_L_err,
+            CMI_mean=CMI_mean, CMI_err=CMI_err,
+            S_AB_mean=S_AB_mean, S_AB_err=S_AB_err,
             n_T_mean=n_T_mean, chi_k_mean=chi_k_mean,
             S_var_mean=S_var_mean, covar_Sk_mean=covar_Sk_mean,
             ESS_mean=ESS_mean, n_collapses=n_collapses_total,
@@ -445,6 +522,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(
             f"clone task {task_id}: L={L}, λ={lam:.3f}, ζ={zeta:.2f}, "
             f"<S>={S_mean:.4f}±{S_err:.4f}, <B_L>={B_L_mean:.4f}±{B_L_err:.4f}, "
+            f"<CMI>={CMI_mean:.4f}±{CMI_err:.4f}, "
             f"θ={theta_mean:.4f}±{theta_err:.4f}, "
             f"k̄={n_T_mean:.4f}, χ_k={chi_k_mean:.4f}, "
             f"C_Sk={covar_Sk_mean:.4f}, t={wall_time:.1f}s",
