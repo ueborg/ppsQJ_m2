@@ -985,3 +985,313 @@ def clone_dense_task_id_ranges() -> dict[int, tuple[int, int]]:
         L: (i * _N_DENSE_PER_L, (i + 1) * _N_DENSE_PER_L - 1)
         for i, L in enumerate(L_CLONE_DENSE)
     }
+
+
+
+# ======================================================================
+# Clone Phase-2 supplement grid (added 2026-05-29)
+# ======================================================================
+# Purpose: narrow, deep, high-L scan to break the L<=128 finite-size
+# ceiling and make the phi=1/2 vs phi=1 question conclusive.
+#
+# Physics rationale (see collaborator spec):
+#   The crossing g_c(L,2L) is biased while L < xi_nc ~ g_c^{-2}.  To put
+#   the crossing in the asymptotic regime we need L well above xi_nc.  In
+#   the decisive window zeta in [0.10, 0.30] the two hypotheses differ by
+#   ~3x in g_c and xi_nc ~ 10-100, so L = 160, 192, 256 actually exceeds
+#   xi_nc there (unlike at smaller zeta, where a fake sqrt-zeta signal can
+#   appear).  Three new L values (160, 192, 256) paired with the dense
+#   L=128 give a 4-point 1/L extrapolation that can FIT the correction-to-
+#   scaling exponent omega rather than assume it.
+#
+#   N_c is set high (400/300/250) so the B_L relative error in the
+#   critical band is ~5%, giving crossing precision delta-lambda_c <~ 0.02
+#   -- enough to separate g_c=0.20 (linear) from g_c=0.32 (sqrt) at
+#   zeta=0.10.
+#
+# CRITICAL DEPENDENCY -- READ THIS:
+#   The lambda-mesh is NARROW (13 points, +/-0.06) and must be CENTERED on
+#   the dense L<=128 crossing lambda_c^{(128)}(zeta).  Those values are NOT
+#   known until the dense campaign (submit_clone_dense_*.sh) finishes and
+#   is analysed.  The table _PHASE2_LAMBDA_C_128 below ships with
+#   PLACEHOLDER values from the sqrt-zeta fit.  Submitting with placeholders
+#   risks centering the expensive scan on the wrong lambda and wasting the
+#   run (the retraction table has lambda_c(0.20) ~ 0.43, far from the fit's
+#   0.29 -- a +/-0.06 window centered wrong would MISS the crossing).
+#
+#   WORKFLOW:
+#     1. Let dense L<=128 jobs finish.
+#     2. Extract lambda_c^{(128)}(zeta) from B_L / CMI crossings for
+#        zeta in {0.10, 0.15, 0.20, 0.25, 0.30}.
+#     3. Edit _PHASE2_LAMBDA_C_128 with those values.
+#     4. Set _PHASE2_CENTERS_VERIFIED = True.
+#     5. (optional) widen _PHASE2_LAMBDA_HALFWIDTH if any center is
+#        uncertain by more than ~0.04.
+#     6. THEN submit.
+#
+# Task layout (L outer, zeta middle, lambda inner): 5 zeta x 13 lambda = 65
+# per L; 3 L -> 195 tasks.
+#   L=160: tasks   0.. 64    N_c=400
+#   L=192: tasks  65..129    N_c=300
+#   L=256: tasks 130..194    N_c=250
+# ======================================================================
+
+# ---- EDIT THIS BLOCK AFTER THE DENSE L<=128 ANALYSIS -------------------
+# lambda_c^{(128)}(zeta) crossing locations.  PLACEHOLDER values below are
+# from the C*sqrt(zeta)/(1+C*sqrt(zeta)) fit with C=0.91 -- replace with
+# the measured dense crossings before submitting.
+_PHASE2_LAMBDA_C_128: dict[float, float] = {
+    0.10: 0.223,   # PLACEHOLDER (sqrt-zeta fit). Dense retraction gave ~0.232.
+    0.15: 0.261,   # PLACEHOLDER (sqrt-zeta fit). No direct dense value yet.
+    0.20: 0.289,   # PLACEHOLDER (sqrt-zeta fit). Retraction gave ~0.43 (!) -- CHECK.
+    0.25: 0.313,   # PLACEHOLDER (sqrt-zeta fit). No direct dense value yet.
+    0.30: 0.333,   # PLACEHOLDER (sqrt-zeta fit). Retraction gave ~0.368.
+}
+# Flip to True ONLY after the centers above are replaced with measured
+# dense crossings.  make_clone_phase2_grid() warns loudly while this is
+# False.
+_PHASE2_CENTERS_VERIFIED: bool = False
+# ------------------------------------------------------------------------
+
+ZETA_VALS_PHASE2: List[float] = [0.10, 0.15, 0.20, 0.25, 0.30]
+L_PHASE2: List[int] = [160, 192, 256]
+
+_PHASE2_LAMBDA_HALFWIDTH: float = 0.06   # +/- window around lambda_c^{(128)}
+_PHASE2_N_LAMBDA: int = 13               # points across the window
+_PHASE2_PER_L = len(ZETA_VALS_PHASE2) * _PHASE2_N_LAMBDA   # = 65
+
+# Seed offset disjoint from v2 (<=1.3e9), FST/slope (~2.5e9), and dense
+# ([7e9, 8.3e9]).  Phase-2 base seeds land in [9.08e9, ~10.3e9].
+_PHASE2_SEED_OFFSET = 9_000_000_000
+
+
+def nc_for_L_phase2(L: int) -> int:
+    """N_c schedule for the Phase-2 supplement.
+
+    Higher than the dense schedule because crossing precision at large L
+    is the binding constraint:  delta-lambda_c <~ 0.02 needs B_L relative
+    error ~5%, i.e. N_c ~ a few hundred even at L=256.
+    """
+    return {160: 400, 192: 300, 256: 250}[L]
+
+
+def time_horizon_phase2(L: int, alpha: float) -> float:
+    """Same time-horizon cap as v2/dense (saturation time is N_c- and
+    L-driven, set by the same convergence tests)."""
+    return time_horizon_v2(L, alpha)
+
+
+def _seed_phase2(L: int, lam: float, zeta: float) -> int:
+    return _seed(L, lam, zeta) + _PHASE2_SEED_OFFSET
+
+
+def lambda_mesh_phase2(
+    zeta: float,
+    halfwidth: float = _PHASE2_LAMBDA_HALFWIDTH,
+    n: int = _PHASE2_N_LAMBDA,
+) -> np.ndarray:
+    """13-point lambda mesh centered on lambda_c^{(128)}(zeta).
+
+    Clipped to (0.01, 0.95) for safety; at the intended centers (0.22-0.33)
+    with halfwidth 0.06 no clipping occurs.
+    """
+    if zeta not in _PHASE2_LAMBDA_C_128:
+        raise KeyError(
+            f"zeta={zeta} has no lambda_c^(128) center in _PHASE2_LAMBDA_C_128"
+        )
+    lc = _PHASE2_LAMBDA_C_128[zeta]
+    lo = max(0.01, lc - halfwidth)
+    hi = min(0.95, lc + halfwidth)
+    return np.linspace(lo, hi, n)
+
+
+def make_clone_phase2_grid() -> List[dict]:
+    """Phase-2 supplement: 3 L x 5 zeta x 13 lambda = 195 tasks.
+
+    Task ordering: L outer, zeta middle, lambda inner.
+      L=160: tasks   0.. 64
+      L=192: tasks  65..129
+      L=256: tasks 130..194
+    """
+    if not _PHASE2_CENTERS_VERIFIED:
+        import warnings
+        warnings.warn(
+            "Phase-2 lambda centers are PLACEHOLDERS (_PHASE2_CENTERS_VERIFIED"
+            " is False). The narrow +/-0.06 lambda mesh may miss the true"
+            " crossing. Update _PHASE2_LAMBDA_C_128 from the dense L<=128"
+            " analysis and set _PHASE2_CENTERS_VERIFIED = True before"
+            " submitting.",
+            stacklevel=2,
+        )
+
+    grid: List[dict] = []
+    task_id = 0
+    for L in L_PHASE2:
+        N_c = int(nc_for_L_phase2(L))
+        for zeta in ZETA_VALS_PHASE2:
+            for lam in lambda_mesh_phase2(zeta):
+                alpha, w = _alpha_w_from_lam(float(lam))
+                T = time_horizon_phase2(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=N_c,
+                    seed=_seed_phase2(L, float(lam), zeta),
+                ))
+                task_id += 1
+
+    expected = len(L_PHASE2) * _PHASE2_PER_L
+    assert len(grid) == expected, (
+        f"Phase-2 grid size mismatch: {len(grid)} != {expected}"
+    )
+    return grid
+
+
+def task_params_clone_phase2(task_id: int) -> dict:
+    grid = make_clone_phase2_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(
+            f"Phase-2 task_id {task_id} out of range [0, {len(grid)})"
+        )
+    return grid[task_id]
+
+
+def n_tasks_clone_phase2() -> int:
+    return len(L_PHASE2) * _PHASE2_PER_L  # = 195
+
+
+def clone_phase2_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_task_id, last_task_id) inclusive for the Phase-2 grid."""
+    return {
+        L: (i * _PHASE2_PER_L, (i + 1) * _PHASE2_PER_L - 1)
+        for i, L in enumerate(L_PHASE2)
+    }
+
+
+
+# ======================================================================
+# Clone "rescue" grid (added 2026-06-03) -- lean large-L resubmission
+# ======================================================================
+# Context: the dense large_L job (N_c=450 at L=96, full 24-26 pt lambda
+# grid) was too heavy -- L=96 alone exceeded the 120h walltime (342/514
+# done) and L=128 never started.  Two compounding causes, both measured
+# from the partial data:
+#   (1) compute scales as ~ N_c * T * L^4  (validated to L=96)
+#   (2) cloning variance inflates with L: B_L rel-err grows 2.8% (L=32)
+#       -> 13.5% (L=96) at comparable N_c, because ESS collapses near
+#       criticality.  Beating it by N_c alone is hopeless (~5000 at L=128).
+#
+# This rescue grid gets L=128 (and optionally L=160) by:
+#   - NARROW lambda window (13 pts, +/-0.07) centered on the MEASURED
+#     dense L<=96 crossings (no need for the full grid -- lambda_c is known)
+#   - reduced N_c (250 at L=128, 120 at L=160): ~20% B_L err, same ballpark
+#     as the L=96 data we already extract usable crossings from
+#   - decisive-but-broad zeta set (10 values, all present in the dense grid
+#     so (64,128) crossings are computable against existing L=64 data)
+#   - T kept at 100 (saturation is ballistic ~L/v; do NOT cut it at L=128)
+#
+# Centers below are MEASURED from clone_aggregate_dense_partial.pkl
+# (mean of available (32,64)&(48,96) B_L crossings; (16,32)+drift for
+# large zeta where L=96 didn't finish).
+#
+# Cost (validated model): L=128 N_c=250 ~13h/task; 130 tasks / 24 conc
+# ~= 72h wall -> fits a 96h job.  L=160 N_c=120 ~16h/task; ~87h wall.
+#
+# Task layout (L outer, zeta middle, lambda inner): 10 zeta x 13 lambda
+# = 130 per L.
+#   L=128: tasks   0..129
+#   L=160: tasks 130..259   (only if L_RESCUE includes 160)
+# ======================================================================
+
+# Measured lambda_c(zeta) from the dense L<=96 Binder crossings.
+_RESCUE_LAMBDA_C: dict[float, float] = {
+    0.10: 0.19,
+    0.15: 0.22,
+    0.22: 0.24,
+    0.25: 0.25,
+    0.30: 0.26,
+    0.40: 0.32,
+    0.50: 0.36,
+    0.65: 0.43,
+    0.80: 0.51,
+    1.00: 0.53,
+}
+ZETA_VALS_RESCUE: List[float] = sorted(_RESCUE_LAMBDA_C.keys())
+
+# L sizes for the rescue run.  Edit to [128] only, or [128, 160].
+L_RESCUE: List[int] = [128, 160]
+
+_RESCUE_LAMBDA_HALFWIDTH: float = 0.07   # +/- window; brackets cross-L drift
+_RESCUE_N_LAMBDA: int = 13
+_RESCUE_PER_L = len(ZETA_VALS_RESCUE) * _RESCUE_N_LAMBDA   # = 130
+
+# Seed offset disjoint from v2(<=1.3e9), FST/slope(~2.5e9),
+# dense([7e9,8.3e9]), phase2([9e9,11.5e9]).  Rescue lands in [12e9,13.3e9].
+_RESCUE_SEED_OFFSET = 12_000_000_000
+
+
+def nc_for_L_rescue(L: int) -> int:
+    """Reduced N_c schedule for the rescue run.
+
+    ~20% B_L rel-err expected (same ballpark as the L=96 dense data, from
+    which usable crossings were extracted).  Going higher is better but
+    each step in N_c costs linearly in wall-time; these values keep
+    130 tasks inside ~72-96h at 24-way concurrency.
+    """
+    return {128: 250, 160: 120, 192: 80}.get(L, 150)
+
+
+def _seed_rescue(L: int, lam: float, zeta: float) -> int:
+    return _seed(L, lam, zeta) + _RESCUE_SEED_OFFSET
+
+
+def lambda_mesh_rescue(zeta: float) -> np.ndarray:
+    lc = _RESCUE_LAMBDA_C[zeta]
+    lo = max(0.01, lc - _RESCUE_LAMBDA_HALFWIDTH)
+    hi = min(0.95, lc + _RESCUE_LAMBDA_HALFWIDTH)
+    return np.linspace(lo, hi, _RESCUE_N_LAMBDA)
+
+
+def make_clone_rescue_grid() -> List[dict]:
+    """Lean large-L grid: len(L_RESCUE) x 10 zeta x 13 lambda.
+
+    Task ordering: L outer, zeta middle, lambda inner.
+      L=128: tasks   0..129
+      L=160: tasks 130..259  (if present in L_RESCUE)
+    """
+    grid: List[dict] = []
+    task_id = 0
+    for L in L_RESCUE:
+        N_c = int(nc_for_L_rescue(L))
+        for zeta in ZETA_VALS_RESCUE:
+            for lam in lambda_mesh_rescue(zeta):
+                alpha, w = _alpha_w_from_lam(float(lam))
+                T = time_horizon_v2(L, alpha)
+                grid.append(dict(
+                    task_id=task_id, L=int(L), lam=float(lam),
+                    alpha=alpha, w=w, zeta=float(zeta),
+                    T=float(T), N_c=N_c,
+                    seed=_seed_rescue(L, float(lam), zeta),
+                ))
+                task_id += 1
+    expected = len(L_RESCUE) * _RESCUE_PER_L
+    assert len(grid) == expected, f"Rescue grid size mismatch: {len(grid)} != {expected}"
+    return grid
+
+
+def task_params_clone_rescue(task_id: int) -> dict:
+    grid = make_clone_rescue_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(f"Rescue task_id {task_id} out of range [0, {len(grid)})")
+    return grid[task_id]
+
+
+def n_tasks_clone_rescue() -> int:
+    return len(L_RESCUE) * _RESCUE_PER_L
+
+
+def clone_rescue_task_id_ranges() -> dict[int, tuple[int, int]]:
+    return {
+        L: (i * _RESCUE_PER_L, (i + 1) * _RESCUE_PER_L - 1)
+        for i, L in enumerate(L_RESCUE)
+    }
