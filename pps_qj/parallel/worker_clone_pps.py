@@ -94,15 +94,15 @@ def _run_one_realisation(args: dict) -> dict:
     # Set PPS_RECORD_RENYI=1 to enable. Backward-compatible: default off.
     record_renyi = os.environ.get("PPS_RECORD_RENYI", "0") not in ("0", "", "false", "False")
 
-    # Backend selector.  PPS_BACKEND=scalar forces the original per-clone
-    # loop (bit-exact w.r.t. historical data).  PPS_BACKEND=batched uses
-    # the vectorised path (1.1–2× faster, statistically equivalent).
-    # Default is 'batched' for new runs; set PPS_BACKEND=scalar to reproduce
-    # old results exactly or to A/B against new data.
-    # NOTE: the batched backend is deliberately *not* used on existing rescue
-    # or dense runs -- those were submitted before this env var existed and
-    # their already-running processes will not pick up this change.
-    backend = os.environ.get("PPS_BACKEND", "batched")
+    # Backend selector.  PPS_BACKEND=batched uses the vectorised path
+    # (statistically equivalent to scalar).  Default is 'scalar' — safe,
+    # bit-exact w.r.t. all historical data, and confirmed faster at N_c<=40.
+    # Whether batched is faster at production N_c (250–450) is not yet
+    # confirmed: preliminary profiling shows batched 0.28x at L=32/N_c=40
+    # and 0.97x at L=64/N_c=40.  Set PPS_BACKEND=batched explicitly once
+    # the N_c crossover benchmark (analysis/nc_scaling_diagnostic.py) shows
+    # a clear speedup at your target N_c.
+    backend = os.environ.get("PPS_BACKEND", "scalar")
 
     # Per-step entropy stride.  Setting PPS_ENTROPY_STRIDE=4 computes the
     # running entropy every 4 steps instead of every step, saving ~6–8% of
@@ -335,6 +335,17 @@ def main(argv: Optional[list[str]] = None) -> int:
         f"\n=== clone task {task_id}: L={L}, λ={lam:.3f} (α={alpha:.3f}), "
         f"ζ={zeta:.2f}, T={T:.0f}, N_c={N_c}, n_real={N_REAL}, "
         f"n_workers={n_workers} ===",
+        flush=True,
+    )
+    # Echo the run-shaping env vars so every job log records the actual code
+    # path taken.  This guards against the Mac/Habrok PPS_BACKEND default
+    # divergence: the backend in use is now always visible in the .out file,
+    # not silently inherited from whichever checkout the node happens to hold.
+    print(
+        f"    env: PPS_BACKEND={os.environ.get('PPS_BACKEND', 'scalar')!r}  "
+        f"PPS_ENTROPY_STRIDE={os.environ.get('PPS_ENTROPY_STRIDE', '1')}  "
+        f"PPS_DTAU_MULT={os.environ.get('PPS_DTAU_MULT', '1.0')}  "
+        f"PPS_RECORD_RENYI={os.environ.get('PPS_RECORD_RENYI', '0')}",
         flush=True,
     )
 

@@ -54,6 +54,14 @@ export PPS_N_WORKERS=${CPUS_PER_TASK}
 export PPS_RECORD_RENYI=1
 export PPS_FORCE_RERUN=1
 export PPS_DTAU_MULT=\${PPS_DTAU_MULT:-1.0}
+# Pin the trajectory backend explicitly.  Do NOT rely on the code default:
+# the Mac checkout defaults to 'scalar' but an un-pulled Habrok checkout may
+# still default to 'batched', so production behaviour would otherwise depend
+# on which revision the node holds.  'scalar' is bit-exact w.r.t. the dense
+# campaign data these crossings are compared against.  Flip to 'batched' only
+# after the N_c crossover + statistical-equivalence diagnostics clear it
+# (PPS_BACKEND=batched bash slurm/submit_clone_rescue_L128.sh ...).
+export PPS_BACKEND=\${PPS_BACKEND:-scalar}
 
 mkdir -p ${OUTPUT_DIR} ${LOG_DIR}
 

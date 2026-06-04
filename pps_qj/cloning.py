@@ -469,20 +469,34 @@ def run_cloning(
     n_T_mean_val = chi_k_val = S_var_val = covar_Sk_val = float("nan")
     S_sq_arr = n_T_mean_arr = n_T_sq_arr = covar_Sn_arr = np.asarray([])
 
-    if record_entropy and len(S_arr) > n_burnin_steps:
-        S_mean = float(np.mean(S_arr[n_burnin_steps:]))
-        S_std  = float(np.std(S_arr[n_burnin_steps:]))
+    # Entropy/activity histories are recorded only every `entropy_stride`
+    # steps, so their length is ~n_steps/stride, NOT n_steps.  The burn-in cut
+    # n_burnin_steps is defined in FULL-step units and must be converted to
+    # recorded-sample units before slicing these arrays: the j-th recorded
+    # sample corresponds to step j*stride, so it is post-burn-in iff
+    # j >= ceil(n_burnin_steps / stride).  Slicing with the raw n_burnin_steps
+    # (the pre-fix behaviour) over-burns by a factor of `stride` and, for
+    # stride >= 1/n_burnin_frac (e.g. stride=4 with frac=0.25), discards the
+    # entire recorded history -> S_mean/S_var/chi_k/covar_Sk all become NaN.
+    # NB: ess_history is recorded EVERY step (full length) and keeps the
+    # original n_burnin_steps cut further below.
+    _stride_eff = max(1, int(entropy_stride))
+    n_burnin_recorded = int(np.ceil(n_burnin_steps / _stride_eff))
+
+    if record_entropy and len(S_arr) > n_burnin_recorded:
+        S_mean = float(np.mean(S_arr[n_burnin_recorded:]))
+        S_std  = float(np.std(S_arr[n_burnin_recorded:]))
 
         S_sq_arr      = np.asarray(S_sq_history,      dtype=np.float64)
         n_T_mean_arr  = np.asarray(n_T_mean_history,  dtype=np.float64)
         n_T_sq_arr    = np.asarray(n_T_sq_history,    dtype=np.float64)
         covar_Sn_arr  = np.asarray(covar_Sn_history,  dtype=np.float64)
 
-        S_pb   = S_arr[n_burnin_steps:]
-        Ssq_pb = S_sq_arr[n_burnin_steps:]
-        nm_pb  = n_T_mean_arr[n_burnin_steps:]
-        nsq_pb = n_T_sq_arr[n_burnin_steps:]
-        cov_pb = covar_Sn_arr[n_burnin_steps:]
+        S_pb   = S_arr[n_burnin_recorded:]
+        Ssq_pb = S_sq_arr[n_burnin_recorded:]
+        nm_pb  = n_T_mean_arr[n_burnin_recorded:]
+        nsq_pb = n_T_sq_arr[n_burnin_recorded:]
+        cov_pb = covar_Sn_arr[n_burnin_recorded:]
 
         norm = float(L * delta_tau_eff)   # L · δτ : converts counts to density
         n_T_mean_val  = float(np.mean(nm_pb)) / norm

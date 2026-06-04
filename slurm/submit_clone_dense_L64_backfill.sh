@@ -57,6 +57,10 @@ export PPS_N_WORKERS=${CPUS_PER_TASK}
 export PPS_RECORD_RENYI=1
 export PPS_FORCE_RERUN=1
 export PPS_DTAU_MULT=\${PPS_DTAU_MULT:-1.0}
+# Pin the trajectory backend explicitly (see submit_clone_rescue_L128.sh).
+# This backfills into the scalar-generated dense campaign, so 'scalar' keeps
+# the L=64 row bit-consistent with the rest of pps_clone_dense.
+export PPS_BACKEND=\${PPS_BACKEND:-scalar}
 
 mkdir -p ${OUTPUT_DIR} ${LOG_DIR}
 
