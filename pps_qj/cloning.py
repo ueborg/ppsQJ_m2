@@ -229,6 +229,7 @@ def run_cloning(
     delta_tau: Optional[float] = None,
     n_burnin_frac: float = 0.25,
     record_entropy: bool = True,
+    entropy_stride: int = 1,
     show_progress: bool = False,
     progress_desc: str = "",
     backward_data: Any = None,
@@ -420,7 +421,7 @@ def run_cloning(
         log_Z_acc += log_W_k
         log_Z_history.append(log_Z_acc)
 
-        if record_entropy:
+        if record_entropy and (_k % max(1, entropy_stride) == 0):
             S_vals = _batched_entanglement_entropy(covs, L // 2)
             w_sum  = float(weights.sum())
             if w_sum > 0.0:

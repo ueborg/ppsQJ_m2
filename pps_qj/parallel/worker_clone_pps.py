@@ -94,10 +94,29 @@ def _run_one_realisation(args: dict) -> dict:
     # Set PPS_RECORD_RENYI=1 to enable. Backward-compatible: default off.
     record_renyi = os.environ.get("PPS_RECORD_RENYI", "0") not in ("0", "", "false", "False")
 
+    # Backend selector.  PPS_BACKEND=scalar forces the original per-clone
+    # loop (bit-exact w.r.t. historical data).  PPS_BACKEND=batched uses
+    # the vectorised path (1.1–2× faster, statistically equivalent).
+    # Default is 'batched' for new runs; set PPS_BACKEND=scalar to reproduce
+    # old results exactly or to A/B against new data.
+    # NOTE: the batched backend is deliberately *not* used on existing rescue
+    # or dense runs -- those were submitted before this env var existed and
+    # their already-running processes will not pick up this change.
+    backend = os.environ.get("PPS_BACKEND", "batched")
+
+    # Per-step entropy stride.  Setting PPS_ENTROPY_STRIDE=4 computes the
+    # running entropy every 4 steps instead of every step, saving ~6–8% of
+    # wall time.  The final B_L / CMI are computed from final_covs at t=T
+    # and are unaffected.  S_mean / S_std have slightly lower sample counts
+    # but remain unbiased estimates.  Default 1 = every step (old behaviour).
+    entropy_stride = max(1, int(os.environ.get("PPS_ENTROPY_STRIDE", "1")))
+
     try:
         result: CloningResult = run_cloning(
             model, zeta=zeta, T_total=T, N_c=N_c, rng=rng,
-            show_progress=False, record_renyi=record_renyi, **cloning_kw,
+            show_progress=False, record_renyi=record_renyi,
+            backend=backend, entropy_stride=entropy_stride,
+            **cloning_kw,
         )
         return {
             "ok":             True,
