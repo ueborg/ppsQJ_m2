@@ -25,7 +25,6 @@ Usage (Habrok interactive node, ~30-45 min):
     python analysis/d5_clones_vs_seeds.py
     python analysis/d5_clones_vs_seeds.py --R 24 --T 10 --Ncs 25,50,100,200,400
 """
-from __future__ import annotations
 
 import os
 for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
