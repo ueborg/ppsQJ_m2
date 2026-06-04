@@ -72,7 +72,7 @@ for BACKEND in scalar batched; do
   mkdir -p \${OUT}
   for TID in \$(seq ${TASK_LO} ${TASK_HI}); do
     T0=\$SECONDS
-    python -m pps_qj.parallel.worker_clone_rescue_pps \${TID} \${OUT} >/dev/null 2>&1 || echo "  (task \${TID} ${BACKEND} returned nonzero)"
+    python -m pps_qj.parallel.worker_clone_rescue_pps \${TID} \${OUT} >/dev/null 2>&1 || echo "  (task \${TID} \${BACKEND} returned nonzero)"
     DT=\$(( SECONDS - T0 ))
     echo "  backend=\${BACKEND} task=\${TID}: \${DT}s  (prod est \$(( DT * ${MULT} / 3600 ))h)"
   done
