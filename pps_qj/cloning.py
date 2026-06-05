@@ -160,6 +160,11 @@ class CloningResult:
     # power-law decay test. Empty if record_renyi=False.
     corr_decay_r: np.ndarray = field(default_factory=lambda: np.asarray([]))
     corr_decay_mean: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    # Intermediate-time observable snapshots: list of (time, snapshot_fn(covs))
+    # recorded when run_cloning is called with snapshot_times + snapshot_fn.
+    # Empty otherwise. Lets one trajectory yield a full B_L(t)/CMI(t) saturation
+    # curve instead of a multi-run horizon ladder.
+    snapshots: list = field(default_factory=list)
 
 
 def _systematic_resample(
@@ -235,6 +240,8 @@ def run_cloning(
     backward_data: Any = None,
     backend: str = "scalar",
     record_renyi: bool = False,
+    snapshot_times: Optional[list] = None,
+    snapshot_fn: Any = None,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -329,6 +336,14 @@ def run_cloning(
     final_weights = np.ones(N_c, dtype=np.float64)
     n_burnin_steps = int(n_steps * n_burnin_frac)
 
+    # Map requested snapshot times -> step indices (recorded at end-of-step,
+    # post-resampling, so the snapshot population matches final_covs semantics).
+    snap_steps: set = set()
+    if snapshot_times is not None and snapshot_fn is not None:
+        for _t in snapshot_times:
+            k = int(round(float(_t) / delta_tau_eff)) - 1
+            snap_steps.add(min(n_steps - 1, max(0, k)))
+    snapshots: list = []
     if show_progress:
         from tqdm import tqdm
         step_iter = tqdm(
@@ -459,6 +474,11 @@ def run_cloning(
             orbs = [orbs[int(i)].copy() for i in idxs]
             ancestor_ids = ancestor_ids[idxs]
 
+        if _k in snap_steps:
+            snapshots.append(
+                (float((_k + 1) * delta_tau_eff), snapshot_fn(covs))
+            )
+
     log_Z_arr = np.asarray(log_Z_history, dtype=np.float64)
     W_arr     = np.asarray(W_history,     dtype=np.float64)
     S_arr     = np.asarray(S_history,     dtype=np.float64) if record_entropy else np.asarray([])
@@ -582,6 +602,7 @@ def run_cloning(
         S_renyi_3_std=S3_std_val,
         corr_decay_r=corr_r_arr,
         corr_decay_mean=corr_mean_arr,
+        snapshots=snapshots,
     )
 
 
