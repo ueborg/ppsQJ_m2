@@ -1295,3 +1295,126 @@ def clone_rescue_task_id_ranges() -> dict[int, tuple[int, int]]:
         L: (i * _RESCUE_PER_L, (i + 1) * _RESCUE_PER_L - 1)
         for i, L in enumerate(L_RESCUE)
     }
+
+
+# ======================================================================
+# Clone N_c-ladder campaign (added 2026-06-05) -- the "2-day decisive" run
+# ======================================================================
+# Goal: a CLEAN lambda_c(zeta) in the discriminating small-zeta window by
+# fixing the two things the dense/rescue data could not:
+#   (1) finite-N_c bias on B_L (~45% at L=128, N_c=250) -> removed with a
+#       1/N_c ladder {250,500,800} + extrapolation to N_c->inf;
+#   (2) per-point statistical error -> beaten with seed BLOCKS (B independent
+#       5-realisation tasks per point), NOT by N_c alone (hopeless near
+#       criticality: ESS collapses, would need N_c~5000).
+# Pairs against existing CLEAN dense L=32,64 (same zeta) -> (32,64,128) FSS.
+# Records full observable set (CMI comps + Renyi-2/3 + corr) so the cleaner
+# estimators (Renyi-2 crossing, bipartite MI) and the washout test reuse it.
+#
+# 2-DAY FEASIBILITY: a task runs N_REAL=5 realisations on 5 cores IN PARALLEL,
+# so wall = ONE realisation: ~13h(Nc250)/~26h(Nc500)/~42h(Nc800) at L=128,
+# all <48h.  Wall is set by the largest-N_c task, not by #points or #seeds:
+# more seeds = more blocks = more concurrent 5-core tasks = more cores, same
+# wall.  ~53k core-h at B=3 -> ~10-12 nodes for <2 days (or 17 nodes ~42h).
+#
+# Each N_c rung writes to its OWN output dir (the aggregator keys by
+# (L,lam,zeta) and would otherwise merge rungs).  Blocks pool via
+# analysis/aggregate_ladder.py.  Task order: rung outer, block, zeta, lam.
+# ======================================================================
+
+LADDER_L: int = 128
+
+# zeta subset of the dense grid (so (32,64,128) crossings reuse existing
+# clean L=32,64 at the SAME zeta) -- the discriminating window.
+LADDER_ZETA: List[float] = [0.08, 0.10, 0.15, 0.18, 0.22, 0.25, 0.30]
+
+# lambda_c(zeta) window centers: blend of measured dense (32,64) crossings and
+# rescue centers; halfwidth widened to bracket the (64,128) drift. Exact
+# center is not critical -- the window only has to contain the L=128 crossing.
+_LADDER_LAMBDA_C: dict[float, float] = {
+    0.08: 0.15, 0.10: 0.17, 0.15: 0.21, 0.18: 0.23,
+    0.22: 0.25, 0.25: 0.26, 0.30: 0.27,
+}
+_LADDER_HALFWIDTH: float = 0.08
+_LADDER_N_LAMBDA: int = 13          # full-grid lambda count (N_c=500 rung)
+_LADDER_N_LAMBDA_CALIB: int = 3     # central lambda count (calib rungs)
+
+_LADDER_NC_FULL: int = 500          # workhorse full-grid rung
+_LADDER_NC_CALIB: List[int] = [250, 800]   # calibration rungs (central lam only)
+
+_LADDER_B_FULL: int = 3             # blocks on full grid  -> 15 seeds
+_LADDER_B_CALIB: int = 3            # blocks on calib subset -> 15 seeds
+
+# Seeds land in [20e9, ~20.5e9], disjoint from v2(<=1.3e9), FST/slope(~2.5e9),
+# dense([7e9,8.3e9]), phase2([9e9,11.5e9]), rescue([12e9,13.3e9]).
+_LADDER_SEED_OFFSET: int = 20_000_000_000
+_LADDER_RUNG_OFFSET: dict[int, int] = {500: 0, 250: 100_000_000, 800: 200_000_000}
+_LADDER_BLOCK_STRIDE: int = 10_000_000
+
+
+def _ladder_lambda_mesh(zeta: float, n: int) -> np.ndarray:
+    lc = _LADDER_LAMBDA_C[zeta]
+    lo = max(0.01, lc - _LADDER_HALFWIDTH)
+    hi = min(0.95, lc + _LADDER_HALFWIDTH)
+    full = np.linspace(lo, hi, _LADDER_N_LAMBDA)
+    if n >= _LADDER_N_LAMBDA:
+        return full
+    i0 = (_LADDER_N_LAMBDA - n) // 2     # central n points (the crossing band)
+    return full[i0:i0 + n]
+
+
+def _seed_ladder(L: int, lam: float, zeta: float, N_c: int, block: int) -> int:
+    return (_seed(L, lam, zeta) + _LADDER_SEED_OFFSET
+            + _LADDER_RUNG_OFFSET[N_c] + block * _LADDER_BLOCK_STRIDE)
+
+
+def _ladder_rungs() -> list[tuple[int, int, int]]:
+    """(N_c, n_lambda, n_block) per rung; full rung first, then calib rungs."""
+    rungs = [(_LADDER_NC_FULL, _LADDER_N_LAMBDA, _LADDER_B_FULL)]
+    rungs += [(nc, _LADDER_N_LAMBDA_CALIB, _LADDER_B_CALIB) for nc in _LADDER_NC_CALIB]
+    return rungs
+
+
+def make_clone_ladder_grid() -> List[dict]:
+    """N_c-ladder campaign grid at L=128.
+
+    Task order (contiguous): rung outer, block, zeta, lambda.
+    Rung order: full(N_c=500) then calib(250, 800).
+    """
+    grid: List[dict] = []
+    task_id = 0
+    for N_c, n_lam, n_block in _ladder_rungs():
+        for block in range(n_block):
+            for zeta in LADDER_ZETA:
+                for lam in _ladder_lambda_mesh(zeta, n_lam):
+                    alpha, w = _alpha_w_from_lam(float(lam))
+                    T = time_horizon_v2(LADDER_L, alpha)   # T=100 cap at L=128
+                    grid.append(dict(
+                        task_id=task_id, L=int(LADDER_L), lam=float(lam),
+                        alpha=alpha, w=w, zeta=float(zeta),
+                        T=float(T), N_c=int(N_c), block=int(block),
+                        seed=_seed_ladder(LADDER_L, float(lam), zeta, int(N_c), int(block)),
+                    ))
+                    task_id += 1
+    return grid
+
+
+def task_params_clone_ladder(task_id: int) -> dict:
+    grid = make_clone_ladder_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(f"Ladder task_id {task_id} out of range [0, {len(grid)})")
+    return grid[task_id]
+
+
+def n_tasks_clone_ladder() -> int:
+    return len(make_clone_ladder_grid())
+
+
+def clone_ladder_rung_ranges() -> dict[int, tuple[int, int]]:
+    """N_c -> (first_task_id, last_task_id) inclusive. Used by the submit
+    script to run each rung into its own output dir."""
+    from collections import defaultdict
+    by_nc: dict[int, list[int]] = defaultdict(list)
+    for p in make_clone_ladder_grid():
+        by_nc[p["N_c"]].append(p["task_id"])
+    return {nc: (min(ids), max(ids)) for nc, ids in sorted(by_nc.items())}
