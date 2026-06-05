@@ -31,32 +31,54 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from nc_bias_pairs import _load_many, _index  # noqa: E402
 
 
-def build_raw_debiased(a_paths, b_paths):
-    """Return raw{(L,l,z):(B_hi,err_hi)} and deb{(L,l,z):(B_inf,err_inf)} for
-    points present in both datasets at equal T, different N_c."""
+def per_L_correction(a_paths, b_paths, bl_lo=0.3, bl_hi=12.0):
+    """Learn a per-L bias factor from matched points, return it plus the FULL
+    dataset-A points (all lambda) so crossings keep their resolution.
+
+    factor(L) = median over crossing-relevant matched points of B_inf / B_hi,
+    where B_hi is A's (production-N_c) value. Multiply A's B_L by factor(L) to
+    debias. Scatter (MAD) is reported so you can judge if the per-L (lambda-
+    independent) model is even valid.
+    """
     A, B = _index(_load_many(a_paths)), _index(_load_many(b_paths))
-    raw, deb = {}, {}
+    # full raw from ALL of A (every lambda), keyed without T
+    full = {}
+    for (L, lam, z, T), r in A.items():
+        b = r.get("B_L_mean"); e = r.get("B_L_err", np.nan)
+        if b is not None and np.isfinite(b) and b > 0:
+            full[(int(L), round(lam, 4), round(z, 3))] = (
+                float(b), float(e) if np.isfinite(e) else 0.05 * b)
+    # per-L correction factor from matched crossing-relevant points
+    ratios = defaultdict(list)
     for k in set(A) & set(B):
         ra, rb = A[k], B[k]
         na, nb = int(ra["N_c"]), int(rb["N_c"])
         if na == nb:
             continue
         ba, bb = ra.get("B_L_mean"), rb.get("B_L_mean")
-        ea, eb = ra.get("B_L_err", np.nan), rb.get("B_L_err", np.nan)
         if ba is None or bb is None or not (np.isfinite(ba) and np.isfinite(bb)):
             continue
-        if na > nb:
-            n_hi, b_hi, e_hi, n_lo, b_lo, e_lo = na, ba, ea, nb, bb, eb
-        else:
-            n_hi, b_hi, e_hi, n_lo, b_lo, e_lo = nb, bb, eb, na, ba, ea
-        # b_inf = (1+a) b_hi - a b_lo,  a = n_lo/(n_hi-n_lo)
+        n_hi, b_hi, n_lo, b_lo = (na, ba, nb, bb) if na > nb else (nb, bb, na, ba)
+        if not (bl_lo <= abs(b_hi) <= bl_hi) or b_hi == 0:
+            continue
         a = n_lo / (n_hi - n_lo)
         b_inf = (1 + a) * b_hi - a * b_lo
-        e_inf = float(np.sqrt(((1 + a) * (e_hi or 0)) ** 2 + (a * (e_lo or 0)) ** 2))
-        L, lam, z, T = k
-        raw[(L, lam, z)] = (float(b_hi), float(e_hi) if np.isfinite(e_hi) else 0.05 * abs(b_hi))
-        deb[(L, lam, z)] = (float(b_inf), e_inf if np.isfinite(e_inf) else 0.1 * abs(b_inf))
-    return raw, deb
+        if np.isfinite(b_inf):
+            ratios[int(k[0])].append(b_inf / b_hi)
+    corr = {}
+    for L, rs in ratios.items():
+        rs = np.array(rs)
+        med = float(np.median(rs))
+        corr[L] = (med, float(np.median(np.abs(rs - med))), len(rs))
+    return full, corr
+
+
+def apply_correction(full, corr):
+    out = {}
+    for (L, lam, z), (b, e) in full.items():
+        f = corr.get(L, (1.0, 0.0, 0))[0]
+        out[(L, lam, z)] = (b * f, e * abs(f))
+    return out
 
 
 def _by_zL(data):
@@ -139,58 +161,65 @@ def main(argv=None):
     args = ap.parse_args(argv if argv is not None else sys.argv[1:])
     Ls = [int(x) for x in args.Ls.split(",")]
 
-    raw, deb = build_raw_debiased(args.a, args.b)
-    print(f"matched points: {len(raw)}  (debiased the same set)")
-    bz_raw, bz_deb = _by_zL(raw), _by_zL(deb)
-    zetas = sorted(set(bz_raw) & set(bz_deb))
+    full_raw, corr = per_L_correction(args.a, args.b)
+    print(f"full dataset-A points (all lambda): {len(full_raw)}")
+    print("\nPer-L bias correction factor (B_inf/B_hi), from matched points:")
+    print(f"{'L':>4} {'factor':>8} {'scatter(MAD)':>13} {'n_pairs':>8}  note")
+    for L in sorted(corr):
+        f, mad, n = corr[L]
+        note = "ok" if (n >= 6 and mad < 0.10) else ("few pairs" if n < 6 else "noisy")
+        print(f"{L:>4} {f:>8.3f} {mad:>13.3f} {n:>8}  {note}")
+    print("  (factor<1 => raw overestimates B_L; large MAD => per-L model unreliable)")
+
+    corrected = apply_correction(full_raw, corr)
+    bz_raw, bz_cor = _by_zL(full_raw), _by_zL(corrected)
+    zetas = sorted(bz_raw)
 
     print("\n" + "=" * 70)
-    print(f"lambda_c(zeta) from Binder crossings, Ls={Ls}  [1/sqrt(L) extrap]")
+    print(f"lambda_c(zeta) from Binder crossings on FULL data, Ls={Ls}")
     print("=" * 70)
-    print(f"{'zeta':>6} {'lc_RAW':>16} {'lc_DEBIASED':>18} {'shift':>9}")
-    z_ok, lc_raw_ok, e_raw_ok, lc_deb_ok, e_deb_ok = [], [], [], [], []
+    print(f"{'zeta':>6} {'lc_RAW':>16} {'lc_CORRECTED':>18} {'shift':>9}")
+    z_ok, lc_raw_ok, e_raw_ok, lc_cor_ok, e_cor_ok = [], [], [], [], []
     for z in zetas:
         lcr, er, _ = lambda_c_inf(bz_raw, z, Ls)
-        lcd, ed, _ = lambda_c_inf(bz_deb, z, Ls)
-        if lcr is None or lcd is None:
-            print(f"{z:>6.3f}   (insufficient crossings)")
+        lcc, ec, _ = lambda_c_inf(bz_cor, z, Ls)
+        if lcr is None or lcc is None:
             continue
-        shift = lcd - lcr
-        print(f"{z:>6.3f} {lcr:>8.4f}+-{er:<6.4f} {lcd:>9.4f}+-{ed:<6.4f} {shift:>+9.4f}")
         z_ok.append(z)
-        lc_raw_ok.append(lcr); e_raw_ok.append(er)
-        lc_deb_ok.append(lcd); e_deb_ok.append(ed)
+        lc_raw_ok.append(lcr); e_raw_ok.append(er or 0.02)
+        lc_cor_ok.append(lcc); e_cor_ok.append(ec or 0.02)
+        print(f"{z:>6.3f} {lcr:>8.4f}+-{er or 0:<6.4f} {lcc:>9.4f}+-{ec or 0:<6.4f} "
+              f"{lcc-lcr:>+9.4f}")
 
+    A_raw = A_cor = float("nan")
     if len(z_ok) >= 2:
         A_raw, chi_raw = fit_A(z_ok, lc_raw_ok, e_raw_ok)
-        A_deb, chi_deb = fit_A(z_ok, lc_deb_ok, e_deb_ok)
+        A_cor, chi_cor = fit_A(z_ok, lc_cor_ok, e_cor_ok)
         print("\n" + "-" * 70)
-        print(f"lambda_c = A*sqrt(zeta) fit:")
-        print(f"  RAW      : A = {A_raw:.3f}   (chi2/dof = {chi_raw:.2f})")
-        print(f"  DEBIASED : A = {A_deb:.3f}   (chi2/dof = {chi_deb:.2f})")
-        print(f"  => debiasing shifts A by {A_deb - A_raw:+.3f} "
-              f"({100*(A_deb-A_raw)/A_raw:+.0f}%)")
-        print("\nNote: L=48,96 carry OBC Friedel oscillations; the clean triple is")
-        print("32/64/128. A trustworthy large-L anchor still needs the higher-N_c")
-        print("L=128 run -- this debiased fit is the best obtainable from current data.")
-    else:
-        A_raw = A_deb = float("nan")
+        print("lambda_c = A*sqrt(zeta) fit:")
+        print(f"  RAW       : A = {A_raw:.3f}   (chi2/dof = {chi_raw:.2f})")
+        print(f"  CORRECTED : A = {A_cor:.3f}   (chi2/dof = {chi_cor:.2f})")
+        print(f"  => correction shifts A by {A_cor - A_raw:+.3f} "
+              f"({100*(A_cor-A_raw)/A_raw:+.0f}%)")
+        print("\nCaveats: L=48,96 carry OBC Friedel; L=128 factor rests on 2 pairs")
+        print("(excluded unless in --Ls). Trust the fit only where chi2/dof ~ O(1)")
+        print("and the per-L factors above are 'ok'. Small-zeta L=128 still needs the")
+        print("higher-N_c run -- this corrects mid/large zeta from existing data.")
 
-    # plot
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     if z_ok:
         sq = np.sqrt(np.array(z_ok))
         fig, ax = plt.subplots(figsize=(7, 5))
         ax.errorbar(sq, lc_raw_ok, yerr=e_raw_ok, fmt="o", color="tab:gray",
-                    capsize=3, label="raw (biased)")
-        ax.errorbar(sq, lc_deb_ok, yerr=e_deb_ok, fmt="s", color="tab:blue",
-                    capsize=3, label="debiased (1/N_c extrap)")
+                    capsize=3, label="raw")
+        ax.errorbar(sq, lc_cor_ok, yerr=e_cor_ok, fmt="s", color="tab:blue",
+                    capsize=3, label="per-L bias-corrected")
         xx = np.linspace(0, max(sq) * 1.05, 50)
         if np.isfinite(A_raw):
-            ax.plot(xx, A_raw * xx, "--", color="tab:gray", lw=1)
-            ax.plot(xx, A_deb * xx, "-", color="tab:blue", lw=1.5)
+            ax.plot(xx, A_raw * xx, "--", color="tab:gray", lw=1, label=f"A={A_raw:.2f}")
+            ax.plot(xx, A_cor * xx, "-", color="tab:blue", lw=1.5, label=f"A={A_cor:.2f}")
         ax.set_xlabel(r"$\sqrt{\zeta}$"); ax.set_ylabel(r"$\lambda_c(\infty)$")
-        ax.set_title("Raw vs bias-corrected critical line"); ax.legend()
+        ax.set_title("Raw vs per-L bias-corrected critical line"); ax.legend()
         ax.grid(alpha=0.3)
         fig.tight_layout(); fig.savefig(out / "debias_collapse.png", dpi=130)
         print(f"\nplot -> {out/'debias_collapse.png'}")
