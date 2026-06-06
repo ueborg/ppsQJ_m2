@@ -546,3 +546,64 @@ BOTTOM LINE: strongest analytic anchor of the three uploaded papers — not a cl
 nobody's), but a published ε-expansion ν, a clean KT resolution, a deterministic-Hamiltonian
 model that nearly kills the random-vs-deterministic caveat, and a concrete route to pin the
 ζ-dependence analytically.
+
+
+### D10 — Numerics-needs audit for D7/D8 + analytic synthesis: φ reduces to y_ζ^IR; the decisive test is Δ_B at λ_c (2026-06-06)
+
+NUMERICS AUDIT (traced cloning.py → worker_clone_pps.py → observables/spectrum.py):
+- The .npz persists B_L + CMI tripartition (S_AB,S_BC,S_B,S_ABC), S_renyi_2/3, n_T,
+  chi_k, S_var, covar_Sk, per-realization arrays of those, and corr_decay_r/mean.
+- final_covs (covariance matrices) are computed in-run for B_L then DISCARDED — NOT saved.
+  ⟹ nothing covariance-based is post-processable from existing output; re-runs required.
+- D8 (ν fixed along the line): NO new numerics — reinterprets the existing flat-ν data.
+- D7 discriminators (X_typ, x⁽²⁾, correct X₁, c_ent): NEW observable + re-runs. Two issues
+  with corr_decay: (1) WRONG OBJECT — single_particle_correlation returns C_ij=⟨c†_i c_j⟩
+  (docstring assumes NO pairing, drops anomalous ⟨cc⟩; but the Kitaev topological point HAS
+  pairing), then translation_averaged_correlation_decay takes mean_i|C_{i,i+r}| (abs, not
+  squared, not Majorana), linearly averaged over clones+realizations. Jian/Foster need
+  G(r)=⟨iγ_pγ_{p+r}⟩² = (Γ_{p,p+r})² — the squared Majorana covariance element, which is the
+  COMPLETE object (includes pairing) and is literally Γ², already in the evolved covariance.
+  (2) ONLY THE MEAN survives — X_typ needs ⟨log G⟩, x⁽²⁾ needs Var(log G) across clones; the
+  distribution is averaged away. FIX (small code): per clone compute G=Γ², log G; aggregate
+  to ⟨log G⟩→X_typ, Var(log G)→x⁽²⁾, linear mean→correct X₁; store the von Neumann S(L/2)
+  (renyi_entropies_batched already computes the n=1 column but only S_renyi_2,3 are saved).
+  Re-run at λ_c(ζ=1), ideally PBC + chord distance (project is OBC w/ L=48,96 Friedel; Jian
+  uses PBC). c_ent (=0.39 test): cheapest — store S(L/2), fit vs log L over L∈{32,64,128}.
+
+ANALYTIC SYNTHESIS (Foster framework + Section 6/8 operator content):
+- CRITICAL: the project's Δ_B≈1 (single-copy mass) and Δ≈2 (cross vertex) are measured at the
+  NO-CLICK critical point (deterministic gapless H_eff, two non-Hermitian SSH chains), NOT at
+  the MIPT FP (strong coupling λ~O(1)). These are bare/UV dimensions; IR relevance at the MIPT
+  is open (= Section 9's Δ_ζ^IR question). Same status as Foster's R=2-anchor dimensions.
+- Foster SETTLES the transverse exponent: single relevant direction = stiffness = λ, y_λ≈1/2
+  (x=3 ↔ ν≈2.1). RESOLVES the project's y_λ=1-vs-1/2 ambiguity (Section 8): the ν=1 branch
+  read the single-particle ξ_nc~λ⁻¹ as the correlation length, but Section 9 itself warns it
+  needn't be the many-body one — and it isn't. Many-body transverse ν≈2.1, y_λ≈1/2.
+  (Caveat: Foster's y_λ=1/2 is x=3 fitted to Jian's numerical ν≈2.1, not first-principles.)
+- ⟹ the boundary exponent φ = y_λ/y_ζ collapses to ONE unknown: y_ζ at the MIPT (cross vertex
+  marginal ⟹ no relevant ζ-eigenvalue; y_ζ set by the single-copy mass). The data brackets it
+  GIVEN y_λ=1/2: φ≈0.56 (on λ_c) ⟹ y_ζ≈0.9; φ≈0.8 (on r_c) ⟹ y_ζ≈0.6. So the single-copy
+  mass is RELEVANT but mildly renormalized below its no-click value 1.
+- DECISIVE CHEAP TEST: measure Δ_B at λ_c(ζ=1) (re-run cross_vertex_dimension.py on the
+  SAMPLED critical state at λ_c, not the no-click state). Prediction: Δ_B(λ_c) = 2 − y_ζ ≈
+  1.1–1.4 (vs Δ_B(no-click)≈1.0). If confirmed ⟹ φ pinned, picture closed. (Needs sampled
+  critical covariances at λ_c → same re-run/persistence issue.) More central to the project's
+  actual open question (the φ exponent) than the D7 multifractal exponents.
+- ANALYTIC STOP POINT: deriving y_ζ^IR from first principles = "identify the SO(R)_q primary +
+  track to R→1." The single-copy mass is a dim-1 fermion-bilinear/dimerization operator at the
+  free-fermion anchor (K₀=1) — the Noether/bilinear sector (Foster's X₁=1 argument), so NOT
+  Foster's interaction-mass O_M (Δ=2). Obstruction: the project's anchor (free-fermion K₀=1)
+  and Foster's (R=2 boson, K_c=2/π) differ, so the operator dictionary must be built across a
+  CHANGE OF ANCHOR before the R→1 deformation applies — genuinely a Meidan-scale calculation,
+  not closeable in-chat. The numerical Δ_B(λ_c) sidesteps it.
+- √ζ STATUS: not revived as proven, but status changed. Section 10 killed √ζ partly via y_λ=1
+  ⟹ φ=1; Foster replaces that with y_λ=1/2. Clean √ζ (φ=1/2) needs y_ζ=1 exactly; data wants
+  y_ζ≈0.6–0.9 ⟹ φ intermediate (neither clean √ζ nor linear). So √ζ unproven & probably not
+  exact, BUT the "φ=1 linear" reading was using the wrong y_λ.
+
+FULL PICTURE: ζ=1 is the class-DIII Born MIPT (finite ν≈2.1, Z₂-defect, novel-class, no closed
+form). Along ζ∈(0,1] the limit stays n→1 (D8) ⟹ transverse ν≈2.1 fixed, only λ_c(ζ) moves;
+forced n→0 (1.9) off-line; ζ→0 singular (λ_c→0). Boundary φ=y_λ/y_ζ, y_λ≈1/2 fixed (Foster),
+y_ζ = single-copy mass dim at the MIPT = the one open number (data ⟹ ≈0.6–0.9). Two re-runs
+close the gaps: Δ_B at λ_c (φ/y_ζ) and multifractal X_typ,x⁽²⁾ at λ_c(1) (Case B Born = Jian's
+class). Neither post-processable (covariances not persisted).
