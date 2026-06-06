@@ -2,10 +2,12 @@
 
 **Last major update: 2026-06-06** (theory: replica field-theory routes recorded
 in `OPEN_ANALYTIC_PROBLEMS.md` §D — convergent n→1 non-perturbative obstruction;
-the transition CHARACTER is **ζ-dependent** (KT-like at ζ=1, where the single-copy
-mass vanishes, leaving only the marginal cross vertex; conventional for ζ<1, where
-PPS switches a relevant mass back on) — see §D4–D5. (This corrects an over-strong
-"conventional favored over BKT" stated earlier the same day.) The LMR-ζ* open item
+the boundary universality was revised again after external review (see §D6): NO
+closed form; a **finite-ν conventional-type** transition (ν~2; KT / essential
+singularity NOT established — the intermediate "KT at ζ=1" claim is WITHDRAWN);
+ζ=1 is special only because the relevant single-copy mass vanishes; ζ→0 is an
+order-of-limits question. Also: the "Carollo PRA 98 010103" cite for λ_c(1)=1/2 is
+MIS-ATTRIBUTED (it is a quantum-Doob paper) — see §D6 and the reference table. The LMR-ζ* open item
 below is updated accordingly.
 2026-06-05: N_c-ladder campaign BUILT + LAUNCHED for the
 decisive small-ζ λ_c — supersedes the plain L=128 rescue for that purpose; see
@@ -290,8 +292,11 @@ Implementation spec at `theory/CASE_A_IMPLEMENTATION_SPEC.md`.
 
 The QJ unraveling has a *gapless* effective no-click Hamiltonian for the
 distance-3 Majorana bond, in contrast to KMR/LMR's QSD case. This is a real
-qualitative difference. The universal MIPT exponents are unraveling-independent,
-but the microscopic localization picture is not.
+qualitative difference. The universal MIPT exponents need NOT be
+unraveling-independent (unraveling-induced transitions exist; ref to verify:
+Eissler-Lesanovsky-Carollo arXiv:2406.04869), and the microscopic localization
+picture certainly is not — so the QJ-vs-QSD distinction may extend to universality,
+not just microscopics (see §D6).
 
 ---
 
@@ -467,13 +472,13 @@ is driven by the relevant single-copy mass and is non-perturbative. Three
 field-theory routes (two-loop PCM β-function; exact-correlator/integrable
 continuation; LMR-style K-matching) converge on this, and via the Coulomb-gas /
 U(1) criterion (a BKT essential singularity needs a U(1) / marginal line, which
-the Majorana Z₂ class lacks) now show the transition CHARACTER is ζ-DEPENDENT (see §D5): the single-copy mass
-∝(ζ−1) vanishes at ζ=1, so the Born point is plausibly KT-like (only the marginal
-cross vertex remains — Poboiko-Mirlin scenario), while ζ<1 switches on a relevant
-mass → conventional. Consequence for the numerics below: expect a power law
-ξ ~ |t|^{−ν} for ζ<1 crossing to an essential singularity log ξ ~ (λ_c−λ)^{−1/2}
-as ζ→1; the "ν=3.1 blow-up at small ζ = BKT" reading is WRONG (small ζ is the
-conventional / forced-endpoint side, not the KT side). The **Rényi-2 numerical ζ\* test remains
+the Majorana Z₂ class lacks) now show (with the §D6 external-review correction) that the boundary is a
+FINITE-ν conventional-type transition, NOT KT: Jian et al. (2302.09094) establish
+the generic monitored-Majorana Born transition as a finite-ν novel class (Z₂-defect
+driven), so the intermediate "KT at ζ=1" claim is WITHDRAWN. ζ=1 is special only
+because the single-copy mass ∝(ζ−1) vanishes; ζ<1 keeps a relevant mass on.
+Numerics: expect a power law ξ ~ |t|^{−ν} (ν~2, possibly drifting forced~1.9 ↔
+Born~2.1), NOT an essential singularity; the "ν=3.1 at small ζ = BKT" reading is WRONG. The **Rényi-2 numerical ζ\* test remains
 live** (a Rényi-k≥2 feature can exist and wash out by n→1). Original framing
 follows. Faithful analog of
 LMR's bosonization-breakdown ζ\* (their ζ\*≈0.28 is explicitly a **two-replica /
@@ -556,7 +561,7 @@ small-ζ ξ data; the ν=3.1 blow-up at ζ=0.02 is what force-fitting BKT looks 
 | Jian2023 | Jian-Shapourian-Bauer-Ludwig arXiv:2302.09094 | Born (n→1) vs forced (n→0) = distinct universality in class DIII |
 | FavaNahum2023 | Fava-Piroli-Swann-Bernard-Nahum PRX 13, 041045 (2023) | principal-chiral SO(N) NLSM for monitored Majorana |
 | PoboikoMirlin2023 | Poboiko-Pöpperl-Gornyi-Mirlin PRX 13, 041046 (2023) | U(1) free fermions in 1d: no MIPT, log is a crossover |
-| Carollo2018PRA | Carollo et al. PRA 98, 010103 (2018) | Born-rule endpoint $\lambda_c(1) = 1/2$ |
+| Carollo2018PRA | Carollo et al. PRA 98, 010103 (2018) — quantum-Doob / large-deviation paper (**mis-cited for λ_c**; correct use: the PPS / tilted-ensemble framing) | λ_c(1)=1/2 is **numerically pinned**, true source TBD (see §D6) |
 
 All in `~/Downloads/continuousmeasurements(2)/references.bib`.
 

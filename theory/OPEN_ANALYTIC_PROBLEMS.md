@@ -352,3 +352,52 @@ The defensible analytic deliverables are STRUCTURAL: (a) the ζ-dependent charac
 (KT-like at ζ=1, conventional for ζ<1); (b) the large-deviation framing of the ζ→0
 endpoint; (c) the (2n−2) log-correction prediction. The exponents are a numerical
 question.
+
+
+### D6 — External review (2026-06-06): withdraw "KT at ζ=1"; finite-ν Born class; ζ→0 order-of-limits; Carollo citation fix
+An external LLM review, pressure-tested by web-verification, corrected the following. This
+is the STABLE conclusion; the BKT↔conventional↔KT oscillation in D4/D5 was over-reaching
+analytics and is settled here.
+
+1. CITATION FIX [VERIFIED by search]. "Carollo et al. PRA 98, 010103 (2018)" is NOT the
+   λ_c(1)=1/2 source — it is Carollo-Garrahan-Lesanovsky-Pérez-Espigares, "Making rare
+   events typical in Markovian open quantum systems," a quantum-Doob / large-deviation
+   paper. λ_c(1)=1/2 should be relabeled NUMERICALLY PINNED (true source TBD — possibly a
+   model-specific self-duality). Silver lining: that Doob paper IS the correct citation for
+   the PPS / tilted-ensemble framing (ζ^{N_clicks} = a Doob tilt).
+
+2. WITHDRAW "KT at ζ=1" (D5 was overstated). [VERIFIED] Jian-Shapourian-Bauer-Ludwig
+   (arXiv:2302.09094) establish the generic 1D monitored-Majorana Born transition as a
+   FINITE-ν "novel universality class beyond Anderson localization" (principal chiral SO(n)
+   NLSM, n→1, SO(n)×SO(n) symmetry; forced is n→0 = Anderson), Z₂-defect-driven; they
+   extract a finite ν (their App. C method). A finite ν is NOT a KT essential singularity.
+   Structural points (correct): a marginal UV operator does not imply an IR KT fixed line;
+   Poboiko-Mirlin is the U(1) class (and finds a crossover, not KT) — wrong to lean on.
+   CORRECTED STATEMENT: ζ=1 is special ONLY because the relevant single-copy mass
+   (∝α(ζ−1)) vanishes; its universality is the unsolved, FINITE-ν Born n→1 orthogonal/DIII
+   class; ζ<1 turns a relevant mass on and is conventional. ⟹ finite-ν conventional-type
+   throughout, NOT KT.
+   CAVEAT: Jian is a RANDOM circuit; Case B is a DETERMINISTIC Hamiltonian. Same DIII /
+   SO(n)→1 structure argues for the same (finite-ν novel) class, but random-vs-deterministic
+   can matter (the PM crossover debate) — plausible, not automatic. No closed-form ν either
+   way (Jian's is numerical, reportedly ν_Born≈2.1, ν_forced≈1.9 — UNVERIFIED, read Table I
+   of 2302.09094 before citing).
+
+3. ζ→0 ENDPOINT — order of limits (correct, sharper). At fixed finite L,
+   ρ_click(ζ)=ζ·θ_{1,L}+O(ζ²)→0; and θ₁^SCGF=0 by fermion parity ⟹ O(ζ²), even more
+   strongly →0. A nonzero limiting click density requires the SINGULAR order
+   lim_{ζ→0}lim_{L→∞}; lim_{L→∞}lim_{ζ→0}=0. The right question is this order-of-limits /
+   s→∞ dynamical-transition test, not "is ρ_click(ζ→0) zero." No closed-form ρ_click(ζ) for
+   the interacting Choi problem (recycling term non-quadratic after doubling); θ₀ (no-click)
+   is Gaussian-accessible, ∂_ζθ|_0 needs the left/right eigenoperators + recycling insertion.
+
+4. Unraveling-independence: "MIPT exponents are unraveling-independent" is too strong
+   (unraveling-induced transitions exist; ref to VERIFY: Eissler-Lesanovsky-Carollo
+   arXiv:2406.04869). Strengthens the QJ-vs-QSD distinction.
+
+STABLE CONCLUSION (settle here): NO closed-form exponent; a FINITE-ν, conventional-type
+transition (ν~2, possibly drifting forced~1.9 ↔ Born~2.1); KT / essential singularity NOT
+established and probably wrong; ζ=1 special only via the vanishing single-copy mass; ζ→0 an
+order-of-limits question. The exponents are a numerical question. The operator-content audit
+(single-copy mass ∝α(ζ−1) relevant + vanishing at ζ=1; :B₊B₋: marginal Δ≈2) was
+independently re-confirmed in this review.
