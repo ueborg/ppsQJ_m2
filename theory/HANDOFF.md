@@ -477,8 +477,9 @@ FINITE-ν conventional-type transition, NOT KT: Jian et al. (2302.09094) establi
 the generic monitored-Majorana Born transition as a finite-ν novel class (Z₂-defect
 driven), so the intermediate "KT at ζ=1" claim is WITHDRAWN. ζ=1 is special only
 because the single-copy mass ∝(ζ−1) vanishes; ζ<1 keeps a relevant mass on.
-Numerics: expect a power law ξ ~ |t|^{−ν} (ν~2, possibly drifting forced~1.9 ↔
-Born~2.1), NOT an essential singularity; the "ν=3.1 at small ζ = BKT" reading is WRONG. The **Rényi-2 numerical ζ\* test remains
+Numerics: expect a power law ξ ~ |t|^{−ν} (ν≈2.1 FIXED along the PPS line — n→1
+throughout, see §D8; the forced n→0 value 1.9 is off the line), NOT an essential
+singularity; the "ν=3.1 at small ζ = BKT" reading is WRONG. The **Rényi-2 numerical ζ\* test remains
 live** (a Rényi-k≥2 feature can exist and wash out by n→1). Original framing
 follows. Faithful analog of
 LMR's bosonization-breakdown ζ\* (their ζ\*≈0.28 is explicitly a **two-replica /

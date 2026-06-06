@@ -396,8 +396,153 @@ analytics and is settled here.
    arXiv:2406.04869). Strengthens the QJ-vs-QSD distinction.
 
 STABLE CONCLUSION (settle here): NO closed-form exponent; a FINITE-ν, conventional-type
-transition (ν~2, possibly drifting forced~1.9 ↔ Born~2.1); KT / essential singularity NOT
+transition (ν≈2.1 FIXED along ζ∈(0,1], the n→1 Born value — see D8, which SUPERSEDES this
+"drift 1.9↔2.1" reading: the forced n→0 point is off the PPS line); KT / essential singularity NOT
 established and probably wrong; ζ=1 special only via the vanishing single-copy mass; ζ→0 an
 order-of-limits question. The exponents are a numerical question. The operator-content audit
 (single-copy mass ∝α(ζ−1) relevant + vanishing at ζ=1; :B₊B₋: marginal Δ≈2) was
 independently re-confirmed in this review.
+
+
+### D7 — Literature anchors from Jian (2302.09094) and the Arrow-of-Time paper (2604.20828) (2026-06-06)
+Two papers read in full (uploaded PDFs). Neither gives a closed-form Born exponent —
+both reinforce "no closed form" — but both are useful.
+
+JIAN ET AL. Table I [VERIFIED from the PDF] — generic 1D Majorana DIII circuit:
+  Born (n→1):   ν=2.1±0.1, X₁=1.00±0.02, X_typ=2.66±0.05, x⁽²⁾=−1.80±0.04, ζ₁=0.39±0.02
+  Forced (n→0): ν=1.9±0.1, X₁=1.02±0.03, X_typ=3.53±0.04, x⁽²⁾=−5.7±0.2,   ζ₁=0.30±0.04
+  (X₁ = avg of squared Majorana correlator G=⟨iγγ⟩², G~R^−2X₁; X_typ, x⁽²⁾ = 1st & 2nd
+   cumulants of log G vs log chord-distance; ζ₁ = S(L/2)~ζ₁ log L.)
+
+KEY POINTS:
+1. ν does NOT discriminate Born vs forced (Δ≈0.2, within error) — the paper says so
+   explicitly. ⟹ the project's flat ν~2 and UNMEASURABLE drift (Spearman −0.07) are
+   EXPECTED, not a failure. [SUPERSEDED by D8: the reason is that the whole PPS line stays in
+   n→1 (ν≈2.1 fixed), NOT that "both endpoints are ≈2" — the forced n→0 point (1.9) is off the
+   line.] State this with the citation; stop apologizing for the flat ν.
+2. The DISCRIMINATORS are the MULTIFRACTAL exponents X_typ (2.66 vs 3.53) and x⁽²⁾
+   (1.80 vs 5.7) of the squared Majorana correlator. NUMERICS PIVOT: compute the 1st and
+   2nd cumulants of log G(r) (G=⟨iγ_pγ_{p+r}⟩² on the final time slice) vs log chord-
+   distance; slopes are −2X_typ and −2x⁽²⁾. Cheap add to the Gaussian covariance backend.
+3. COMPARISON TEST for Case B ζ=1 (Born): does it give ν≈2.1, ζ₁≈0.39, X₁≈1.00,
+   X_typ≈2.66? If yes ⟹ strong evidence Case B Born = Jian's novel DIII n→1 class.
+   CAVEAT: Jian is a RANDOM staggered circuit; Case B is a DETERMINISTIC Hamiltonian +
+   single fixed-bond measurement + PPS. Both DIII; Jian argues universality is AZ-class-
+   only (⟹ should match), but clean-vs-random is exactly the PM-debate axis — so it's a
+   test, not a given. Forced endpoint is solid: Jian ν_forced=1.9 matches Fulga DIII
+   Anderson, confirming the project's Fulga reference.
+4. Confirms the stable conclusion: finite-ν, Z₂-defect-driven, novel-class-beyond-
+   Anderson, NO closed form, NOT KT. The ε=2−n RG for DIII is deferred to (unpublished)
+   follow-up in the paper, so no closed-form ν is available even there.
+
+ARROW-OF-TIME (Hurvitz-Kochol-Fleurov-Sela, 2604.20828; Meidan acknowledged) — NOT
+analytics for Case B (its one exact result, AoT↔bond percolation, α_specific-heat=−2/3,
+AoT~|g−g_c|^{8/3}, is the LARGE-q Haar universality, NOT free fermions). But:
+- NEW LOCAL THERMODYNAMIC OBSERVABLE that plugs into existing project machinery. No-click
+  AoT rate (their Eq. A7): Q/t → γL − 4Γ_min, with Γ_min = Im part of the longest-living
+  eigenvalue of the non-Hermitian H_eff — i.e. the project's no-click activity / θ₁ object.
+  Nonanalytic at the MIPT. Computable for Case B's H_eff (the two non-Hermitian SSH chains)
+  ⟹ a cheap diagnostic for the ζ→0 endpoint. CAVEAT: their exact Γ_min relation assumes a
+  TR structure (Ising); check it survives the Bogoliubov-density measurement.
+- AoT = Q₀ − 2 S_SM, S_SM = n→1 entropy of the measurement-outcome distribution — the same
+  tilted-ensemble partition function the project's SCGF / L_ζ tools compute. Connects the
+  AoT to the project's large-deviation/activity framework.
+- A free-energy / specific-heat probe (bulk thermodynamic), complementary to ν and the
+  entanglement exponents — in principle a different exponent cut (novel-DIII, not −2/3).
+- FUTURE DIRECTION + supervisor-group bridge; sidesteps postselection overhead (relevant
+  to the PPS focus).
+
+
+### D8 — Sharpening: ν is FIXED (≈2.1) along the PPS line; forced n→0 is OFF-line (supersedes the "drift 1.9↔2.1" phrasing in the D6 STABLE CONCLUSION and in D7.1)
+Re-reading Jian's replica logic + the project's own marginal-cross-vertex result resolves an
+internal inconsistency in these notes: D6.3 correctly says ζ→0 ≠ forced n→0, but the D6
+"STABLE CONCLUSION" and D7.1 then describe the ζ-line as interpolating forced(1.9)↔Born(2.1).
+That conflation is the mistake ChatGPT flagged. Correct picture:
+
+- Replica limit is set by trajectory WEIGHTING: forced = equal weights = n→0; Born = Born-rule
+  weights = n→1 (Jian, verified). PPS reweights the BORN ensemble by ζ^{N_clicks} — a tilt of
+  Born weights, NOT a switch to equal weights. ⟹ the whole PPS line ζ∈(0,1] stays in n→1.
+  Field-theory echo: "ζ enters only the cross-replica vertex" (project finding) = ζ modifies a
+  vertex in the n→1 theory; it does not change the replica limit n→1 → n→0.
+- ⟹ ν ≈ 2.1 (the n→1 Born value) is FIXED for all ζ∈(0,1]; only λ_c(ζ) moves (driven by the
+  relevant single-copy mass ∝α(ζ−1)). The forced n→0 point (ν≈1.9) is OFF the PPS line.
+  ζ=0 (strict) is singular: only the no-click trajectory survives, the replica trick
+  degenerates → the AoT/Γ_min non-Hermitian problem (D7). So ζ→0 is a singular limit WITHIN
+  n→1, not a smooth approach to the forced point.
+- ⟹ NO true ν-drift is expected. The project's flat ν (Spearman −0.07) is because the line
+  never leaves the n→1 class — NOT because "both endpoints are ≈2." The earlier predicted
+  drift ≲0.4 ∝ ζ^{1+p} is a MARGINAL correction-to-scaling (from the ζ-dependent marginal
+  cross vertex), not a true exponent change; unmeasurable either way, but the clean thesis
+  statement is "ν fixed at the Born value, λ_c(ζ) the only ζ-dependent quantity."
+- QJ-vs-QSD origin (sharp): in LMR (QSD) the cross vertex is RELEVANT → a genuine ζ* can
+  appear WITHIN n→1 (exponents vary / multicritical point); the QJ cross vertex is MARGINAL →
+  no ζ*, ν fixed. This is the precise field-theory reason the two unravelings differ. (The
+  Rényi-k≥2 ζ* test remains live and is compatible with this: a Rényi feature can exist and
+  wash out at n→1.)
+- Jian's argument (i)+(ii) that Born = n→1 (Born probabilities + POVM normalization → constant
+  partition function) survives the PPS tilt: still Born-based, still POVM-normalized after the
+  tilt, so still n→1.
+
+EPISTEMIC STATUS: [PLAUSIBLE, strongly motivated, data-consistent] — NOT [VERIFIED]. Rests on
+PPS preserving the n→1 limit (LMR structure + the marginal-cross-vertex result) and on Case B
+realizing Jian's class at all (standing random-vs-deterministic caveat). Does NOT change the
+D6/D7 conclusion (no closed form, finite-ν, Z₂-defect, not-KT); it fixes ONLY the ζ-dependence
+of ν: FIXED at the Born value, not drifting.
+
+RE-VERIFICATION: Table I numbers in D7 independently re-confirmed from the freshly-uploaded PDF
+(ν 2.1/1.9, X₁ 1.00/1.02, X_typ 2.66/3.53, −x⁽²⁾ 1.80/5.7, ζ₁ 0.39/0.30). The D6 "ν UNVERIFIED"
+note is obsolete — it was already verified in D7; D6 was written from a web-fetch that did not
+reach the table.
+
+
+### D9 — Foster-Guo-Jian-Ludwig (arXiv:2510.23706, Oct 2025): the published ε=2−R expansion for the class-DIII MIPT (strongest analytic anchor of the uploaded papers)
+Same authors as Jian 2302.09094 (Jian, Ludwig) + Foster, Guo. This IS the "separate
+follow-up work" 2302.09094 deferred — the Fu-Kane-style ε=2−R expansion for the class-DIII
+MIPT. Primarily about INTERACTING monitored Majorana fermions (volume-law via a dangerously-
+irrelevant mass); the part relevant to this (non-interacting) project is the NON-INTERACTING
+ε-expansion + operator content.
+
+1. SEMI-ANALYTIC ν (NOT closed-form). Anchor at R=2: SO(R) field → single compact boson,
+   action → sine-Gordon S~∫(K/2)(∇φ)²−(M/32)cos4φ (K=λ/4); cos4φ has Δ_M=4/πK, dual vortex
+   Δ_V=πK; at K_c=2/π both =2 (a genuine KT point). Deform R=2−ε to reach the physical MIPT
+   R→1 (ε=1). Noninteracting FP (their Eq 15) has a single relevant direction ⟹
+       ν = (1+√(33−8x))⁻¹ · (8/ε),   x = WZNW level-deformation param (q=8−xε).
+   NOT parameter-free: ε=1 is not small (uncontrolled) and x is FIT — x=3 reproduces the
+   numerical ν≈2.1 (at ε=1 the formula gives exactly 2). Authors say "not fully controlled."
+   ⟹ "no first-principles closed-form ν" STILL holds; what is new is a published RG scaffolding
+   reproducing the correct flow topology + a ν consistent with the numerics.
+2. KT QUESTION SETTLED (vindicates the D6 withdrawal of "KT at ζ=1"). KT lives at the R=2
+   ANCHOR (marginal cos4φ + vortex), NOT at the physical R→1 transition: at R→1 the stiffness
+   deviation y_K acquires a positive (relevant) dimension ε/4 ⟹ FINITE-ν defect-unbinding, not
+   KT. The project's marginal cross-vertex (Δ≈2) is the echo of the R=2 KT anchor — consistent.
+3. CAVEAT-KILLER for "random-vs-deterministic". Foster's model is a DETERMINISTIC-HAMILTONIAN
+   monitored system (clean p-wave/Kitaev SC, their Eq 6/9: J, Δ, μ; monitor LOCAL density;
+   randomness only from measurement outcomes) — exactly Case B's setup type (vs Jian's random
+   circuit) — and they argue it is the SAME SO(R) PCM class-DIII universality. ⟹ Case B (clean
+   Kitaev + monitoring) sitting in Jian's class is now on much firmer ground. Their fine-tuned
+   J=μ=0 → two decoupled Majorana chains (enhanced class-D) — rhymes with the project's no-click
+   "two decoupled non-Hermitian SSH chains" (worth checking the correspondence).
+4. RE-CONFIRMS the discriminators + EXPLAINS X₁=1. Their tests (ii)-(iv) = c_ent=0.39 (=Jian
+   ζ₁), X_typ=2.66, X₁=1. X₁=1 explained: noninteracting SO(R)×SO(R) ⟹ two Noether currents of
+   dim exactly 1; absorbing boundary at the final time slice leaves one ⟹ G~R⁻². Interacting
+   DIII (no continuous sym) ⟹ X₁≠1. So X₁=1 is the FREE-FERMION signature; the project (non-
+   interacting) should give X₁≈1 at ζ=1 — if so, no hidden interaction generated by QJ/PPS.
+
+ANALYTIC AVENUE OPENED (most promising route from this paper): place the project's ζ cross-
+vertex in their R→1 RG (Eq 5) and compute analytically whether ζ is relevant/marginal/
+irrelevant — exactly the D8 question (is universality fixed along the ζ-line?). The SO(R)_q
+operator spectrum (Δ_{M,p} their Eq S28; spinor/vortex Eq S29) is theory-intrinsic, so the
+ζ-vertex must be one of those primaries; the numerical Δ≈2 narrows the candidates. CAVEAT:
+their O_M is interaction-induced, the project's ζ-vertex measurement-induced — identify the
+operator by representation/dimension, NOT by origin.
+
+DOES NOT TRANSFER: the interacting/volume-law content (dangerously-irrelevant mass; level-
+repulsion test (v)) — the project is non-interacting (log-vs-area, no volume law); and PPS (ζ)
+is not in their model; their measured operator is the LOCAL density vs the project's distance-3
+Bogoliubov bond (same class DIII, so universality should still match — verify via c_ent=0.39,
+X_typ=2.66, X₁=1).
+
+BOTTOM LINE: strongest analytic anchor of the three uploaded papers — not a closed form (still
+nobody's), but a published ε-expansion ν, a clean KT resolution, a deterministic-Hamiltonian
+model that nearly kills the random-vs-deterministic caveat, and a concrete route to pin the
+ζ-dependence analytically.
