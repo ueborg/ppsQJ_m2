@@ -1,0 +1,192 @@
+# QJ-PPS project handoff (as of 2026-05-20)
+
+Single entry-point document for resuming this project in a fresh chat.
+If you're a new assistant instance picking this up, read this first.
+
+## Latest session updates (2026-05-20)
+
+Three substantive additions this session, documented in
+\`theory/SESSION_2026_05_20.md\`:
+
+1. **Empirical confirmation of φ = 1/2.** Re-analysis of the existing
+   cloning aggregate with the theoretically motivated \`1/sqrt(L)\`
+   extrapolation (because ν = 1/y_λ = 2 ⇒ Binder corrections go as
+   L^{-1/2}) gives **φ = 0.502 ± 0.026, A = 0.96 ± 0.05**, replacing
+   the previous biased \`1/L\`-extrapolation result of φ ≈ 0.43.
+   Writeup: \`analysis/lambda_c_phi_analysis.md\`.
+
+2. **NLSM theoretical framework added.** Adapted the Le Gal & Schirò
+   replica Keldysh framework (arXiv:2511.22506, Nov 2025) to QJ-PPS,
+   with ζ multiplying only the cross-replica vertex. Two model variants
+   analysed:
+   - **Case A** (two competing measurements, no Hamiltonian): D class,
+     self-dual, λ_c = 1/2 ∀ ζ, Ising universality.
+   - **Case B** (single measurement + free hopping, project's main
+     model): DIII class, no self-duality, naive NLSM is incorrect at
+     small ζ because the BdG localisation length ξ_ps ~ λ^{-2} replaces
+     the dressed length as the relevant UV cutoff. Matching the NLSM
+     cutoff to ξ_ps and running multicritical RG between a and ξ_ps
+     **recovers λ_c ~ sqrt(ζ) from the NLSM framework itself**.
+
+   Full derivation: \`theory/NLSM_FRAMEWORK.md\`.
+   LaTeX writeup of the framework: \`~/Downloads/continuousmeasurements(2)/sections/sec8_replica_nlsm_pps.tex\`.
+
+3. **Case A implementation spec written.** The current code only does
+   Case B. Spec at \`theory/CASE_A_IMPLEMENTATION_SPEC.md\` gives a
+   self-contained recipe for an implementation agent: 8 implementation
+   steps + 7 validation gates + SLURM grid (260 jobs).
+
+## Project context
+
+- **Researcher**: Utku, master's in quantum engineering, University of Groningen.
+- **Supervisor**: Dganit Meidan (RUG).
+- **Project**: \`ppsQJ_m2\` — measurement-induced phase transitions (MIPT) in
+  a 1D Kitaev chain under quantum-jump partial postselection (QJ-PPS).
+  Extends Kells–Meidan SciPost Phys 14, 3, 031 from diffusive to quantum-jump.
+- **Repo**: \`github.com/ueborg/ppsQJ_m2\`. Local at \`/Users/catlover1337/Documents/ppsQJ_m2/\`.
+- **Compute**: Habrok HPC (RUG), interactive nodes ~60 cores.
+- **Language**: Python. Code uses numpy, scipy, tqdm; Gaussian fermionic backend.
+
+## Model (Case B, current code)
+
+Hamiltonian \$H = w \sum_j (c_j^\dagger c_{j+1} + \text{h.c.})\$ on \$L\$ sites.
+Jump operators \$L_j = \sqrt{\alpha}\,d_j\$ with
+\$d_j = (\gamma_{2j} - i\gamma_{2j+3})/2\$
+(distance-3 Majorana bond operator).
+
+Parametrization: \$\alpha + w = 1\$, \$\lambda := \alpha\$, \$\zeta \in [0, 1]\$
+the postselection parameter. \$\zeta = 1\$ recovers Born-rule quantum jumps;
+\$\zeta = 0\$ is full postselection (no clicks at all).
+
+Trajectory measure is tilted by \$\zeta^{N_T}\$. The tilted Lindbladian
+\$\mathcal{L}_\zeta[\rho] = -i[H,\rho] + \sum_j[\zeta J_j\rho J_j^\dagger - \tfrac{1}{2}\{J_j^\dagger J_j, \rho\}]
+= \mathcal{L}_0 + \zeta \mathcal{J}\$
+splits into no-click non-Hermitian piece \$\mathcal{L}_0\$ and click
+recycling piece \$\zeta\mathcal{J}\$.
+
+For Case A (the symmetry-protected variant analysed in
+\`NLSM_FRAMEWORK.md\`), \$H = 0\$ and two measurement channels are
+present with rates γ and α, parametrised as λ_A = α/(α+γ).
+
+## Current top-level result
+
+\$\boxed{\;\lambda_c(\zeta) \sim A\sqrt{\zeta}, \quad A = 0.96 \pm 0.05\;}\$
+
+with two-parameter FSS structure
+\$B_L(\lambda, \zeta) = \mathcal{B}(\lambda L^{1/2}, \zeta L, u L^{-\omega})\$,
+i.e. \$y_\lambda = 1/2\$ from BdG localization, \$y_\zeta = 1\$ from
+cross-Choi extensivity (\$\Delta_\zeta = 1\$).
+
+**Confirmed this session** with proper 1/sqrt(L) Binder extrapolation:
+φ = 0.502 ± 0.026 (matches predicted 1/2 to 1σ).
+
+Born-rule endpoint \$\lambda_c(1) \approx 0.5\$ matches Carollo (PRA 2018).
+
+Physical picture, now framed within the NLSM:
+- Multicritical regime (small ζ): Gaussian fixed point at the origin
+  + cross-Choi perturbation with \$\Delta_\zeta = 1\$. Criticality at
+  \$\zeta \xi_{ps}(\lambda_c) \sim 1\$ with \$\xi_{ps} \sim \lambda^{-2}\$
+  gives \$\lambda_c \sim \sqrt{\zeta}\$.
+- DIII NLSM regime (ζ ~ 1): Lindbladian saddle dominant, bare coupling
+  \$g_B \propto \zeta\lambda/(1-\lambda)\$, transition at \$g_B \approx 1\$,
+  giving \$\lambda_c \to \lambda_{BR} \approx 0.5\$.
+- Crossover at ζ ~ 0.25, consistent with the ζ = 0.5 outlier in data.
+
+## Status of each step in the theoretical chain
+
+| # | Claim | Source | Status |
+|---|---|---|---|
+| 1 | \$\xi_{ps} \sim \lambda^{-2}\$ | non-Hermitian SSH-Majorana BdG | Rigorous |
+| 2 | \$y_\lambda = 1/2\$ | Step 1 | Rigorous |
+| 3 | Click vertex extensive over bonds | manifest in action | Rigorous |
+| 4 | \$\theta_1^{SCGF} = 0\$ exactly by fermion parity | parity selection rule | Rigorous |
+| 5 | \$y_\zeta = 1\$ from \$\Delta_\zeta = 1\$ | CFT level-spacing | Derived |
+| 6 | \$\zeta\xi_{ps} \sim 1\$ critical condition | Steps 1, 5 | Derived |
+| 7 | \$\lambda_c \sim \sqrt{\zeta}\$ at small ζ | Step 6 | Predicted |
+| 8 | NLSM framework + matching reproduces √ζ | NLSM_FRAMEWORK.md | **NEW** (this session) |
+| 9 | Empirical φ from Binder data | this session, L ≤ 128 | **φ = 0.502 ± 0.026** |
+| 10 | L = 192, 256 confirmation | FSS collapse test | **Pending FST data** |
+| 11 | Case A predictions (D class, λ_c = 1/2, Ising) | NLSM_FRAMEWORK.md | Theory only; code not yet implemented |
+
+## Eliminated scenarios
+
+- **Scenario A** (\$\lambda_c \to 0.5\$ for all \$\zeta > 0\$, LMR-Ising
+  persistence): RULED OUT by Binder data showing \$\lambda_c\$
+  monotonically decreasing as \$\zeta \to 0\$.
+- **Scenario B** (separatrix at \$\zeta_c \approx 0.143\$): ARTIFACT of
+  c_eff threshold method; does not survive switch to Binder.
+- **Original Scenario C** (linear \$\lambda_c \sim \zeta\$, φ = 1):
+  EXCLUDED. Collapse residual 28% worse than \$\sqrt{\zeta}\$.
+
+## Methodology lesson (still applies)
+
+**c_eff method gives misleading results.** The c_eff = 1 threshold is
+not a universal MIPT diagnostic. All extractions of \$\lambda_c\$ must
+use **Binder cumulant crossings** with proper 1/sqrt(L) extrapolation.
+
+When this session started, the most recent small-ζ runs on Habrok had
+been analysed with the c_eff = 1 threshold, yielding φ = 0.201 (which
+contradicts the 0.502 from Binder). This is the wrong method, NOT
+a falsification of theory. **All new runs must store B_L_mean values
+per (L, λ, ζ).**
+
+## Empirical data sources
+
+- **Main aggregate**: \`/Users/catlover1337/Downloads/clone_aggregate(1).pkl\`
+  (1920 entries, L ∈ {8, 16, 24, 32, 48, 64, 96, 128}, ζ ∈ {0.02, 0.05,
+  0.10, 0.15, 0.20, 0.30, 0.50, 0.70, 0.85, 1.00}, 24 λ values).
+- **Each entry**: contains \`S_mean\`, \`B_L_mean\`, \`theta_mean\`,
+  etc. with per-realization statistics.
+- (96, 128) at ζ ≤ 0.10 has only \$N_c = 100\$ clones, noisier.
+
+## File index (where to find what)
+
+Fresh assistants resuming work should go to these files in this order:
+
+| Topic | File | Purpose |
+|---|---|---|
+| **Overview** | `theory/HANDOFF.md` (this file) | Start here. Single source of truth for project state. |
+| Latest session work | `theory/SESSION_2026_05_20.md` | What changed most recently and what's pending. |
+| **Theory: NLSM derivation** | `theory/NLSM_FRAMEWORK.md` | Le Gal–Schirò + PPS + Case A/B analysis. 296 lines. |
+| **Theory: LaTeX writeup** | `~/Downloads/continuousmeasurements(2)/sections/sec8_replica_nlsm_pps.tex` | Thesis section, 943 lines, ready to compile. |
+| Empirical φ result | `analysis/lambda_c_phi_analysis.md` | The φ = 0.502 ± 0.026 Binder analysis writeup. |
+| Empirical figure | `analysis/lambda_c_phi_fit.png` | Final φ-fit plot. |
+| Diagnostic figure | `analysis/binder_analysis_v2.png` | 4-panel Binder diagnostic. |
+| Two-parameter FSS context | `theory/two_parameter_FSS_results.md` | Earlier FSS notes (pre-NLSM). |
+| Cross-Choi / Δ_ζ argument | `theory/qj_chiral_vertex_result.md` | y_ζ = 1 derivation. |
+| Parity-resolved θ₁ correction | `theory/theta1_first_principles.md` | Why θ₁_SCGF = 0 by fermion parity. |
+| **Case A implementation** | `theory/CASE_A_IMPLEMENTATION_SPEC.md` | Self-contained spec for adding Case A code (8 steps + 7 gates). 612 lines. |
+| Earlier theory chain | `theory/qj_pps_final_synthesis.md`, `theory/qj_pps_theory_summary.md` | Pre-NLSM synthesis; superseded by NLSM_FRAMEWORK but still readable. |
+
+## Onboarding sequence for a fresh chat
+
+1. Read this file (`HANDOFF.md`) end-to-end. ~3 minutes.
+2. Read `theory/SESSION_2026_05_20.md`. ~3 minutes.
+3. If working on theory: read `theory/NLSM_FRAMEWORK.md`. ~10 minutes.
+4. If working on Case A numerics: read `theory/CASE_A_IMPLEMENTATION_SPEC.md`. ~10 minutes.
+5. If working on Case B numerics: the recommended runs are in
+   `SESSION_2026_05_20.md` §4, and the cloning entry points are in
+   `pps_qj/cloning.py` + `scripts/`.
+
+Do not re-derive things from scratch when an existing doc covers it.
+If you disagree with something in an existing doc, *flag it* in a new
+file rather than silently overwriting.
+
+## What can be tested numerically right now
+
+| Claim | Code status | Numerical test |
+|---|---|---|
+| φ = 1/2 at small ζ (Case B) | Code ready | Run A: dense ζ ∈ {0.02..0.20}, B_L values, L up to 256. 360 jobs. |
+| Two-parameter Binder collapse (Case B) | Code ready | Run B: extend existing data to L = 192, 256. 240 jobs. |
+| DIII Rényi drift in log phase (Case B) | Code ready | Run C: λ = 0.05, ζ ∈ {0.5, 1}, L up to 384. 12 jobs. |
+| λ_c^A = 1/2 ∀ ζ (Case A self-duality) | **Code not yet written**. | Implement Case A per spec, then 260-job scan. |
+| Ising universality in Case A (ν = 1) | **Code not yet written**. | Topological invariant + entropy scaling at λ_A = 1/2. |
+
+## Things to NOT do silently
+
+- Do not run any new numerics that store only c_eff. Always store B_L.
+- Do not modify Case B code while implementing Case A — use parallel files.
+- Do not "improve" the multicritical RG arguments — they're now grounded in
+  the NLSM framework and any rederivation should reference NLSM_FRAMEWORK.md.
+- Do not claim a numerical discrepancy with theory without verifying the
+  analysis method first (e.g. c_eff vs Binder).

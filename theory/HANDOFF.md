@@ -2,8 +2,11 @@
 
 **Last major update: 2026-06-06** (theory: replica field-theory routes recorded
 in `OPEN_ANALYTIC_PROBLEMS.md` §D — convergent n→1 non-perturbative obstruction;
-a **conventional power-law** boundary is now favored over BKT via the
-Coulomb-gas/U(1) criterion; the LMR-ζ* open item below is updated accordingly.
+the transition CHARACTER is **ζ-dependent** (KT-like at ζ=1, where the single-copy
+mass vanishes, leaving only the marginal cross vertex; conventional for ζ<1, where
+PPS switches a relevant mass back on) — see §D4–D5. (This corrects an over-strong
+"conventional favored over BKT" stated earlier the same day.) The LMR-ζ* open item
+below is updated accordingly.
 2026-06-05: N_c-ladder campaign BUILT + LAUNCHED for the
 decisive small-ζ λ_c — supersedes the plain L=128 rescue for that purpose; see
 "N_c-ladder campaign (2026-06-05)" below. Prior 2026-06-04 replica-limit
@@ -464,10 +467,13 @@ is driven by the relevant single-copy mass and is non-perturbative. Three
 field-theory routes (two-loop PCM β-function; exact-correlator/integrable
 continuation; LMR-style K-matching) converge on this, and via the Coulomb-gas /
 U(1) criterion (a BKT essential singularity needs a U(1) / marginal line, which
-the Majorana Z₂ class lacks) now favour a **conventional power-law** boundary
-over BKT. Consequence for the numerics below: fit ξ ~ |t|^{−ν}, NOT the BKT
-essential singularity; and the "ν=3.1 blow-up = BKT" reading is downgraded to
-large-ν-conventional + finite-size. The **Rényi-2 numerical ζ\* test remains
+the Majorana Z₂ class lacks) now show the transition CHARACTER is ζ-DEPENDENT (see §D5): the single-copy mass
+∝(ζ−1) vanishes at ζ=1, so the Born point is plausibly KT-like (only the marginal
+cross vertex remains — Poboiko-Mirlin scenario), while ζ<1 switches on a relevant
+mass → conventional. Consequence for the numerics below: expect a power law
+ξ ~ |t|^{−ν} for ζ<1 crossing to an essential singularity log ξ ~ (λ_c−λ)^{−1/2}
+as ζ→1; the "ν=3.1 blow-up at small ζ = BKT" reading is WRONG (small ζ is the
+conventional / forced-endpoint side, not the KT side). The **Rényi-2 numerical ζ\* test remains
 live** (a Rényi-k≥2 feature can exist and wash out by n→1). Original framing
 follows. Faithful analog of
 LMR's bosonization-breakdown ζ\* (their ζ\*≈0.28 is explicitly a **two-replica /

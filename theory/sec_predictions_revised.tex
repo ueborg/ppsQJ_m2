@@ -1,0 +1,147 @@
+%──────────────────────────────────────────────────────────────────
+\subsection{Summary of analytic predictions and comparison with
+            numerics}
+\label{subsec:predictions-summary}
+%──────────────────────────────────────────────────────────────────
+
+We collect the analytic predictions of this section, organised by the
+level of theoretical support, and contrast them with the numerical
+results obtained from the cloning data of
+Section~\ref{sec:binder-analysis}.
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{p{0.36\linewidth}p{0.27\linewidth}p{0.27\linewidth}}
+\toprule
+\textbf{Quantity} & \textbf{Case~A} & \textbf{Case~B}\\
+\midrule
+AZ class & $D$ & $\mathrm{DIII}$\\
+NLSM target & $SO(2N)/U(N)$ & $SO(N)$\\
+Self-duality & yes ($\alpha\leftrightarrow\gamma$) & no\\
+Critical line position & $\lambda_c^{\rm A}=\tfrac12\ \forall\zeta$ & varies with $\zeta$\\
+$\lambda_c$ at small $\zeta$ & $\tfrac12$ (pinned) & $\propto\sqrt{\zeta}$\\
+$\lambda_c$ at $\zeta=1$ & $\tfrac12$ & $\to\tfrac12$ (BR/Carollo)\\
+Crossover form (Case~B) & --- & $\lambda_c=\sqrt{\zeta}/(1+\sqrt{\zeta})$\\
+UV scaling dim.\ of $\mathcal V_\zeta$ & $1$ & $1$\\
+NLSM correlation exp.\ $\nu$ & $1$ (Ising at $\theta=\pi$) & $2$ (DIII multicritical)\\
+$\pi_2$ of target / topological term & $\mathbb Z$, $\theta\in\{0,\pi\}$
+                                     & $\mathbb Z_2$ ($N\geq 3$)\\
+Critical CFT (at $\theta=\pi$) & Ising ($c=\tfrac12$) & free-fermion Gaussian\\
+\bottomrule
+\end{tabular}
+\caption{Analytic predictions for QJ--PPS Cases~A and~B.  Case~A is
+protected by self-duality and has $\zeta$-independent universality.
+Case~B has no protection; the matched-NLSM framework of
+Section~\ref{subsec:matching} predicts a $\sqrt{\zeta}$ small-$\zeta$
+asymptote, with a Born-rule endpoint at $\lambda_c(1)=1/2$, smoothly
+interpolated by the closed-form $\lambda_c=\sqrt{\zeta}/(1+\sqrt{\zeta})$.}
+\label{tab:caseAB-summary}
+\end{table}
+
+
+\paragraph{Comparison with cloning data (Case~B).}
+The principal prediction of Section~\ref{subsec:matching}---that the
+phase boundary satisfies $\alpha_c/w\propto\sqrt{\zeta}$ with
+order-unity prefactor and Born-rule limit $\lambda_c\to 1/2$ at
+$\zeta\to 1$---is tested in
+Section~\ref{sec:binder-analysis} via global finite-size scaling
+collapse on the cloning data at $L\in\{32,48,64,96,128,192,256\}$.
+On the cleanest data range $\zeta\in[0.03,0.85]$ (excluding the
+finite-size-limited $\zeta=1$ corner and the asymptotic-FSS-marginal
+$\zeta=0.02$ corner), a free power-law fit
+$\alpha_c/w=C\,\zeta^{\phi}$ gives
+\begin{equation}\label{eq:phi-C-fit}
+  \phi^{\rm fit}\,=\,0.56\pm 0.05,
+  \qquad
+  C^{\rm fit}\,=\,1.02\pm 0.10,
+  \qquad
+  \chi^{2}/\mathrm{dof}\,=\,3.8.
+\end{equation}
+The prediction $\phi=1/2$ of Eq.~\eqref{eq:caseB-sqrtz} is consistent
+within $1.3\sigma$; the alternative $\phi=1$, corresponding to a naive
+$\xi_\lambda^{\rm cross}\propto\lambda^{-1}$ matching length, is
+excluded at $9\sigma$.  The fitted prefactor $C\approx 1$ is
+consistent with the order-unity expectation; we emphasise that $C$ is
+non-universal and that no precision target is meaningful at this
+level.
+
+\paragraph{Logarithmic corrections in the log phase.}
+The one-loop DIII flow~\eqref{eq:caseB-beta-R1} predicts a specific
+form for the logarithmic corrections in the weakly-monitored phase of
+Case~B.  Integrating Eq.~\eqref{eq:caseB-beta-R1} gives
+\begin{equation}\label{eq:running-coupling}
+  g_R(L) \;=\; \frac{g_B}{1 + (g_B/8\pi)\ln(L/L_{\rm match})},
+\end{equation}
+where $L_{\rm match}$ is the matching scale (either $a$ or
+$\xi_\lambda^{\rm cross}$ depending on the regime).  This predicts a
+sub-leading correction to the entanglement entropy of the form
+$S(L) = (c_{\rm eff}/6)\ln L + b\ln\ln L+\ldots$ with $b$ a universal
+coefficient set by the $\beta$-function.  The drift of $c_{\rm eff}(L)$
+with $L$ at fixed $\zeta$ is in principle a direct signature of the
+DIII flow, although the available cloning data is not precise enough
+to extract $b$ reliably at the $L\leq 256$ system sizes accessible
+here.
+
+\paragraph{R\'enyi-ratio drift.}
+The weak-coupling fixed point of the DIII NLSM is the free-fermion
+Gaussian CFT, with R\'enyi ratios
+$c_n/c_1 = \tfrac{1}{2}(1+1/n)$, i.e.\ $c_2/c_1=0.75$,
+$c_3/c_1\approx 0.667$.  The cloning data of
+Section~\ref{sec:cloning} measure $c_2/c_1$ at $\lambda=0.05$ deep in
+the log phase across $L\in\{64,96,128,192,256,384\}$ and find values
+in the range $[0.75,0.80]$ at $\zeta=0.5$ and $[0.81,0.84]$ at
+$\zeta=1$.  The framework predicts these ratios should approach the
+Gaussian values from above as $L\to\infty$, but the available data
+shows a non-monotonic drift at $\zeta=0.5$ and approximate stability
+at $\zeta=1$.  The clean drift signal is masked by reduced trajectory
+counts at the larger system sizes ($N_c$ falls from $200$ at $L=64$
+to $20$ at $L=384$), and the test is therefore inconclusive at the
+present statistics.
+
+\paragraph{Two-parameter FSS in $(\lambda L^{1/2},\zeta L)$.}
+At the multicritical fixed point, the joint scaling form
+\begin{equation}\label{eq:two-param-FSS}
+  B_L(\lambda,\zeta) \;=\; \mathcal B\!\bigl(\lambda L^{1/y_\lambda},\,\zeta L^{y_\zeta}\bigr)
+  \;=\; \mathcal B\!\bigl(\lambda L^{1/2},\,\zeta L\bigr)
+\end{equation}
+should describe the Binder cumulant up to logarithmic corrections in
+the small-$\zeta$ regime.  A direct two-parameter collapse on the
+cloning data shows scatter at the order-of-magnitude level at fixed
+$(\lambda L^{1/2},\zeta L)$, consistent with finite-size corrections
+expected at $\zeta L\gtrsim 5$ (the marginal asymptotic-FSS threshold
+for the available $L$ values).  The single-parameter scaling
+$B_L = F((\lambda-\lambda_c(\zeta))L^{1/\nu})$ at fixed $\zeta$ gives
+clean collapses across all five $L$ values, supporting the existence
+of a $\zeta$-dependent critical line of class-DIII type.
+
+\paragraph{The empirical $\nu(\zeta)$ pattern.}
+Global FSS extracts $(\lambda_c,\nu)$ jointly at each $\zeta$ by
+collapsing the five $L$-curves; the resulting $\nu$ values scatter
+between $1.7$ and $3.0$, with weighted mean $\bar\nu=2.23\pm 0.04$.
+On the clean middle range $\zeta\in[0.1,0.7]$ the values cluster
+within $1\sigma$ of $\nu=2$, consistent with the class-DIII
+multicritical prediction.  The end points $\zeta=0.85$ and $\zeta=1$
+pull $\bar\nu$ upward to $\sim 2.7$--$3.0$; these are precisely the
+regions where finite-size systematics (low $N_c$ at $L=256$ and
+limited $\lambda$ coverage) dominate, and we therefore treat $\nu=2$
+as a literature input that is consistent with our data in the
+asymptotic-FSS regime rather than as an independent numerical
+determination.
+
+\paragraph{Summary of theoretical robustness.}
+The principal robust prediction of this chapter is the small-$\zeta$
+scaling law $\lambda_c\propto\sqrt{\zeta}$ for Case~B, derived from
+two field-theory inputs ($\Delta_\zeta^{\rm UV}=1$ from
+cross-Choi, microscopically verified; $\nu=2$ from class-DIII
+multicritical NLSM, taken from the disordered-fermion literature),
+combined via the matched-RG argument of
+Section~\ref{subsec:matching}.  This prediction is confirmed by the
+cloning numerics within $1.3\sigma$ on a $9$-point dataset spanning
+two decades of $\zeta$.  The non-universal prefactor $C\approx 1$ is
+consistent with order-unity matching; precision computation of $C$
+would require a one-loop NLSM calculation that is not pursued here.
+The Born-rule limit $\lambda_c\to 1/2$ at $\zeta=1$ is consistent
+with Carollo~\cite{Carollo2018PRA}.  These two limits are smoothly
+joined by the parameter-free closed-form interpolation
+$\lambda_c(\zeta) = \sqrt{\zeta}/(1+\sqrt{\zeta})$.

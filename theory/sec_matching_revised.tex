@@ -1,0 +1,262 @@
+%──────────────────────────────────────────────────────────────────
+\subsection{Resolution of the small-$\zeta$ regime: matched-NLSM
+            and the $\sqrt{\zeta}$ scaling}
+\label{subsec:matching}
+%──────────────────────────────────────────────────────────────────
+
+The Le~Gal--Schir\'o derivation gradient-expands the bosonic
+action~\eqref{eq:bosonic-action} around the Lindbladian saddle of
+Section~\ref{subsec:HS-saddle}, treating the dressed length
+$\xi_{\rm dressed}\sim v_0/(\zeta\gamma)$ of
+Remark~\ref{rem:dressed-length} as the short-distance UV cutoff.  This
+prescription is well-adapted to the Born-rule endpoint $\zeta=1$ but
+fails to describe the full $(\lambda,\zeta)$ phase diagram of
+Case~B at small $\zeta$, where individual trajectories spend long
+intervals under purely no-click evolution.  The resolution, developed
+in this subsection, is a two-stage RG argument that runs the bare
+cross-replica coupling on the free-fermion fixed point up to a
+$\lambda$-controlled \emph{crossover} length scale $\xi_\lambda^{\rm
+cross}$, and then matches to the DIII NLSM.  The output is a
+parameter-free prediction $\lambda_c\propto\sqrt{\zeta}$ for the
+location of the critical line at small $\zeta$, in quantitative
+agreement with the cloning numerics of
+Section~\ref{sec:binder-analysis}.
+
+\subsubsection{The two-stage matched-NLSM argument}
+\label{subsubsec:two-stage}
+
+The matched argument is most cleanly phrased as a linearised RG flow
+around the multicritical point
+$(\lambda,\zeta)=(0,0)$, followed by the imposition of an order-one
+threshold condition.
+
+\paragraph{Multicritical fixed point and its relevant deformations.}
+The point $(\lambda,\zeta)=(0,0)$ is a multicritical free-Dirac fixed
+point of the replica Keldysh theory: at $\lambda=0$ the no-click
+generator $H_{\rm nH}$ reduces to a real hopping Hamiltonian, and at
+$\zeta=0$ the cross-replica vertex of Section~\ref{subsec:keldysh-action}
+vanishes.  Both $\lambda$ and $\zeta$ are relevant
+perturbations of this fixed point.  Linearising the RG equations
+around the origin,
+\begin{equation}\label{eq:RG-linear}
+  \frac{d\lambda}{d\ell}\;=\; y_\lambda \,\lambda,
+  \qquad
+  \frac{d\zeta}{d\ell}\;=\; y_\zeta \,\zeta,
+\end{equation}
+the two eigenvalues are identified as follows.
+
+\textbf{(i)~Cross-Choi eigenvalue $y_\zeta$.}~The cross-replica vertex
+$\mathcal V_\zeta = \prod_r L_{x,r,+}L^\dagger_{x,r,-}$ is a product of
+density bilinears (one per Keldysh contour) at coincident spacetime
+points.  By engineering dimension counting at the free-Dirac UV with
+$[\psi_\pm]=1/2$ and $[L_j]=1$ in $1+1$~d, its UV scaling dimension is
+\begin{equation}\label{eq:Delta-zeta-UV}
+  \Delta_\zeta^{\rm UV} \;=\; 1
+  \qquad\Longrightarrow\qquad
+  y_\zeta \;=\; 2-\Delta_\zeta^{\rm UV} \;=\; 1.
+\end{equation}
+This is confirmed by a direct lattice computation of the cross-Choi
+two-point function $\langle\mathcal V_\zeta(x)\,\mathcal V_\zeta(0)\rangle\sim
+x^{-2\Delta_\zeta^{\rm UV}}\sim x^{-2}$ at $\lambda=0$, presented in
+Section~\ref{sec:cross-choi}.
+
+\textbf{(ii)~$\lambda$-eigenvalue $y_\lambda$.}~The infrared fixed
+point of the multicritical class-DIII NLSM is well established in the
+disordered-fermion literature~\cite{KonigBrouwer2014} and was
+transcribed to the MIPT context by~\cite{LeGalSchiro2025}; both give
+a correlation-length exponent $\nu=2$.  Identifying $y_\lambda$ with
+the inverse correlation-length exponent along the $\lambda$ direction
+at the multicritical point,
+\begin{equation}\label{eq:y-lambda}
+  y_\lambda\;=\;\nu^{-1}\;=\;\tfrac{1}{2}.
+\end{equation}
+Equivalently, the $\lambda$ direction generates a crossover length
+$\xi_\lambda^{\rm cross}\sim\lambda^{-1/y_\lambda}=\lambda^{-2}$.
+
+\paragraph{Crossover length and matching condition.}
+We emphasise the distinction between two correlation lengths that
+share the same $\lambda$-scaling but are conceptually different.  The
+\emph{crossover} length $\xi_\lambda^{\rm cross}$ is the RG scale at
+which the linearised perturbation $\lambda(\ell)$ in
+\eqref{eq:RG-linear} reaches order unity, signalling that the system
+has flowed out of the vicinity of the $(0,0)$ multicritical fixed
+point: $\lambda\,e^{y_\lambda\ell_\lambda}\sim 1$ gives
+$e^{\ell_\lambda}\sim\lambda^{-2}$ and hence
+\begin{equation}\label{eq:xi-lambda-cross}
+  \xi_\lambda^{\rm cross}\;\sim\;\lambda^{-2}\,a.
+\end{equation}
+This is the length used in the matching condition below.  The
+\emph{critical} length $\xi_{\rm crit}\sim|\lambda-\lambda_c(\zeta)|^{-\nu}$
+is the diverging correlation length at the phase boundary itself and
+plays no role in the present argument; using
+$\xi_\lambda^{\rm cross}$ in place of $\xi_{\rm crit}$ avoids any
+circularity in which the unknown $\lambda_c(\zeta)$ would be used to
+fix itself.
+
+Evaluating the linearised flow of $\zeta$ at the crossover scale,
+\begin{equation}\label{eq:zeta-eff}
+  \zeta_{\rm eff}(\xi_\lambda^{\rm cross})
+  \;=\;
+  \zeta\,e^{y_\zeta\ell_\lambda}
+  \;=\;
+  \zeta\,\lambda^{-y_\zeta/y_\lambda}
+  \;=\;
+  \zeta\,\lambda^{-2},
+\end{equation}
+where the last equality uses $y_\zeta/y_\lambda=2$.  The MIPT occurs
+when this renormalised coupling reaches an order-unity threshold
+$K^\ast$, the universal critical coupling of the class-DIII NLSM:
+$\zeta_{\rm eff}(\xi_\lambda^{\rm cross})=K^\ast$, which solves to
+\begin{equation}\label{eq:caseB-sqrtz}
+  \boxed{\quad
+  \lambda_c(\zeta)\;=\;\sqrt{c_\lambda/K^\ast}\,\sqrt{\zeta}
+  \;\equiv\;C\,\sqrt{\zeta},
+  \qquad
+  C \;=\; O(1) \text{ non-universal}
+  \quad}
+\end{equation}
+in the small-$\zeta$ regime $\zeta\ll 1$.  Here $c_\lambda$ is the
+$O(1)$ coefficient relating the bare scale $a$ to the crossover scale
+$\xi_\lambda^{\rm cross}=c_\lambda\,\lambda^{-2}\,a$, set by lattice
+matching.
+
+\paragraph{Two ingredients, two limits.}
+The derivation rests on exactly two field-theory inputs:
+$\Delta_\zeta^{\rm UV}=1$, established microscopically by the
+cross-Choi lattice calculation; and $\nu=2$, the multicritical
+class-DIII NLSM correlation-length exponent, taken from the literature
+and consistent with the empirical $\nu(\zeta)$ extracted by global FSS
+in the clean range $\zeta\in[0.1,0.7]$ (Section~\ref{sec:binder-analysis}).
+The prefactor $C$ in \eqref{eq:caseB-sqrtz} is non-universal: it
+depends on $c_\lambda$ and on the regularisation scheme defining
+$K^\ast$, both of which are scheme-dependent $O(1)$ numbers.  Demanding
+that the formula \eqref{eq:caseB-sqrtz} interpolate to the Born-rule
+endpoint $\lambda_c(1)=1/2$ of~\cite{Carollo2018PRA} fixes the natural
+one-parameter form
+\begin{equation}\label{eq:lambda-c-full}
+  \lambda_c(\zeta)\;=\;\frac{\sqrt{\zeta}}{1+\sqrt{\zeta}},
+\end{equation}
+equivalently $\alpha_c/w=\sqrt{\zeta}$, which is the closed-form
+zero-parameter interpolation used throughout
+Section~\ref{sec:binder-analysis}.
+
+\subsubsection{Validity of the matched argument and the assumptions
+               that go in}
+\label{subsubsec:validity}
+
+The derivation above is a \emph{matched crossover} argument, not a
+complete one-loop calculation of the IR scaling dimensions of all
+operators in the class-DIII NLSM.  We list explicitly the assumptions
+on which the conclusion $\lambda_c\sim\sqrt{\zeta}$ rests and note,
+for each, the level of justification provided.
+
+\begin{itemize}
+  \item \textbf{$\Delta_\zeta^{\rm UV}=1$ at the free-Dirac fixed point.}
+    This is established by engineering dimension counting at the
+    Keldysh-replica level and verified independently by lattice
+    computation of the cross-Choi two-point function at $\lambda=0$,
+    which decays as $x^{-2}$ (Section~\ref{sec:cross-choi}).  No
+    further assumptions enter.
+
+  \item \textbf{$\nu=2$ for the class-DIII multicritical NLSM.}
+    This is a known result of the disordered-fermion NLSM
+    literature~\cite{KonigBrouwer2014}, used in the MIPT context
+    by~\cite{LeGalSchiro2025}.  Our global FSS gives values of
+    $\nu(\zeta)$ scattered around $2$ in the clean range
+    $\zeta\in[0.1,0.7]$, with finite-size systematics at the extremes
+    preventing a precision determination from numerics alone.  We
+    therefore use $\nu=2$ as a literature input, with the data
+    serving as a consistency check.
+
+  \item \textbf{The critical condition is reached at the crossover scale.}
+    The matched argument runs $\zeta$ with the UV eigenvalue
+    $y_\zeta^{\rm UV}=1$ from the lattice scale $a$ to the crossover
+    scale $\xi_\lambda^{\rm cross}$, then sets the result equal to
+    $K^\ast$.  This is justified \emph{provided} the IR running of
+    $\zeta$ inside the NLSM regime is not parametrically large and
+    does not change the leading exponent.  An anomalous IR dimension
+    $\Delta_\zeta^{\rm IR}\neq 1$ would shift the prefactor and could
+    generate subleading corrections; it would not change the leading
+    $\sqrt{\zeta}$ behaviour unless the second RG window
+    $\xi_\lambda^{\rm cross}\ll \ell\ll\xi_{\rm crit}$ is
+    parametrically large compared with the first.  The full one-loop
+    computation of $\Delta_\zeta^{\rm IR}$ at the class-DIII NLSM
+    fixed point is left as future work.
+
+  \item \textbf{No microscopic single-particle counterpart claimed.}
+    Earlier formulations of this matching identified
+    $\xi_\lambda^{\rm cross}$ with a BdG localisation length
+    $\xi_{\rm ps}\sim\lambda^{-2}$ of the no-click Hamiltonian.  This
+    identification is suggestive for models where the no-click
+    dynamics has a manifest non-Hermitian SSH structure, but it does
+    not directly map onto the bulk spectral content of
+    $H_{\rm eff}=H-i\alpha\sum_j\tilde n_j$ for the
+    Bogoliubov-mode-measurement model studied here, as direct
+    diagonalisation shows.  We therefore treat
+    $\xi_\lambda^{\rm cross}$ as the RG-defined crossover scale of
+    Eq.~\eqref{eq:xi-lambda-cross}, with $\nu=2$ supplied by the
+    field theory rather than by single-particle BdG considerations.
+\end{itemize}
+
+The conclusion is that the $\sqrt{\zeta}$ scaling of the Case~B
+critical line is a robust universal prediction of the matched
+field-theory argument, while the prefactor $C$ is non-universal and
+not separately fixed by the present derivation.
+
+\subsubsection{Comparison with numerics}
+\label{subsubsec:numerics-match}
+
+Global FSS on the merged Run-A, Run-B and Run-C cloning data
+(Section~\ref{sec:binder-analysis}) gives, on the clean range
+$\zeta\in[0.03,0.85]$,
+\begin{align}
+  \phi^{\rm fit} &\;=\; 0.56 \,\pm\, 0.05, \\
+  C^{\rm fit}    &\;=\; 1.02 \,\pm\, 0.10,
+\end{align}
+with $\chi^2/\text{dof}=3.8$ for the free power-law fit
+$\alpha_c/w=C\zeta^\phi$.  The prediction $\phi=1/2$ of
+Eq.~\eqref{eq:caseB-sqrtz} is within $1.3\sigma$ of the best-fit
+value; the alternative $\phi=1$, corresponding to a naive
+$\xi_\lambda\sim\lambda^{-1}$ matching length, is excluded at
+$9.1\sigma$.  The fitted prefactor is consistent with the order-unity
+expectation of the matched argument.  The natural variable
+$\alpha_c/w$ is approximately linear in $\sqrt{\zeta}$ with slope
+close to one, reproducing the Carollo Born-rule endpoint
+$\lambda_c(1)\to 1/2$ to within finite-size systematics
+(Section~\ref{sec:binder-analysis}).
+
+\paragraph{Crossover to the large-$\zeta$ regime.}
+At $\zeta=O(1)$ the crossover length
+$\xi_\lambda^{\rm cross}\sim\lambda^{-2}$ becomes comparable to the
+lattice scale already at moderate $\lambda$, and the matched-NLSM
+window shrinks.  In this regime the Lindbladian saddle of
+Section~\ref{subsec:HS-saddle} is dominant and the full class-DIII
+NLSM with bare coupling $g_B\propto\zeta\lambda/(1-\lambda)$ controls
+the transition, recovering the Born-rule endpoint $\lambda_c\to 1/2$
+at $\zeta=1$.  The closed-form $\lambda_c=\sqrt{\zeta}/(1+\sqrt{\zeta})$
+of Eq.~\eqref{eq:lambda-c-full} interpolates between the two regimes
+and is consistent with the numerics across the full range with no
+additional fit parameters.
+
+\begin{remark}[Physical picture]\label{rem:physical-interpretation}
+The Case~B phase diagram is controlled by two structurally distinct
+limits of the same DIII NLSM:
+\begin{itemize}
+  \item \textbf{Multicritical regime} ($\zeta\ll 1$, $\lambda\ll 1$):
+    proximity to the free-Dirac fixed point at the origin.  The
+    cross-replica vertex is a relevant operator of UV dimension
+    $\Delta_\zeta^{\rm UV}=1$, and the linearised flow generates a
+    $\lambda$-crossover length $\xi_\lambda^{\rm cross}\sim\lambda^{-2}$.
+    Critical line $\lambda_c\propto\sqrt{\zeta}$, exponent
+    $\nu=1/y_\lambda=2$.
+  \item \textbf{NLSM regime} ($\zeta=O(1)$): the Lindbladian saddle
+    is dominant and the DIII NLSM applies with bare coupling
+    $g_B\propto\zeta\lambda/(1-\lambda)$.  Critical line approaches
+    $\lambda_c=1/2$ at $\zeta=1$.
+\end{itemize}
+The two regimes are joined smoothly by the closed-form interpolation
+\eqref{eq:lambda-c-full}; the same field-theoretic framework controls
+both, with the UV cutoff in the gradient expansion taken to be the
+lattice scale $a$ for $\zeta=O(1)$ and the crossover scale
+$\xi_\lambda^{\rm cross}$ for $\zeta\ll 1$.
+\end{remark}
