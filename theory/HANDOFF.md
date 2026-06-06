@@ -1,6 +1,10 @@
 # ppsQJ_m2 Project — Handoff Notes
 
-**Last major update: 2026-06-05** (N_c-ladder campaign BUILT + LAUNCHED for the
+**Last major update: 2026-06-06** (theory: replica field-theory routes recorded
+in `OPEN_ANALYTIC_PROBLEMS.md` §D — convergent n→1 non-perturbative obstruction;
+a **conventional power-law** boundary is now favored over BKT via the
+Coulomb-gas/U(1) criterion; the LMR-ζ* open item below is updated accordingly.
+2026-06-05: N_c-ladder campaign BUILT + LAUNCHED for the
 decisive small-ζ λ_c — supersedes the plain L=128 rescue for that purpose; see
 "N_c-ladder campaign (2026-06-05)" below. Prior 2026-06-04 replica-limit
 reframing and 2026-06-03 dense/rescue status below unchanged.)
@@ -452,7 +456,20 @@ and not removable by more statistics at fixed L.
    or adaptive measurement to the QJ-PPS protocol. Not explored
    analytically. Would change the cross-vertex structure.
 
-**LMR-style ζ\* breakdown / BKT target (new, 2026-06-04).** Faithful analog of
+**LMR-style ζ\* breakdown / BKT target (new, 2026-06-04; UPDATED 2026-06-06).**
+**Analytic side now settled (see `OPEN_ANALYTIC_PROBLEMS.md` §D).** The QJ cross
+vertex is **marginal**, not relevant (unlike LMR's QSD vertex), so it does NOT
+drive the transition and there is **no n→1 QJ analogue of LMR's ζ\***; the MIPT
+is driven by the relevant single-copy mass and is non-perturbative. Three
+field-theory routes (two-loop PCM β-function; exact-correlator/integrable
+continuation; LMR-style K-matching) converge on this, and via the Coulomb-gas /
+U(1) criterion (a BKT essential singularity needs a U(1) / marginal line, which
+the Majorana Z₂ class lacks) now favour a **conventional power-law** boundary
+over BKT. Consequence for the numerics below: fit ξ ~ |t|^{−ν}, NOT the BKT
+essential singularity; and the "ν=3.1 blow-up = BKT" reading is downgraded to
+large-ν-conventional + finite-size. The **Rényi-2 numerical ζ\* test remains
+live** (a Rényi-k≥2 feature can exist and wash out by n→1). Original framing
+follows. Faithful analog of
 LMR's bosonization-breakdown ζ\* (their ζ\*≈0.28 is explicitly a **two-replica /
 Rényi-2** result; they state the n→1 behaviour is unknown). Route A (Cardy RG,
 y_m = 1 − (π/4)rζ) gives NO crossing in the physical window (y_m>0 along the
