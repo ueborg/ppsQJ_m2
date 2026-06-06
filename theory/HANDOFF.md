@@ -177,7 +177,9 @@ $\zeta = 1$ via $\zeta \in \{0.70, 0.80, 0.90\}$ at $L = 192, 256$.
   designed. The decisive small-ζ resolution gap is the methodological
   limit, not a budget question.
 - **Case A implementation**. Spec at `theory/CASE_A_IMPLEMENTATION_SPEC.md`;
-  code not yet written.
+  backend written and validated against exact Fock space (2026-06-06, all
+  hard gates pass — see code file map below). Production Binder scan + FSS
+  not yet run.
 
 ---
 
@@ -258,7 +260,14 @@ is pinned for all $\zeta \in (0, 1]$.
 $\nu = 1$, $c = 1/2$. Different from Case B's class DIII multicritical
 $\nu = 2$.
 
-**Status.** Theoretical prediction, *not yet numerically verified*.
+**Status.** Backend validated 2026-06-06 (Gaussian vs exact Fock space, L=6,
+agree at λ_A = 0.3, 0.5, 0.7). The λ_c^A = 1/2 and universality *physics*
+remain *not yet numerically verified* — that requires the Binder-crossing
+scan. Caveat surfaced during validation: S(L/2) is strongly asymmetric under
+λ_A ↔ 1−λ_A (≈0.31 vs ≈1.03 at L=16), confirmed by the exact backend. This
+is expected (site-density measurement disentangles the Néel state, bond
+measurement does not) and does NOT bear on λ_c, because S(L/2) is not
+duality-invariant — the c↔d duality is non-local and scrambles the cut.
 Implementation spec at `theory/CASE_A_IMPLEMENTATION_SPEC.md`.
 
 ### Comparison to KMR and LMR
@@ -573,6 +582,23 @@ All in `~/Downloads/continuousmeasurements(2)/references.bib`.
   with clean low-L → FSS-ready pkl (prints bias-linearity residual)
 - `analysis/renyi_washout.py` — B4 item 3 (von Neumann vs crossover via the
   Rényi-index dependence of the S_n log-coefficient); validated on synthetic
+
+## File map (code added this iteration, 2026-06-06) — Case A backend
+
+- `pps_qj/gaussian_backend_caseA.py` — Case A Gaussian QJ backend. Site
+  channel c†c at rate γ on pair (2j,2j+1), bond channel d†d at rate α
+  (identical operator to Case B). Two structural differences from Case B,
+  both validated: rate-weighted uniform decay γL + α(L−1) in the branch
+  norm, and rate-weighted channel selection. Local `site_jump_pair`; the
+  Case B file is untouched.
+- `pps_qj/exact_backend_caseA.py` — exact Fock-space reference (L ≤ 10).
+  Site projector n_j, bond projector built identically to Case B so any
+  mismatch isolates to the new site channel.
+- `tests/validate_caseA.py` — standalone gate suite. Hard gates PASS
+  2026-06-06: generator algebra, λ_A=1/2 sanity, Gaussian-vs-exact at L=6
+  (site-click fractions agree to 3 digits → site convention correct, no
+  flip), and Case A(γ=0) = Case B(w=0). Self-duality S-check is
+  informational only (S is not duality-invariant).
 
 The most important documents to read first are `HANDOFF.md` (this file),
 then `SUMMARY_2026_05_22.md`, then `PROMPT_INTERNSHIP_REPORT.md`.
