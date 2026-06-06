@@ -1,341 +1,578 @@
-# QJ-PPS project handoff (as of 2026-05-18, post parity-resolved correction)
+# ppsQJ_m2 Project — Handoff Notes
 
-Single entry-point document for resuming this project in a fresh chat.
-If you're a new assistant instance picking this up, read this first.
+**Last major update: 2026-06-05** (N_c-ladder campaign BUILT + LAUNCHED for the
+decisive small-ζ λ_c — supersedes the plain L=128 rescue for that purpose; see
+"N_c-ladder campaign (2026-06-05)" below. Prior 2026-06-04 replica-limit
+reframing and 2026-06-03 dense/rescue status below unchanged.)
+This document is the canonical entry point.
+For deeper theoretical detail see `theory/SUMMARY_2026_05_22.md` and
+`theory/qj_pps_theory_summary.md`. **For the chat-agent protocol (start-of-chat
+read + handoff-update workflow), see `theory/AGENTS.md`.**
 
-## Project context
+> **⚠️ THEORY STATUS REVISED (2026-06-03).** The √ζ derivation in the TL;DR
+> below (Δ_ζ=1, ξ~λ⁻²) is **invalid** for the projector-jump model. The genuine
+> cross vertex is **marginal** (Δ≈2, verified); the no-click length is
+> **ξ_nc~λ⁻¹** (verified). The phase-boundary exponent is **unresolved** (free
+> fits give φ≈0.56 on λ_c, ≈0.8 on r_c). See `theory/CURRENT_THEORY_STATUS.md`
+> for the corrected canonical state, `theory/OPEN_ANALYTIC_PROBLEMS.md` for the
+> analytic attempts, and `theory/NUMERICS_STATUS_AND_PLAN.md` for the data plan.
+> The √ζ material below is retained as historical context only.
 
-- **Researcher**: Utku, master's in quantum engineering, University of Groningen.
-- **Supervisor**: Dganit Meidan (RUG).
-- **Project**: `ppsQJ_m2` — measurement-induced phase transitions (MIPT) in
-  a 1D Kitaev chain under quantum-jump partial postselection (QJ-PPS).
-  Extends Kells–Meidan SciPost Phys 14, 3, 031 from diffusive to quantum-jump.
-- **Repo**: `github.com/ueborg/ppsQJ_m2`. Local at `/Users/catlover1337/Documents/ppsQJ_m2/`.
-- **Compute**: Habrok HPC (RUG), interactive nodes ~60 cores.
-- **Language**: Python. Code uses numpy, scipy, tqdm; Gaussian fermionic backend.
+> **⚠️ REPLICA-LIMIT REFRAMING (2026-06-04).** The class-DIII ν≈2 the project
+> relied on was mis-cited as "König-Brouwer 2014" (non-existent paper). Real
+> source: **Fulga et al. PRB 86, 054505 (2012)** — and it is the **n→0
+> (forced/Anderson)** exponent. Jian-Shapourian-Bauer-Ludwig (arXiv:2302.09094)
+> prove that for class DIII the **forced (n→0)** and **Born-rule (n→1)**
+> measurement transitions are *different universality classes*. The MIPT
+> boundary is governed by the **n→1** end, so importing Fulga's n→0 ν=2 is not
+> justified; ζ interpolates between the limits (ζ→0 forced/n→0, ζ=1 Born/n→1),
+> so a *constant* ν is not expected (cf. LMR's ν∈[1,5/3]). Also flag: the
+> monitored-Majorana literature (Jian; Fava et al. PRX 13 041045) uses the
+> **principal-chiral SO(N)** target, NOT the SO(2n)/U(n) coset the Doc
+> derivations assumed — the target for THIS model must be rederived from the
+> Choi action, not inherited from the Anderson problem.
 
-## Model
+---
 
-Hamiltonian $H = w \sum_j (c_j^\dagger c_{j+1} + \text{h.c.})$ on $L$ sites.
-Jump operators $L_j = \sqrt{\alpha}\,d_j$ with $d_j = (\gamma_{2j} - i\gamma_{2j+3})/2$
-(distance-3 Majorana bond operator).
+## TL;DR — where the project stands (May 2026)
 
-Parametrization: $\alpha + w = 1$, $\lambda := \alpha$, $\zeta \in [0, 1]$ the
-postselection parameter. $\zeta = 1$ recovers Born-rule quantum jumps;
-$\zeta = 0$ is full postselection (no clicks at all).
+### Theory (SUPERSEDED — see CURRENT_THEORY_STATUS.md)
 
-Trajectory measure is tilted by $\zeta^{N_T}$. The tilted Lindbladian
+The matched-NLSM framework for QJ-PPS Case B (single d-mode measurement +
+Kitaev hopping + PPS parameter ζ) predicts
 $$
-\mathcal{L}_\zeta[\rho] = -i[H,\rho] + \sum_j\bigl[\zeta J_j\rho J_j^\dagger - \tfrac{1}{2}\{J_j^\dagger J_j, \rho\}\bigr]
-= \mathcal{L}_0 + \zeta \mathcal{J}
+\lambda_c(\zeta) \;\sim\; C\sqrt{\zeta}, \qquad C = O(1) \text{ non-universal}
 $$
-splits into no-click non-Hermitian piece $\mathcal{L}_0$ and click recycling
-piece $\zeta\mathcal{J}$.
+from two ingredients:
 
-## Current top-level result (provisional but well-supported)
+1. ~~UV dimension Δ_ζ=1~~ **CORRECTED**: the genuine normal-ordered cross
+   vertex :B₊B₋: has Δ≈2 (marginal), verified exactly
+   (`analysis/cross_vertex_dimension.py`). The earlier "Δ=1" measured a single
+   bilinear / the raw correlator, which is ~r⁻² because ⟨B⟩≠0.
+2. ~~ν=2 used as input~~ **OPEN**: the many-body ν is unresolved; the
+   single-particle no-click length gives ξ_nc~λ⁻¹ (ν=1 proxy), not λ⁻².
 
+Matching at the multicritical crossover scale $\xi_\lambda^{\rm cross}\sim\lambda^{-2}$
+gives $\zeta\lambda^{-2}\sim K^* \Rightarrow \lambda_c\sim\sqrt\zeta$.
+
+The $\lambda^{-2}$ scale is the universal class-DIII multicritical correlation
+length, *not* a single-particle no-click localization length. The actual QJ
+distance-3 Majorana bond gives a gapless H_eff at the single-particle
+level (verified numerically) — this is a structural difference from KMR/LMR's
+QSD setup, where the no-click problem does have a well-defined BdG localization
+length.
+
+### Numerics (best current estimate)
+
+Global FSS on merged cloning data ($L \le 256$, $\zeta \in [0.02, 1.00]$):
+- $\phi = 0.56 \pm 0.05$ on $\zeta \in [0.03, 0.85]$
+- Consistent with predicted $\phi = 1/2$ at $1.3\sigma$
+- Excludes $\phi = 1$ at $9\sigma$
+- Empirical prefactor $C \approx 0.91 \pm 0.10$
+- $\nu(\zeta)$ scattered around $\sim 2$ across $\zeta \in [0.05, 0.7]$,
+  consistent with the theory-predicted plateau
+
+### Dense fine-grid campaign — actual status (June 2026)
+
+The dense campaign (`pps_clone_dense`, 4112 tasks across three SLURM
+scripts) was submitted; partial outcomes from the running and finished
+jobs:
+
+| Script | L | Tasks | Done | Status |
+|---|---|---|---|---|
+| `submit_clone_dense_small_L.sh` | 8,16,24,32 | 0–2055 | **2056/2056** | Complete |
+| `submit_clone_dense_medium_L.sh` | 48,64 | 2056–3083 | **800/1028** | Walltime hit; 228 L=64 tasks (IDs 2856–3083) missing |
+| `submit_clone_dense_large_L.sh` | 96,128 | 3084–4111 | **L=96: 342/514, L=128: 0/514** | 120h walltime exhausted; L=128 never started |
+
+Worker writes the full per-clone observable set (B_L, full CMI tripartition
+components $S_{AB}, S_{BC}, S_B, S_{ABC}$, and Rényi-2/3 — verified
+populated, no NaNs from `PPS_RECORD_RENYI=1`).
+
+**Partial aggregate**: `clone_aggregate_dense_partial.pkl` (3198 entries),
+covers all 21 ζ for L=8..48 and partial coverage at L=64, 96. Sufficient
+for clean Binder crossings at (16,32), (32,64), (48,96) pairs across the
+moderate-ζ band. Used to design the rescue resubmission below.
+
+### Rescue resubmission (June 2026)
+
+Three new SLURM scripts written this iteration, addressing the campaign
+shortfall:
+
+| Script | L | N_c | Tasks | Walltime | Purpose |
+|---|---|---|---|---|---|
+| `submit_clone_dense_L64_backfill.sh` | 64 | 400 | 228 (IDs 2856–3083) | 24h | Complete the L=64 row in `pps_clone_dense` |
+| `submit_clone_rescue_L128.sh` | 128 | 250 | 130 (IDs 0–129) | 96h | **Priority**: the critical missing FSS size, writes to `pps_clone_rescue` |
+| `submit_clone_rescue_L160.sh` | 160 | 120 | 130 (IDs 130–259) | 120h | Optional: 4th FSS point for ω-fit |
+
+The rescue grid (`make_clone_rescue_grid()` in `grid_pps.py`) uses:
+- 10 ζ values (decisive window + anchors): {0.10, 0.15, 0.22, 0.25, 0.30,
+  0.40, 0.50, 0.65, 0.80, 1.00} — all already present in the dense ζ-set so
+  (64,128) and (96,128) crossings are directly computable
+- Narrow λ windows (13 points, ±0.07) centered on **measured** dense crossings
+  (see "Measured crossings" below) — NOT on √ζ-fit placeholders
+- Reduced N_c (250 at L=128, 120 at L=160): pragmatic ~20% B_L error target
+- Output dir `pps_clone_rescue` (separate from dense; no collision)
+- Seeds offset by +12e9, disjoint from all prior campaigns
+
+Shim worker: `worker_clone_rescue_pps.py`. T held at 100 for L≥128
+(saturation argument: ballistic spreading needs T ≳ L/v; cutting T at the
+key size would gamble on the most expensive run).
+
+### N_c-ladder campaign (2026-06-05, IN FLIGHT) — the decisive small-ζ run
+
+Supersedes the plain L=128 rescue for the decisive small-ζ λ_c. Built and
+launched this session; jobs running on Habrok. Fixes the two limits the
+dense/rescue data could not: the ~45% finite-N_c B_L bias at L=128, and the
+per-point variance (ESS collapse). Design:
+
+- L=128 only; pairs against the existing CLEAN dense L=32,64 (same ζ) → the
+  (32,64,128) FSS triple. 7 ζ in the discriminating window
+  {0.08,0.10,0.15,0.18,0.22,0.25,0.30}; 13-pt λ windows (±0.08) on measured crossings.
+- N_c LADDER {250,500,800}: full grid at 500, central-3-λ calibration subsets
+  at 250 and 800 → per-point 1/N_c extrapolation to B_∞ (removes the bias).
+- Seed BLOCKS: 3×5 = 15 seeds/point — variance beaten by seeds, NOT N_c (ESS
+  collapse makes N_c-only hopeless; would need ~5000).
+- Records full observable set (CMI comps + Rényi-2/3 + corr) so the cleaner
+  estimators (Rényi-2 crossing, bipartite MI) and the washout test reuse it.
+- 2-DAY FEASIBILITY: a task runs its 5 realisations on 5 cores in parallel, so
+  wall = ONE realisation (~13/26/42h at N_c 250/500/800, all <48h). Wall is set
+  by the top N_c rung, not by #seeds; ~53k core-h → ~10-12 nodes for <2 days.
+- Each N_c rung writes its OWN dir (the aggregator keys by (L,λ,ζ) and would
+  merge rungs): `pps_clone_ladder_nc{250,500,800}`.
+
+Analysis chain (staged, runs when data lands): `aggregate_ladder.py` (pools the
+seed-blocks — the stock aggregator overwrites duplicate keys) →
+`extrapolate_nc.py` (per-point 1/N_c → B_∞; prints `resid_frac` = whether the
+bias is clean 1/N_c; merges with clean L=32,64 → FSS-ready pkl) →
+`scaling_form.py` (free-ν collapse, √ζ vs linear) + `renyi_washout.py`
+(B4 item 3 at L=128).
+
+HONEST CAVEATS (carry to the thesis):
+- Solid deliverable is **λ_c(ζ) and the √ζ-vs-linear discrimination**. φ is
+  softer (may not be a clean power law if BKT). **ν(ζ) is NOT a clean
+  deliverable**: 3 sizes weakly constrain ν in the collapse, the 1/√L λ_c method
+  partly bakes in ν=2, and under BKT ν is ill-defined. The ν-drift was already
+  unmeasurable (Spearman −0.07, p=0.88); one clean size won't change that.
+  Measuring ν(ζ) properly needs ≥4–5 sizes (L=160/192, out of the 2-day scope).
+- If the bias is not clean 1/N_c (ESS-collapse curvature), the extrapolation
+  leaves a residual systematic — `extrapolate_nc`'s `resid_frac` flags it. Hedge:
+  the Rényi-2 / bipartite-MI estimators (less cancellation → likely less bias).
+- L=160 (4th FSS point) is OUT of this baseline: one L=160 N_c=500 seed is
+  ~63h > 48h cap. A reduced-N_c L=160 run is a separate later step.
+
+### Slope test (separate from rescue)
+
+`pps_clone_slope` (528 tasks): submitted earlier; status should be checked.
+Designed to discriminate Möbius slope 1/8 vs naive NLSM slope 1/4 at
+$\zeta = 1$ via $\zeta \in \{0.70, 0.80, 0.90\}$ at $L = 192, 256$.
+
+### What's NOT yet running
+
+- **L = 192, 256.** Originally planned as the Phase-2 supplement (see
+  `make_clone_phase2_grid()` in `grid_pps.py`, scripts not yet written).
+  The cost + variance-inflation analysis from the partial dense data
+  (see "Dense campaign empirical findings" below) shows these are
+  infeasible with the cloning method at this scale; the Phase-2 grid is
+  kept in `grid_pps.py` for completeness but should not be submitted as
+  designed. The decisive small-ζ resolution gap is the methodological
+  limit, not a budget question.
+- **Case A implementation**. Spec at `theory/CASE_A_IMPLEMENTATION_SPEC.md`;
+  code not yet written.
+
+---
+
+## Theoretical synthesis (the long-form story)
+
+### Case B (α + w = 1, γ = 0): the main project
+
+**Model.** 1D Kitaev chain at the topological point ($\mu = 0, \Delta = w$),
+single Bogoliubov-density measurement $\tilde L_j = d_j^\dagger d_j$ with
+$d_j = \tfrac{1}{2}(\gamma_{2j} - i\gamma_{2j+3})$ at rate $\alpha$,
+hopping rate $w$, $\alpha + w = 1$, PPS parameter $\zeta \in (0, 1]$.
+
+**Lindbladian-level setup.** Same as KMR's $\gamma = 0$ edge. The Lindbladian
+is unraveling-independent; QJ and QSD differ only in their trajectory
+sampling.
+
+**Replica Keldysh action.** Following Le Gal-Schirò, the replicated
+density-matrix evolution under PPS gives an action
 $$
-\boxed{\;\lambda_c(\zeta) \sim A\sqrt{\zeta}, \quad A \approx 0.5\;}
+S[\bar\Phi,\Phi;\zeta] = S_{\rm kin} + S_{\rm nH}
+- i\zeta\gamma \int dt \sum_j \prod_{r=1}^N \mathcal V_{j,r}
+$$
+where $\zeta$ enters *only* in the cross-replica vertex. The non-Hermitian
+replica-diagonal part is ζ-independent. This is exact and structural — not
+an approximation.
+
+**Symmetry class.** Class DIII (Altland-Zirnbauer); NLSM target $SO(R)$
+in the replica limit $R \to 1$.
+
+**The matched-NLSM derivation.** Near the multicritical point $(\lambda, \zeta)
+= (0, 0)$, the two relevant operators have RG eigenvalues
+$$
+y_\lambda = 1/\nu = 1/2, \qquad y_\zeta = 2 - \Delta_\zeta^{\rm UV} = 1.
+$$
+The $\lambda$-perturbation generates a crossover length
+$\xi_\lambda^{\rm cross} \sim \lambda^{-1/y_\lambda} = \lambda^{-2}$ (this is
+the definition of $\nu = 2$, not a separately-derived quantity). At this
+scale the running cross-vertex coupling reaches
+$\zeta_{\rm eff} \sim \zeta \cdot \lambda^{-2}$. Criticality is the matching
+condition $\zeta_{\rm eff} \sim K^*$ (universal NLSM critical coupling),
+giving
+$$
+\lambda_c \;\sim\; \sqrt{c_\lambda / K^*} \, \sqrt\zeta \;\equiv\; C \sqrt\zeta.
 $$
 
-with two-parameter FSS structure:
-$$
-B_L(\lambda, \zeta) = \mathcal{B}\bigl(\lambda L^{1/2}, \zeta L, u L^{-\omega}\bigr)
-$$
-i.e., $y_\lambda = 1/2$ from BdG localization, $y_\zeta = 1$ from extensivity.
+**Validity / assumptions.** The derivation assumes:
+(i) The microscopic $\lambda$ has nonzero linear overlap with the DIII
+relevant scaling field (data confirms this — $\phi = 1$ excluded at $9\sigma$).
+(ii) The critical condition is reached at the matching scale, so IR
+running of $\zeta$ inside the NLSM regime contributes only subleading
+corrections (this is the residual assumption — Δ_ζ^IR not computed).
+(iii) The QJ-PPS-Case-B model flows to the same class-DIII fixed point as
+the LMR/KMR field theory predicts.
 
-Physical picture: $\zeta$ is a *defect fugacity per no-click localization volume*.
-Criticality at $\zeta \xi_{\rm ps}(\lambda_c) \sim 1$ with $\xi_{\rm ps} \sim \lambda^{-2}$
-gives $\lambda_c \sim \sqrt{\zeta}$.
+**Born-rule endpoint.** $\lambda_c(\zeta=1) = 1/2$ from Carollo et al.
+PRA 98, 010103 (2018), analytically. The Möbius interpolation
+$\lambda_c(\zeta) = \sqrt\zeta / (1 + \sqrt\zeta)$ is a phenomenological
+[1,1] Padé in $\sqrt\zeta$ that matches both the small-ζ scaling and the
+Born endpoint, fits the data to $\sim 10\%$, but is *not* derived.
 
-Born-rule endpoint $\lambda_c(1) \approx 0.5$ matches Carollo (PRA 2018).
+**Post-selected endpoint** ($\zeta \to 0$). Deterministic non-Hermitian
+evolution. Whether this is genuinely a critical point with ν₀ = 2 or a
+broadening crossover is not entirely clear from data — the FSS at ζ = 0.02
+gives ν = 3.10 (large, suspicious), at ζ = 0.03 gives ν = 1.82. Either the
+post-selected limit is itself critical (with $\nu_0$ to be determined) or
+the limit is singular. **This is a real open question.**
 
-## Status of each step in the theoretical chain
+### Case A (α + γ = 1, w = 0): the prediction
 
-| # | Claim | Source | Status |
+Two on-site measurements (c-density at rate γ, d-density at rate α), no
+Hamiltonian. The self-duality $\alpha \leftrightarrow \gamma$, $c \leftrightarrow d$
+is exact at the Born rule. **PPS respects this self-duality** because
+$\zeta^{N_T}$ depends only on the total click count $N_T = N_c + N_d$, not
+on which channel fired. Therefore the self-dual line $\lambda_c^A = 1/2$
+is pinned for all $\zeta \in (0, 1]$.
+
+**Universality class.** Class D with self-duality $\Rightarrow$ Ising,
+$\nu = 1$, $c = 1/2$. Different from Case B's class DIII multicritical
+$\nu = 2$.
+
+**Status.** Theoretical prediction, *not yet numerically verified*.
+Implementation spec at `theory/CASE_A_IMPLEMENTATION_SPEC.md`.
+
+### Comparison to KMR and LMR
+
+| | KMR 2023 | LMR 2025 | This project |
 |---|---|---|---|
-| 1 | $\xi_{\rm ps} \sim \lambda^{-2}$ | non-Hermitian SSH-Majorana BdG (Path A/B analysis) | Rigorous |
-| 2 | $y_\lambda = 1/2$ | Step 1 | Rigorous |
-| 3 | Click vertex extensive over bonds | $\mathcal{G}_{\rm click} = \zeta\alpha\sum_j d_j^{(+a)}d_j^{*(-a)}$ | Manifest |
-| 4a | $Q_{\rm BdG}(\lambda, L) \sim \lambda^2 L$ (BdG no-click activity) | Numerical, BdG slowest-decay state | Confirmed for $\lambda \le 0.15$; **NOT the SCGF derivative** (see 4b) |
-| 4b | $\theta_1^{\rm SCGF} = 0$ exactly by fermion parity | Liouville-exact perturbation, parity selection rule | **Rigorous** — supersedes the old 4 → 5 link |
-| 4c | 2×2 parity-doublet effective generator reproduces full $\mathcal{L}_\zeta$ leading eigenvalue to $10^{-8}$ at small $\zeta$ | `analysis/parity_resolved_theta.py`, L=4-7 | **Strong numerical confirmation** of the parity-mixing mechanism |
-| 5 | $y_\zeta = 1$ from cross-Choi operator dimension $\Delta_\zeta = 1$ | CFT level-spacing argument: $\Delta E_\zeta / \Delta E_{\rm CFT} \sim g_\zeta L$ | Derived (analytical); **independent of $K_{\rm eff}$ exponent** |
-| 6 | $\zeta\xi_{\rm ps} \sim 1$ critical condition | Steps 1-5 | Derived |
-| 7 | $\lambda_c(\zeta) \sim \sqrt{\zeta}$ | Step 6 | Predicted |
-| 8 | Empirical $\phi \approx 1/2$ from Binder data | $L \le 128$ aggregate, B_L crossings | Confirmed in range $\phi \in [0.5, 0.7]$ |
-| 9 | $L = 192, 256$ confirmation | FSS collapse test | **Pending FST data** |
+| Hamiltonian | det. Kitaev | random unitaries | det. Kitaev |
+| Measurements | two on-site | two with asymmetry | one (Case B) |
+| Unraveling | QSD | QSD | **QJ** |
+| PPS | no | yes | yes |
+| Phase boundary | $\lambda_c$ at Born | discontinuous at $\zeta^* \approx 0.28$ | $\lambda_c \sim \sqrt\zeta$, continuous |
+| No-click ξ | $\sim \lambda^{-2}$ (QSD) | $\sim \lambda^{-2}$ (QSD) | **gapless** (QJ) |
 
-Caveats:
-- Step 4a (BdG activity) only works for $\lambda \le 0.15$ due to
-  biorthogonal construction breakdown at large $\lambda$. **This is no
-  longer central**: the BdG number is a useful activity diagnostic but is
-  not the SCGF derivative, so its breakdown at large $\lambda$ is not a
-  gap in the chain.
-- Step 5 used to be derived from "Steps 3 + 4 + locality of no-click
-  theory" — that route is now retired. The correct route is the CFT/RG
-  argument: $\Delta_\zeta = 1 \Rightarrow y_\zeta = 2 - \Delta_\zeta = 1$.
-  See `theory/theta1_first_principles.md`, Correction section.
-- Step 8 has uncertainty: $\phi \in [0.5, 0.7]$ across extraction methods.
-  $\phi = 1/2$ is the cleanest theoretical value and is consistent with all
-  three methods within error.
+The QJ unraveling has a *gapless* effective no-click Hamiltonian for the
+distance-3 Majorana bond, in contrast to KMR/LMR's QSD case. This is a real
+qualitative difference. The universal MIPT exponents are unraveling-independent,
+but the microscopic localization picture is not.
 
-## Eliminated scenarios
+---
 
-- **Scenario A** ($\lambda_c \to 0.5$ for all $\zeta > 0$, LMR-Ising
-  persistence): RULED OUT by small-$\zeta$ Binder data showing $\lambda_c$
-  monotonically decreasing with $L$ from 0.185 → 0.050 at $\zeta = 0.02$.
-- **Scenario B** (separatrix at $\zeta_c \approx 0.143$): the apparent
-  separatrix was an ARTIFACT of using c_eff threshold method. Doesn't
-  survive switch to Binder cumulant.
-- **Original Scenario C** (linear $\lambda_c \sim \zeta$, $\phi = 1$):
-  EXCLUDED. Collapse residual 28% worse than $\phi = 1/2$.
+## Numerics status
 
-## Methodology lesson (important)
+### Dense campaign empirical findings (June 2026)
 
-**c_eff method gives misleading results.** The c_eff values in this data
-have median ~3.4 and never drop below 1.5; c_eff = 1 threshold method
-fails. The L-pair c_eff crossings happen at c_eff ≈ 6-8 (not universal),
-indicating they're in the volume-law/log-law boundary, not at the MIPT.
+From the partial aggregate (`clone_aggregate_dense_partial.pkl`, 3198 entries),
+three quantitative findings shaped the rescue design.
 
-**B_L (Binder cumulant) crossings are the right observable.** Born-rule
-sanity check: B_L crossings give $\lambda_c$ mean = 0.497, matching
-Carollo's 0.5 exactly. All subsequent analysis uses B_L.
+**1. Measured λ_c(ζ) from L≤96 Binder crossings.** Crossings at (16,32),
+(32,64), (48,96) agree well at moderate-to-large ζ, locating λ_c clearly:
 
-## Empirical data sources
+| ζ | (16,32) | (32,64) | (48,96) | adopted center |
+|---|---|---|---|---|
+| 0.10 | 0.161 | 0.223 | 0.165 | 0.19 (noisy — see below) |
+| 0.15 | 0.175 | 0.244 | 0.200 | 0.22 |
+| 0.22 | 0.228 | 0.258 | 0.230 | 0.24 |
+| 0.25 | 0.239 | 0.262 | 0.246 | 0.25 |
+| 0.30 | 0.257 | 0.262 | 0.257 | 0.26 (very stable) |
+| 0.40 | 0.287 | 0.308 | 0.339 | 0.32 |
+| 0.50 | 0.337 | 0.357 | 0.368 | 0.36 |
 
-- **Main aggregate**: `/Users/catlover1337/Downloads/clone_aggregate(1).pkl`
-  (1920 entries, $L \in \{8, 16, 24, 32, 48, 64, 96, 128\}$,
-  $\zeta \in \{0.02, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50, 0.70, 0.85, 1.00\}$,
-  24 $\lambda$ values from 0.02 to 0.90).
-- **Each entry**: contains `S_mean`, `B_L_mean`, `theta_mean`, etc. with
-  per-realization statistics over $n_{\rm real}$ independent runs.
-- **(96, 128) at $\zeta \le 0.10$ is noisy**: only $N_c = 100$ clones, lower stats.
-  Excluded from clean analyses.
+These are the centers driving the rescue λ-mesh. They differ from the
+$C\sqrt\zeta/(1+C\sqrt\zeta)$ phenomenological fit by 0.05–0.07 at moderate
+ζ, which is *the reason Phase 2 was held back* — submitting it with the
+placeholder √ζ-fit centers and ±0.06 windows would have partly missed the
+actual crossings. Centers in the rescue grid are measured.
 
-## Pending action items (priority-ordered, with exact commands)
+At ζ=0.10 the crossings scatter (0.16–0.22) because L≤96 isn't asymptotic
+there ($\xi_{\rm nc} \gtrsim L$). Wider rescue window covers this.
 
-### 1. Push commits to GitHub (LOCAL TERMINAL REQUIRED)
+**2. Cloning variance inflation with L.** B_L relative error in the
+critical band, measured at the actual N_c used:
 
-There are 8 commits ahead of origin/main on local. `osascript` can't access
-the SSH keychain on macOS, so this must be done from the user's terminal:
-```
-cd ~/Documents/ppsQJ_m2 && git push
-```
+| L | N_c | B_L rel-err | CMI rel-err |
+|---|---|---|---|
+| 32 | 1000 | 2.8% | 2.0% |
+| 48 | 600 | 7.5% | 5.9% |
+| 64 | 400 | 10.9% | 8.1% |
+| 96 | 450 | 13.5% | 9.6% |
 
-Commits to push (most recent first):
-```
-HEAD     Parity-resolved correction: theta_1^SCGF = 0 by parity; 2x2 effective theory
-9d3f8a5  HANDOFF.md entry point + final synthesis updated
-e2ec079  First-principles confirmation of y_zeta=1 via theta_1
-510bbe3  Final synthesis: y_zeta=1 from extensivity, λ_c~√ζ
-4c6785b  Refined FSS: two-parameter scaling
-de899dd  FSS results: B_L > c_eff
-24a3f58  Scenario C addendum (superseded)
-c5cd98d  Comprehensive theory summary
-```
-Plus untracked files (don't auto-add): see `git status -sb`.
+The error grows with L *even as N_c stays similar*. Cause: effective sample
+size (ESS) collapses near criticality (inherent to cloning / importance
+sampling). Projected N_c needed for 5% B_L error: ~3300 at L=96, ~5000 at
+L=128 — combined with L⁴ compute scaling, the cost of "clean" Binder
+crossings at L≥128 is prohibitive. This is a methodological limit of
+cloning at large L, worth flagging in the thesis as such.
 
-### 2. Submit L = 192, 256 jobs on Habrok
+CMI is consistently ~30% tighter than B_L at fixed N_c — useful, but doesn't
+eliminate the inflation.
 
-Grid is already configured in `pps_qj/parallel/grid_pps.py` (FST section).
-SLURM script: `slurm/submit_clone_v2_fst.sh` (24 tasks × 5 cores).
-Expected wall time: ~22h/task at L=192, ~31h at L=256, 84 tasks total.
+**3. Compute cost model validated.** Wall-time per task scales as
+$t \propto N_c \cdot T \cdot L^4$, validated to within 10% on all
+L ∈ {24..96} measured points. The L⁴ exponent (rather than L³) comes from
+n_steps ~ T·α·L combined with per-step cost ~L³. Anchor: L=96, N_c=450,
+T=100 → ~7.6h mean per task with 5-worker realisation parallelism. From
+this model:
 
-Submission flow:
-```
-ssh habrok
-cd ppsQJ_m2 && git pull
-sbatch slurm/submit_clone_v2_fst.sh
-```
+- L=128, N_c=250, T=100: ~13h/task → 130 rescue tasks fit in ~72h
+- L=160, N_c=120, T=100: ~16h/task → 130 tasks ~87h
+- L=192, N_c=100, T=100: ~27h/task → 130 tasks ~117h (marginal)
+- L=256, N_c=100, T=100: ~85h/task → **infeasible** for any reasonable task count
 
-### 3. Run the decisive collapse test when FST data is in
+The combination of L⁴ compute and ESS variance inflation is why L≥192 is
+out of reach with cloning at this scale, and L=256 is structurally
+infeasible without methodological changes.
 
-When `fst_aggregate.pkl` is built and pulled back to local:
-```
-python analysis/test_yzeta1_collapse.py --add-fst /path/to/fst_aggregate.pkl
-```
+**4. T = 100 is borderline-low at L=128, not overkill.** Entanglement
+saturation is ballistic ($T_{\rm sat} \sim L/v$). The smaller L actually
+ran at *longer* T (L=48 used T=200 from the time_horizon_v2 caps), so if
+anything the cheap sizes were over-resourced. T=100 should be held at
+L=128, not cut, despite the cost; a saturation check script
+(`analysis/phase2_saturation_check.py`) is available if needed.
 
-Visual verdict: do the $L = 192, 256$ [square] markers fall on the $L \le 128$
-[circle] curve in the $(\zeta L, \lambda_c\sqrt{L})$ plane?
+**5. Scaling test from partial data (inconclusive but suggestive).**
+Using the best-available (32,64) or (48,96) crossings to form
+$g_c = \lambda_c/(1-\lambda_c)$, then plotting $g_c/\sqrt\zeta$ and $g_c/\zeta$
+versus ζ across ζ ∈ [0.02, 0.50]: the $\sqrt\zeta$ ratio is roughly flat
+around 0.6–0.9, while $g_c/\zeta$ decreases steeply from ~3.7 (small ζ)
+to ~1.2 (large ζ). This leans toward the √ζ hypothesis but does *not*
+settle it — the (32,64)/(48,96) crossings are not L-asymptotic and the
+blue curve still has structure. The L=128 rescue is what resolves this.
 
-- **YES** → thesis result $\lambda_c \sim \sqrt{\zeta}$ is solid.
-- **NO** → reassess; possible logarithmic corrections or higher-order $y_\zeta$
-  corrections.
+### Data on disk
 
-## Open theoretical questions (priority-ordered)
+| Aggregate | Path | Entries | Status |
+|---|---|---|---|
+| v2 cloning | `~/Downloads/clone_aggregate(1).pkl` | 1920 | complete, L≤128 + L=192,256 sparse |
+| Run AC | `~/Downloads/aggregate_runAC.pkl` | (merged) | dense λ around critical |
+| Run B | `~/Downloads/aggregate_B.pkl` | 216 | L=192,256 at ζ ∈ {0.05, 0.10, 0.20, 0.50, 1.00} |
+| Slope grid | (Habrok scratch) | submitted | ζ ∈ {0.70, 0.80, 0.90}, L=192,256 |
+| Dense fine-grid (partial) | `~/Downloads/clone_aggregate_dense_partial.pkl` | **3198 / 4112** | small_L complete; medium_L missing 228 L=64; L=96 partial (342/514); **L=128 missing entirely** |
+| Dense L=64 backfill | (Habrok `pps_clone_dense`) | resubmit needed | 228 tasks via `submit_clone_dense_L64_backfill.sh` |
+| Rescue L=128 | (Habrok `pps_clone_rescue`) | submit needed | 130 tasks via `submit_clone_rescue_L128.sh` |
+| Rescue L=160 (optional) | (Habrok `pps_clone_rescue`) | submit needed | 130 tasks via `submit_clone_rescue_L160.sh` |
 
-### A. ~~Fix the large-$\lambda$ $\theta_1$ calculation~~ — RESOLVED (May 2026)
+### Key result: $\phi$ from global FSS
 
-**Update**: this question is closed in a way that revises the framing of
-the whole chain. The exact Liouville-space SCGF derivative
-($\theta_1^{\rm SCGF}$) vanishes identically by fermion-parity selection,
-at every $\lambda$. The BdG quantity $Q_{\rm BdG} \sim \lambda^2 L$ is
-the **no-click activity** $\alpha \sum_j \langle J_j^\dagger J_j\rangle$,
-not the SCGF derivative — so its large-$\lambda$ breakdown is no longer
-a gap in the chain. See `theory/theta1_first_principles.md` (Correction
-section), `analysis/compute_theta1_exact.py`,
-`analysis/parity_resolved_theta.py`. The corrected $y_\zeta = 1$
-derivation routes through the cross-Choi operator dimension
-$\Delta_\zeta = 1$ and the CFT finite-size level-spacing argument
-(see `theory/theta1_first_principles.md`, "How y_zeta = 1 is actually
-derived").
+Global FSS collapse on the cleanest range $\zeta \in [0.03, 0.85]$,
+all L ∈ {64, 96, 128, 192, 256}:
+- $\phi = 0.56 \pm 0.05$ (free power-law fit)
+- $C = 1.02 \pm 0.10$ (prefactor)
+- $\chi^2/{\rm dof} = 3.8$
+- Consistent with $\phi = 1/2$ at $1.3\sigma$
+- Excludes $\phi = 1$ at $9\sigma$
 
-### A'. Verify $\Delta_\zeta = 1$ directly via the cross-Choi two-point function
+Effective exponent from pairwise crossings (current L ≤ 128 data alone):
+$\phi_{\rm eff} = 0.76$ (L=96/128) to $0.84$ (L=64/128). **Trending toward
+0.5 with L but not converged** — the finite-size bias at L ≤ 128 is real
+and not removable by more statistics at fixed L.
 
-The corrected $y_\zeta = 1$ derivation rests on $\Delta_\zeta = 1$, which
-is currently supported by the bosonization argument
-($\Delta[d] = 1/2 \Rightarrow \Delta[d^{(+)} d^{*(-)}] = 1$) and by the
-Binder FSS empirical data, but not directly measured on the lattice.
+### Tests that didn't decide $\phi = 1/2$ vs $\phi = 1$
 
-The cleanest microscopic verification is the equal-time cross-Choi
-correlator at $\lambda = 0$ (no-click multicritical point):
-$$
-C(r) = \langle O_\zeta(r)\,O_\zeta(0)\rangle, \qquad
-O_\zeta(x) = d^{(+)}(x)\,d^{*(-)}(x).
-$$
-For $\Delta_\zeta = 1$ we predict $C(r) \sim r^{-2}$. This bypasses
-parity-doublet one-point subtleties, edge-Majorana contamination, and
-even/odd $L$ structure that complicate $K_{\rm eff}(L)$. Tractable on
-the Gaussian free-fermion manifold at small $L$ using two-replica
-covariance matrices (no superoperator blowup needed).
+- **The ν-drift test.** The relation $\nu - \nu_0 \sim \zeta^{1+p}$ should
+  give a power-law drift in $\nu(\zeta)$, with exponent $1+p$ locking the
+  critical-line exponent $p$. **Empirically the drift is too small to see**:
+  predicted magnitude $\lesssim 0.4$ at ζ=0.7 vs measured ν error bars
+  $\pm 0.1$–$0.3$. Spearman correlation of ν vs ζ in $[0.05, 0.7]$ is
+  $-0.07$ (p=0.88), i.e., no detectable trend. The plateau holds, but
+  the drift can't be measured.
+- **The slope-at-ζ=1 test.** Requires L ≥ 192. Currently the data in the
+  large-ζ band is too noisy (N_c too low at L=192,256) for the slope to
+  discriminate $1/8$ (Möbius) vs $1/4$ (naive NLSM).
 
-### B. Extract universality class along $\lambda_c(\zeta)$
+### What CAN currently be concluded
 
-The framework establishes $y_\lambda$ and $y_\zeta$ but doesn't predict the
-critical exponents at the transition itself. Compute the critical Binder
-value $B_L^*$ along the line — is it $\zeta$-independent (single universality
-class) or drifting? Use existing aggregate, extend `analysis/extract_yzeta.py`.
+- The genuine PPS cross vertex is **marginal** (Δ≈2); the no-click length is
+  **ξ_nc~λ⁻¹**; the Born endpoint λ_c(1)=1/2 is recovered. [VERIFIED]
+- The √ζ *derivation* (Δ_ζ=1 + ξ~λ⁻²) is **invalid** for this model.
+- Fitting the physical ratio r_c=λ_c/(1−λ_c) gives φ≈0.7–0.85 (not ½);
+  √ζ overshoots, linear undershoots; neither Möbius form fits well. The
+  previous φ≈0.56 is largely an artifact of fitting λ_c (which saturates).
 
-### C. Bosonization derivation of $y_\zeta = 1$
+### What CANNOT yet be concluded
 
-**Update (May 2026)**: this is now the central analytical route to
-$y_\zeta = 1$ rather than a future check. The derivation:
-$\Delta[d] = 1/2$ (Majorana field) $\Rightarrow$ $\Delta[d^{(+)} d^{*(-)}] = 1$
-$\Rightarrow$ $y_\zeta = 2 - \Delta_\zeta = 1$. The remaining gap is
-**verifying $\Delta_\zeta = 1$ directly on the lattice** — that's what
-Open Question A' (above) is for.
+- The precise asymptotic value of $\phi$ (could be exactly 1/2 with
+  corrections, or could be a value in $[0.5, 0.6]$).
+- Whether $\lambda_c = \sqrt\zeta / (1 + \sqrt\zeta)$ is exact or just a
+  Padé interpolation.
+- The slope at ζ=1 (1/8 vs 1/4).
+- The Case A prediction (numerics not yet done).
+- The Δ_ζ^IR question (not numerically accessible at this resolution).
 
-The earlier bosonization machinery in
-`theory/qj_one_minus_zeta_expansion.md` etc. approaches the problem from
-the Born-rule end and gives a $\Delta = 4$ vertex relevant there; the
-no-click-end derivation gives $\Delta_\zeta = 1$ at the multicritical
-fixed point, which is the relevant one for the small-$\zeta$ scaling.
+---
 
-### D. Sub-leading $1/L$ corrections in $Q_{\rm BdG}$ (low priority)
+## Open questions and immediate next steps
 
-The empirical slope $p = 1.04$ (instead of exactly 1.0) at small $\lambda$
-in the BdG activity $Q_{\rm BdG}(\lambda, L)$ suggests
-$Q_{\rm BdG} = A L + B + O(1/L)$ — a boundary correction from the
-OBC chain ends. A clean linear fit with explicit boundary term would
-pin down both $A$ and $B$.
+### Theoretical
 
-**Low priority** because $Q_{\rm BdG}$ is now a side diagnostic
-(no-click activity), not a step in the $y_\zeta = 1$ derivation. The
-$L$-extensivity is still meaningful as a check that the activity is
-bulk-like, but it doesn't enter the FSS chain.
+1. **Δ_ζ^IR at the class-DIII NLSM fixed point.** Whether the cross-vertex
+   renormalizes the marginal NLSM stiffness ($\Delta_\zeta^{\rm IR} = 2$,
+   what the collaborator's analysis suggests) or remains relevant
+   ($\Delta_\zeta^{\rm IR} = 1$, what the matched argument implicitly
+   assumes). Status: open. Prompt at `theory/PROMPT_DELTA_ZETA_IR.md`.
+2. **Crossover function $\lambda_c(\zeta)$.** Derive (or refute) the
+   Möbius form. The collaborator's analysis showed the linearised RG
+   has $y_\lambda = y_v = 1/2$ in $v = \sqrt\zeta$, so the prefactor
+   $C$ is non-universal at linear order. One-loop NLSM in the joint
+   $(\lambda, \zeta)$ plane needed to decide. Status: open. Prompt at
+   `theory/PROMPT_CROSSOVER_FUNCTION.md`.
+3. **Post-selected endpoint** ($\zeta = 0$). Is it a critical point with
+   $\nu_0$ to be determined, or a crossover? Not yet investigated.
+4. **Feedback.** Adding coherent feedback (measurement-conditional unitary)
+   or adaptive measurement to the QJ-PPS protocol. Not explored
+   analytically. Would change the cross-vertex structure.
 
-## Conventions
+**LMR-style ζ\* breakdown / BKT target (new, 2026-06-04).** Faithful analog of
+LMR's bosonization-breakdown ζ\* (their ζ\*≈0.28 is explicitly a **two-replica /
+Rényi-2** result; they state the n→1 behaviour is unknown). Route A (Cardy RG,
+y_m = 1 − (π/4)rζ) gives NO crossing in the physical window (y_m>0 along the
+whole critical line, bottoming at ≈0.2 near ζ=1) — a negative result; the
+relevant-mass picture yields only a slowly drifting effective exponent, not a
+sharp ζ\*. Route B (the real target): the **gapless no-click H_eff** (the
+QJ-vs-QSD difference) is itself critical, so bosonize/CFT-describe it; Choi
+doubling gives ρ/σ (ket/bra) modes; the PPS-weighted clicks are the
+cross-contour σ-mode vertex with coupling g₀∝rζ. ζ\* = where that vertex crosses
+marginality, Δ_click(ζ\*)=2. **Key structural insight:** the anomalous dimension
+driving the crossing ∝ a (2n−2)-type factor → present for Rényi-k≥2, vanishes
+at von Neumann (n→1). So a ζ\* is generic for Rényi entropies but may NOT survive
+to n→1 — same replica-limit issue as everywhere else, and the reason LMR's ζ\*
+is a two-replica statement. **Testable NOW with on-disk Rényi-2/Rényi-3 data:**
+look for a ζ\* feature (kink in measured ν, or BKT essential singularity
+log ξ ~ (ζ−ζ\*)^{−1/2}) in Rényi-2; if it drifts/weakens with Rényi index →
+finite-replica artifact (vanishes at vN); if stable → genuine. Departures from
+LMR to check: (i) single measurement (no second physical species — the doubling
+is the Choi ket/bra, not two channels); (ii) bare Luttinger K₀ of the gapless
+no-click CFT (LMR's came from their Luttinger liquid; here from the distance-3
+no-click spectrum — verify it is a tractable single-mode CFT first). Specific ζ\*
+value requires redoing LMR's App.-G one-loop K-matching for the distance-3 QJ
+operator (scaffolded, not done). Cheap parallel test: BKT vs power-law fit on
+small-ζ ξ data; the ν=3.1 blow-up at ζ=0.02 is what force-fitting BKT looks like.
 
-- $\alpha + w = 1$, $\lambda := \alpha$
-- $\zeta = 0$: full postselection (no clicks); $\zeta = 1$: Born-rule
-- Jump $L_j = \sqrt{\alpha}\,d_j$, $d_j = (\gamma_{2j} - i\gamma_{2j+3})/2$
-- $L_j^\dagger L_j = (\alpha/2)(1 - i\gamma_{2j}\gamma_{2j+3}) = (\alpha/2)(1 - \hat P^I_j)$
-- Bond parity $\hat P^I_j = i\gamma_{2j}\gamma_{2j+3}$ (distance-3)
-- Effective no-click Hamiltonian $H_{\rm eff} = H - i(\alpha/2)\sum_j L_j^\dagger L_j$
-- Majorana covariance $\Gamma_{ab} = i\langle\gamma_a\gamma_b\rangle$, real antisymmetric, eigenvalues in $[-1, 1]$ for physical states
-- $L$ sites → $2L$ Majoranas → $L-1$ bonds (OBC); `bond_jump_pair(bond)` in `pps_qj.gaussian_backend` maps bond index to Majorana indices
+### Numerical
 
-## File map
+5. **Targeted high-L scan at L=128** — for the decisive small-ζ window this is
+   now **SUPERSEDED (2026-06-05) by the N_c-ladder campaign** (see "N_c-ladder
+   campaign" above), which adds the {250,500,800} N_c ladder + 15-seed blocks
+   the plain rescue lacked and is the run currently in flight. The plain rescue
+   below remains the description of the broader-ζ resubmission. Narrow λ windows
+   (13 pts, ±0.07) centered on measured
+   dense crossings (not √ζ-fit placeholders), 10 ζ values spanning the
+   full range, N_c=250 at L=128 / 120 at L=160. Scripts:
+   `submit_clone_dense_L64_backfill.sh` (228 missing L=64 tasks),
+   `submit_clone_rescue_L128.sh` (priority, 130 tasks ~72h),
+   `submit_clone_rescue_L160.sh` (optional, 130 tasks ~87h). Output
+   directory `pps_clone_rescue`. **L=192, 256 in the decisive small-ζ
+   window are NOT pursued** in this rescue — infeasible per the cost +
+   variance-inflation analysis above; the thesis should report the
+   methodological limit explicitly.
+6. **Case A implementation and FSS.** See `theory/CASE_A_IMPLEMENTATION_SPEC.md`.
+   Predicted $\lambda_c^A = 1/2$ for all ζ, Ising universality. ~1 week
+   of implementation + ~1 day of FSS runs.
+7. **Slope test analysis.** When the submitted slope grid (528 tasks) at
+   ζ ∈ {0.70, 0.80, 0.90}, L=192,256 finishes, extract slope at ζ=1 and
+   compare to Möbius (1/8) vs naive NLSM (1/4).
 
-### Theory documents (chronological — read in order)
+---
 
-| File | What it contains | Status |
+## Operational
+
+- **HPC**: Habrok cluster (RUG), user `s4629701`. SLURM partitions
+  `regularsh`, `regularme`, `regular`. venv at `~/venvs/pps_qj/`.
+- **Git push from Habrok fails** (SSH key issue). All commits must be made
+  on Mac, pushed to GitHub, then pulled on Habrok.
+- **Repo**: `ueborg/ppsQJ_m2`. Mac path: `/Users/catlover1337/Documents/ppsQJ_m2/`.
+- **Aggregate script**: `scripts/aggregate.py` or `scripts/aggregate_runs.py`.
+  Auto-slurps all .npz fields; new fields (CMI, $S_{AB}$, Rényi) should
+  appear automatically in the aggregate.
+- **Thesis draft**: `~/Downloads/m1thesislatex/` (M1 internship report,
+  deadline **19 June 2026**).
+- **Thesis notes**: `~/Downloads/continuousmeasurements(2)/` (working
+  document with theoretical sections, the "main.pdf" referenced
+  throughout).
+
+---
+
+## Key references in the project bibliography
+
+| Key | Reference | Used for |
 |---|---|---|
-| `theory/qj_pps_theory_summary.md` | Original comprehensive overview | Background |
-| `theory/STATUS.md` | Bosonization status guide | Background |
-| `theory/qj_two_replica_derivation.md` | Two-replica generator derivation | Rigorous setup |
-| `theory/qj_bosonization_calculation.md` | First-pass bosonization | Historical |
-| `theory/qj_one_minus_zeta_expansion.md` | Sharpened bosonization, $\Delta=4$ vertex | Rigorous for $\zeta \to 1$ |
-| `theory/qj_chiral_vertex_result.md` | Chiral vertex result | Historical |
-| `theory/qj_pps_scenario_C_addendum.md` | First (wrong) guess: linear $\lambda_c \sim \zeta$ | **Superseded** |
-| `theory/fss_analysis_results.md` | First FSS results, B_L vs c_eff | Methodology |
-| `theory/two_parameter_FSS_results.md` | Two-parameter FSS, $y_\zeta$ extraction | Current empirical |
-| `theory/qj_pps_final_synthesis.md` | Final synthesis with $y_\zeta=1$ derivation | Current top-level |
-| `theory/theta1_first_principles.md` | $\theta_1$ from BdG, $y_\zeta=1$ confirmed numerically | Current top-level |
-| `theory/HANDOFF.md` | **this file** | Entry point |
+| KMR2023 | Kells-Meidan-Romito SciPost Phys 14, 031 (2023) | model (QSD analogue) |
+| LMR2025 | Leung-Meidan-Romito PRX 15, 021020 (2025) | PPS framework (QSD-PPS) |
+| LeGalSchiro2025 | Le Gal-Schirò arXiv:2511.22506 | replica Keldysh + NLSM derivation |
+| Fulga2012 | Fulga-Akhmerov-Tworzydło-Béri-Beenakker PRB 86, 054505 (2012) | class-DIII **Anderson (n→0)** ν≈2 — forced/postselected endpoint ONLY, not the Born MIPT |
+| Jian2023 | Jian-Shapourian-Bauer-Ludwig arXiv:2302.09094 | Born (n→1) vs forced (n→0) = distinct universality in class DIII |
+| FavaNahum2023 | Fava-Piroli-Swann-Bernard-Nahum PRX 13, 041045 (2023) | principal-chiral SO(N) NLSM for monitored Majorana |
+| PoboikoMirlin2023 | Poboiko-Pöpperl-Gornyi-Mirlin PRX 13, 041046 (2023) | U(1) free fermions in 1d: no MIPT, log is a crossover |
+| Carollo2018PRA | Carollo et al. PRA 98, 010103 (2018) | Born-rule endpoint $\lambda_c(1) = 1/2$ |
 
-### Analysis scripts
+All in `~/Downloads/continuousmeasurements(2)/references.bib`.
 
-| File | Purpose |
-|---|---|
-| `analysis/compute_theta1.py` | $Q_{\rm BdG}$ (no-click activity) from BdG slowest-decay state — **note: this is NOT $\theta_1^{\rm SCGF}$**; see `compute_theta1_exact.py` |
-| `analysis/compute_theta1_exact.py` | Full-Liouville $\theta_1^{\rm SCGF}$ via four methods (perturbation, FD polynomial fit, BdG cross-check, $H_{\rm eff}$ matrix element). Confirms $\theta_1^{\rm SCGF} = 0$ by parity at $L \le 6$ |
-| `analysis/parity_resolved_theta.py` | Parity-resolved 2×2 effective generator; computes $\theta_\pm$, $K_{+-}$, $K_{-+}$, $K_{\rm eff}$, $\delta_{\rm par}$ at $L = 4, 5, 6, 7$. **Validates the parity-mixing mechanism to $10^{-8}$.** |
-| `analysis/extract_yzeta.py` | Extract $y_\zeta$ from B_L crossings (3 methods) |
-| `analysis/test_yzeta1_collapse.py` | **Decisive test ready for FST data** (use `--add-fst`) |
-| `analysis/test_fss_collapse.py` | Original c_eff-based test (kept for reference) |
+---
 
-### Diagnostic plots in `analysis/`
+## File map (theory folder)
 
-| File | What it shows |
-|---|---|
-| `theta1_scaling_v2.png` | $Q_{\rm BdG}$ vs $L$ for various $\lambda$ — confirms $Q_{\rm BdG} \sim L$ at small $\lambda$ (activity diagnostic, not SCGF) |
-| `parity_resolved.png` | Parity-resolved diagnostics: $K_{\rm eff}(L)$, $\delta_{\rm par}(L)$, $\kappa_{L=5,7}$, effective $\theta_2$ |
-| `yzeta_extraction.png` | $y_\zeta$ optimization via collapse residual + slice fits |
-| `yzeta1_collapse_test.png` | Current $L \le 128$ data in predicted scaling |
-| `fss_final.png` | Comprehensive Binder analysis |
-| `fss_collapse_data.txt` | Raw numerical tables |
+- `AGENTS.md` ← **chat-agent protocol: start-of-chat read + handoff update rules**
+- `HANDOFF.md` ← this file (canonical project state)
+- `SUMMARY_2026_05_22.md` ← detailed theoretical state
+- `qj_pps_theory_summary.md` ← long-form derivations (604 lines)
+- `qj_pps_final_synthesis.md` ← compact synthesis
+- `ONE_LOOP_RG.md` ← matched-NLSM derivation
+- `NLSM_FRAMEWORK.md` ← Case A/B structural distinction
+- `CASE_A_IMPLEMENTATION_SPEC.md` ← Case A code spec (612 lines)
+- `COLLABORATOR_RESPONSE*.md` ← peer commentary integration
+- `PROMPT_*.md` ← prompts for new chats on specific subproblems
+- `PROMPT_INTERNSHIP_REPORT.md` ← **master prompt for the thesis synthesis**
+- `sec_matching_revised.tex`, `sec_predictions_revised.tex` ← LaTeX sections
 
-### Computation infrastructure
+## File map (code added this iteration, 2026-06-03)
 
-| File | Purpose |
-|---|---|
-| `pps_qj/gaussian_backend.py` | Gaussian fermionic backend; `effective_generator(L, w, alpha)` builds $h_{\rm eff}$ |
-| `pps_qj/cloning.py` | Cloning population dynamics (small-$L$, used for aggregate) |
-| `pps_qj/doob_wtmc.py` | Doob $h$-transform WTMC (main approach) |
-| `pps_qj/parallel/grid_pps.py` | Grid spec (includes FST section for L=192, 256) |
-| `slurm/submit_clone_v2_fst.sh` | SLURM submission for FST runs |
+- `pps_qj/parallel/grid_pps.py` — appended `make_clone_rescue_grid()`,
+  `_RESCUE_LAMBDA_C` (measured centers), `nc_for_L_rescue`, plus the
+  earlier dense and phase2 grids
+- `pps_qj/parallel/worker_clone_rescue_pps.py` — shim worker for rescue grid
+- `slurm/submit_clone_dense_L64_backfill.sh` — fills the 228 missing L=64
+  dense tasks
+- `slurm/submit_clone_rescue_L128.sh` — priority: L=128 rescue
+- `slurm/submit_clone_rescue_L160.sh` — optional: L=160 rescue
+- `analysis/phase2_saturation_check.py` — T-saturation diagnostic
+  (written, not yet run on cluster)
 
-## Key references
+## File map (code added this iteration, 2026-06-05) — N_c-ladder campaign
 
-- Carollo et al., PRA 98, 010103(R) (2018) — projective MIPT, $\lambda_c \approx 0.5$
-- Kells, Meidan, Romito, SciPost Phys 14, 3, 031 — diffusive PPS framework
-- Leung, Meidan, Romito — diffusive PPS-SSE RG (companion to Kells et al.)
-- Giardina, Kurchan, Peliti, PRL 96, 120603 (2006) — cloning/population dynamics
-- Lecomte, Tailleur, J. Stat. Mech. (2007) — tilted-Liouvillian framework
-- Nemoto et al., PRE 2017 — Jack–Sollich-like feedback for cloning
-- Bao, Choi, Altman — two-replica MIPT framework
-- Giamarchi, *Quantum Physics in 1D*; Sénéchal, cond-mat/9908262 — bosonization
+- `pps_qj/parallel/grid_pps.py` — appended `make_clone_ladder_grid()`,
+  `task_params_clone_ladder`, `clone_ladder_rung_ranges`, `_LADDER_*` config
+  (L=128, 7 small-ζ, N_c {250,500,800}, 3 seed-blocks; seeds offset +20e9,
+  verified disjoint from v2/dense/rescue/slope)
+- `pps_qj/parallel/worker_clone_ladder_pps.py` — shim worker for the ladder grid
+- `slurm/submit_clone_ladder.sh` — job-array submit per N_c rung (auto-spreads
+  across nodes; each rung → own dir); usage + node/conc guidance in the header
+- `analysis/aggregate_ladder.py` — block-pooling aggregator (concatenates the
+  per-realisation arrays across seed-blocks; the stock aggregator overwrites)
+- `analysis/extrapolate_nc.py` — per-point 1/N_c extrapolation → B_∞ + merge
+  with clean low-L → FSS-ready pkl (prints bias-linearity residual)
+- `analysis/renyi_washout.py` — B4 item 3 (von Neumann vs crossover via the
+  Rényi-index dependence of the S_n log-coefficient); validated on synthetic
 
-## Practical notes (Mac + Habrok workflow)
-
-- User works on Mac with VSCode → GitHub → Habrok
-- Habrok has SSH key issues; do edits LOCAL, push, then `git pull` on Habrok
-- macOS `osascript` cannot access GitHub SSH keychain → user must run
-  `git push` from a Terminal window
-- Habrok uses CVMFS network filesystem; spawn-based multiprocessing is slow,
-  prefer forkserver
-- Desktop Commander MCP server is configured for the analysis tools
-
-## How to verify the project state in 30 seconds
-
-```bash
-cd ~/Documents/ppsQJ_m2
-git log --oneline -7              # last commits, top should be e2ec079
-git status -sb                    # check 'ahead 6' of origin/main
-ls theory/HANDOFF.md              # this file should exist
-ls analysis/test_yzeta1_collapse.py  # decisive test script
-```
-
-Then read in order:
-1. `theory/HANDOFF.md` (this file)
-2. `theory/qj_pps_final_synthesis.md` (full reasoning)
-3. `theory/theta1_first_principles.md` (microscopic confirmation)
-4. `theory/two_parameter_FSS_results.md` (empirical extraction details)
-
-If FST data has arrived since this was written, run:
-```bash
-python analysis/test_yzeta1_collapse.py --add-fst /path/to/new/aggregate.pkl
-```
-and check whether the collapse holds.
+The most important documents to read first are `HANDOFF.md` (this file),
+then `SUMMARY_2026_05_22.md`, then `PROMPT_INTERNSHIP_REPORT.md`.
