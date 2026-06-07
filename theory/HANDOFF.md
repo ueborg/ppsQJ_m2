@@ -1,5 +1,46 @@
 # ppsQJ_m2 Project — Handoff Notes
 
+> **★ 2026-06-07 SESSION (cont. 2) — N_c-LADDER DATA LANDED + ANALYZED; LEVER CHECKS.**
+> The {250,500,800} N_c-ladder (399 tasks) finished on Habrok, aggregated per rung
+> (`ladder_nc{250,500,800}.pkl`), analyzed on Mac. Outcome CONFIRMS the cont.-1 block below
+> on independent **debiased-L=128** data (not just v2/dense cross-validation):
+>
+> 1. **λ_c(ζ) on the (32,64,128) triple.** `extrapolate_nc.py` per-point 1/N_c → B_∞ at L=128
+>    (resid_frac median 0.087, max 0.42 — debias clean for the typical point, SOFT at
+>    ζ∈{0.22,0.30} where ESS-collapse curvature dominates → treat those two λ_c as low-weight).
+>    Clean (32,64) crossings over ζ∈[0.02,0.5]: **λ_c = 0.501·√ζ** (φ=0.523±0.019, R²=0.986);
+>    debiased (64,128) crossings at the 7 ladder ζ agree (slightly lower = finite-L drift).
+>    Reproduces cont.-1's λ_c-A≈0.51 ⇒ **the 0.96 is the r_c prefactor, not λ_c** is now
+>    confirmed on the debiased set. λ_c=0.5√ζ hits Carollo (0.5·1) with NO Möbius needed.
+> 2. **√ζ-on-λ_c is partly a saturation artifact — physical exponent stays on r_c.** Panel D of
+>    `~/Downloads/sqrt_zeta_confirmation.png`: r_c=λ_c/(1−λ_c) vs √ζ has slope ≈0.70 and CURVES
+>    up — consistent with cont.-1's r_c-φ≈0.7–0.85, NEITHER √ζ nor linear. λ_c≈0.5√ζ is the
+>    small-ζ (no-click-anchored) description; do not report it as the global single-exponent law.
+> 3. **ν NOT measured.** Free-(λ_c,ν) collapse degenerate for ζ≥0.18 (λ_c pinned 0.736, ν at the
+>    1.0 floor, quality 0) — narrow 13-pt L=128 window doesn't overlap the broad dense grids under
+>    the scaling transform. Crossings (ν-free) are the only trustworthy estimator. Matches the
+>    standing "ν is not a clean deliverable".
+> 4. **Rényi washout (`renyi_washout.py`, clean L=128): INCONCLUSIVE.** a_1/a_2 (CFT no-washout
+>    = 4/3) drifts 1.67 (small ζ) → 1.28 at ζ=1; the Born-corner 1.28 is a WEAK sub-CFT hint
+>    (Poboiko–Mirlin) within finite-size error. Ladder ζ∈{0.18–0.30} rows corrupted (L=128 only at
+>    narrow λ ⇒ "max a_n over λ" misses the deep log phase). Decisive washout needs a dedicated
+>    broad-λ, multi-cut run at L=128/160. Not a thesis result as-is. Plot: `/tmp/ladder_washout/`.
+> 5. **Lever checks (job 29352854).** T-lever REAL but shrinking: B_L saturates by t≈42 (ζ=0.15) /
+>    t≈67 (ζ=0.5) at L=128 vs T=100 → ~1.5–2.4× on steps, smaller at larger L/ζ; also confirms
+>    **T=100 was adequate** (ladder not under-equilibrated, so the √ζ result is not a short-T
+>    artifact). BLAS threads: 1.6× WALL at L=128 (8 threads) at the cost of concurrency = walltime-
+>    cap tool only, no core-h saving. **dtau 3× NOT certified**: SAFE/biased/SAFE/SAFE across
+>    mult=1.0/1.5/2.0/3.0 is noise (R=8 too few; ζ=0.3 B_L≈0.04 → huge relative scatter); a faint
+>    −6% B_L drift by 3× may be real. Reopens vs "dead" but needs an R-converged re-test at a
+>    production L before banking even 2×.
+>
+> Artifacts: `ladder_nc{250,500,800}.pkl`, `ladder_fss_ready.pkl` (FSS-ready, L=32/64/128 with
+> per-point resid_frac on the L=128 recs), `~/Downloads/sqrt_zeta_confirmation.png`,
+> `/tmp/ladder_washout/`. Chain: `aggregate_ladder.py` (on Habrok) → `extrapolate_nc.py` → by_zL
+> crossings + `scaling_form.best_collapse_z/fit_forms` → plots; `renyi_washout.py`. **STILL OPEN:
+> `Y_ZETA_DERIVATION.md` §7/§11 "0.96 tell" wording needs the r_c-vs-λ_c fix (flagged cont.-1 #2).**
+
+
 > **★ 2026-06-07 SESSION — y_ζ MEASUREMENT PIPELINE + LOAD-BEARING SCALING-VARIABLE CORRECTION.**
 >
 > **Canonical derivation doc for the y_ζ question is now `theory/Y_ZETA_DERIVATION.md`**
@@ -45,6 +86,53 @@
 > `corr_decay` is the wrong object (single-particle ⟨c†c⟩, drops pairing, abs-averaged) for
 > the Jian/Foster discriminators — hence the dedicated opdim worker.
 
+
+> **★ 2026-06-07 SESSION (cont.) — OLD-AGGREGATE CROSS-VALIDATION + FORM DEGENERACY + SLEVIN–OHTSUKI COLLAPSE.**
+> Combined analysis of `~/Downloads/clone_aggregate(1).pkl` (v2, 1920 entries, L≤128 incl. its
+> own N_c=100 L=128 curves) with the dense + rescue sets. Container-side only (uploaded pkls);
+> no new repo code. Six findings, all carry to the thesis:
+>
+> 1. **λ_c(ζ) cross-validated across independent datasets.** v2 (separate λ/ζ grid, own N_c
+>    ladder) reproduces the dense wide-pair crossings to rms 0.025, systematically +0.019
+>    HIGHER (lower N_c ⇒ upward crossing bias). The λ_c(ζ) shape is robust; truth sits at or
+>    slightly below the dense values.
+> 2. **The "0.96√ζ" is the r_c prefactor, not λ_c (doc fix needed).** λ_c=A√ζ gives A≈0.51 on
+>    BOTH dense (χ²/dof 0.76) and v2 (0.53); r_c=λ_c/(1−λ_c)=A√ζ gives A≈0.78–0.90. The §7
+>    "internal tell" in `Y_ZETA_DERIVATION.md` ("global fit λ_c≈0.96√ζ doesn't pass through
+>    0.5") conflates r_c(1) with λ_c(1): the λ_c fit (≈0.5√ζ) DOES pass through λ_c(1)≈0.5.
+>    Fix the §7 wording. The Born-corner reframing conclusion is unaffected (it stands on the
+>    derivation-invalidity + the r_c exponent, not on that tell).
+> 3. **Form degeneracy — the concrete reason boundary-shape fitting cannot decide φ.** On λ_c,
+>    FIVE forms fit at χ²/dof < 0.6 and are statistically indistinguishable: a√ζ (0.53), free
+>    power φ=0.55 (0.35), √ζ-Möbius-2p (0.29), log-corrected a√ζ(1+c·lnζ) (0.35),
+>    linear+intercept (0.55). On the UNBOUNDED r_c, a√ζ FAILS (χ²/dof 4.3) and free power
+>    gives φ≈0.65–0.81. Confirms quantitatively that λ_c-φ≈0.5 is a saturation artifact and
+>    the physical r_c exponent is ~0.7–0.85 (neither √ζ nor linear). One-param √ζ-Möbius is the
+>    only clear loser (forced to undershoot the corner, χ²/dof 4.7).
+> 4. **B_L finite-N_c bias (304 matched v2/dense pairs).** Median fractional B_L bias ~1.8% at
+>    N_c=250, growing with L (~11% at L=96) and near criticality, BUT it largely CANCELS in
+>    crossings (propagated λ_c shift only ~0.02). **L=128 cannot be debiased from
+>    v2(N_c=100)+rescue(N_c=250)** — the 2-point 1/N_c extrapolation is noise-dominated (the
+>    two shared λ give −8% vs +82%). The N_c-ladder {250,500,800} is REQUIRED for the L=128
+>    debias; this confirms (does not replace) its necessity.
+> 5. **Born-corner boundary fit is unreliable, as Y_ZETA §9 anticipated.** λ_c(1)−λ_c(ζ) ~
+>    (1−ζ)^{φ_B} gives φ_B≈1.7 (R²=0.996, ζ∈[0.5,1)), but this is the thin, non-monotonic
+>    near-ζ=1 region (λ_c(0.92)=0.514 > λ_c(1)=0.505). NOT a φ_B measurement — it only shows
+>    the global √ζ (which predicts φ_B=1 by Taylor expansion) misses the corner. The Δ_B
+>    opdim run stays the right tool for the Born-corner exponent.
+> 6. **Slevin–Ohtsuki cost-function collapse — implemented, does NOT beat wide-pair crossings.**
+>    Form B_L = F₀(x) + L^{−ω}F₁(x), x=(λ−λ_c)L^{1/ν}. **B_L is NOT scale-invariant at
+>    criticality** (crossing height drifts with L: 0.82–1.66 across pairs at ζ=0.5), so the
+>    single-variable collapse is structurally strained. With L≥16 + 5% error floor: SO-λ_c
+>    AGREES with crossings at small ζ (0.10–0.30, within 0.01) and returns ν~1.1–1.4, ω~2;
+>    DIVERGES at ζ∈[0.4,0.65] (off by 0.05–0.10) where L-coverage thins and the fit finds
+>    spurious small-ω minima. ν scattered 1.1–2.9, NO clean plateau. Form fits to SO-λ_c
+>    reproduce λ_c-φ≈0.52, r_c-φ≈0.80. VERDICT: wide-pair crossing median + drift errors
+>    remains the primary λ_c estimator; SO becomes viable only with ≥4–5 clean sizes
+>    (ladder-debiased L=128 + an L=160 point). For the eventual redo, adopt Slevin–Ohtsuki
+>    cost-function FSS with a correction-to-scaling term — standard in the monitored-fermion
+>    literature (arXiv:2503.23807 cost-function + error-from-2×min; arXiv:2509.09538 notes
+>    visual crossing-ID is insufficient given free-fermion finite-size corrections).
 
 **Last major update: 2026-06-06** (theory: replica field-theory routes recorded
 in `OPEN_ANALYTIC_PROBLEMS.md` §D — convergent n→1 non-perturbative obstruction;
@@ -173,7 +261,7 @@ Shim worker: `worker_clone_rescue_pps.py`. T held at 100 for L≥128
 (saturation argument: ballistic spreading needs T ≳ L/v; cutting T at the
 key size would gamble on the most expensive run).
 
-### N_c-ladder campaign (2026-06-05, IN FLIGHT) — the decisive small-ζ run
+### N_c-ladder campaign (2026-06-05, COMPLETE — analyzed 2026-06-07, see cont.-2 block at top) — the decisive small-ζ run
 
 Supersedes the plain L=128 rescue for the decisive small-ζ λ_c. Built and
 launched this session; jobs running on Habrok. Fixes the two limits the
