@@ -1,8 +1,16 @@
 # Derivation of the y_zeta prediction (Delta_B at the MIPT), QJ Case B
 
-Canonical chain from the microscopic model to the prediction Delta_B(lambda_c) ~ 1.1-1.4,
+Canonical chain from the microscopic model to the Born-corner relation y_zeta = 2 - Delta_B(lambda_c),
 and the single measurement that closes it.  Epistemic tags: [V]=verified in-project,
 [L]=literature-anchored, [P]=plausible/data-consistent, [O]=open.
+
+>> POST-REVIEW CORRECTION (2026-06-07, see Sec. 11). The boundary law in Sec. 7/9 was
+>> originally written lambda_c(zeta) ~ zeta^phi (a zeta=0-anchored / GLOBAL form). That is
+>> the WRONG scaling variable for a perturbation around the Born corner zeta=1. The correct
+>> LOCAL law is lambda_c(1) - lambda_c(zeta) ~ (1-zeta)^{y_lambda/y_zeta}. The zeta=1
+>> measurement constrains ONLY the Born corner, not the global/small-zeta boundary; the
+>> 1.1-1.4 number is demoted to a conjecture contingent on Born-dominance of the
+>> intermediate-zeta window. Sec. 7/9/10 corrected below; Sec. 11 is the ledger.
 
 --------------------------------------------------------------------------------
 ## 0. Model and conventions [V]
@@ -134,17 +142,37 @@ which nearly removes the random-vs-deterministic caveat in identifying Case B wi
 --------------------------------------------------------------------------------
 ## 7. The boundary (crossover) exponent phi [P]
 
-For zeta<1 there are TWO relevant scaling fields at the zeta=1 corner:
-  * the thermal field  t ~ (lambda_c - lambda),  eigenvalue y_lambda  (Sec. 6),
-  * the PPS field      h ~ (1 - zeta),            eigenvalue y_zeta    (Sec. 4).
-Under RG, t -> t b^{y_lambda}, h -> h b^{y_zeta}.  The phase boundary is the locus where
-the relevant flows balance; eliminating the rescaling b gives the crossover law
-    lambda_c(zeta)  ~  (zeta-field)^{ y_lambda / y_zeta },     phi = y_lambda / y_zeta.   (7.1)
-With y_lambda = 1/2 this is the relation used in analysis/extract_yzeta.py,
-    phi = 1 / (2 y_zeta),                                      (7.2)
-and the two-parameter FSS form lambda_c(L,zeta) * sqrt(L) = F( zeta * L^{y_zeta} ) (the
-sqrt(L) = L^{-y_lambda} crossing drift).  So with y_lambda fixed (Sec. 6), the ONLY
-unknown in the boundary exponent is y_zeta.
+The PPS perturbation (Prop 4 / Sec. 2) couples to the single-copy mass with coefficient
+proportional to (zeta - 1).  The associated relevant SCALING FIELD is therefore
+    h ~ (zeta - 1) = -(1 - zeta),    which VANISHES at zeta=1, not at zeta=0.
+Crossover scaling is organized around the fixed point where h=0, i.e. the BORN CORNER.
+With the two relevant fields
+  * thermal  t ~ (lambda_c(1) - lambda),  eigenvalue y_lambda  (Sec. 6),
+  * PPS      h ~ (1 - zeta),              eigenvalue y_zeta    (Sec. 4),
+RG invariance (the singular part depends on t / h^{y_lambda/y_zeta}) places the phase
+boundary at a fixed value of that combination, i.e. the LOCAL Born-corner law
+    lambda_c(1) - lambda_c(zeta)  ~  (1 - zeta)^{ y_lambda / y_zeta },             (7.1)
+    phi_Born = y_lambda / y_zeta = 1/(2 y_zeta)   (using y_lambda = 1/2).          (7.2)
+
+CORRECTION (load-bearing; Sec. 11).  An earlier version wrote lambda_c(zeta) ~ zeta^phi with
+the collapse lambda_c*sqrt(L) = F(zeta L^{y_zeta}) of analysis/extract_yzeta.py.  That uses
+zeta (which vanishes at zeta=0) as the scaling field -- it is anchored at the SINGULAR
+no-click endpoint (zeta->0, lambda_c->0), a DIFFERENT fixed point, NOT the Born corner.
+Symptom in our own data: the global fit gives lambda_c ~ 0.96 sqrt(zeta), which does not pass
+through lambda_c(1) ~ 0.5 (0.96*1 != 0.5).  Eq. (7.1) does, by construction.  Consequence:
+the zeta=1 operator-dimension measurement constrains the BORN CORNER only; it does NOT by
+itself fix the global/small-zeta phase-boundary exponent.
+
+THREE-REGIME PICTURE (the honest statement of the critical line):
+  - Born corner (zeta=1, lambda~0.5): Delta_B^IR at the MIPT -> controls (7.1) LOCALLY.
+    This is what worker_opdim_pps measures.
+  - No-click endpoint (zeta->0, lambda->0): a DIFFERENT fixed point (deterministic non-
+    Hermitian critical point, xi_nc ~ lambda^{-1}), where Delta_B~1 was measured (Sec. 3,
+    free/UV) -> controls the small-zeta boundary lambda_c ~ zeta^{...}.
+  - Intermediate zeta in [0.1,0.7]: a crossover between the two; the fitted phi~0.56 is an
+    EFFECTIVE exponent controlled by neither cleanly.
+A single phi describing the whole line presupposes one fixed point dominates it -- unproven.
+So with y_lambda fixed (Sec. 6), the only unknown in the BORN-CORNER exponent is y_zeta.
 
 --------------------------------------------------------------------------------
 ## 8. The crux: UV (no-click) vs IR (MIPT) dimension [O -> measurable]
@@ -158,17 +186,23 @@ open "Delta_zeta^IR" question.  This is the single quantity the measurement targ
 --------------------------------------------------------------------------------
 ## 9. The prediction [P]
 
-Combine (6.1), (7.1) and the boundary data (free-exponent fits give phi ~ 0.56 on
-lambda_c, ~0.7-0.85 on the physical ratio r_c = lambda_c/(1-lambda_c)):
-    y_zeta = y_lambda / phi = (1/2) / phi
-           ~ 0.5/0.56 ~ 0.89   (lambda_c parametrization),
-           ~ 0.5/0.80 ~ 0.63   (r_c parametrization).
-So
-    y_zeta ~ 0.6 - 0.9     (relevant, but renormalized below the no-click value 1),  (9.1)
-    Delta_B(lambda_c) = 2 - y_zeta ~ 1.1 - 1.4.                                       (9.2)
-PREDICTION (9.2): the bond-operator dimension at the MIPT is modestly ABOVE its no-click
-value (~1.0).  This is NOT clean sqrt(zeta) (phi=1/2 would need y_zeta=1 exactly) nor
-linear (phi=1 needs y_zeta=1/2); it is an intermediate boundary exponent set by (9.2).
+The logic must run FORWARD (measure -> predict), not backward.  Inverting the GLOBAL phi
+(phi~0.56 on lambda_c, ~0.7-0.85 on r_c) through y_zeta = y_lambda/phi would give
+y_zeta ~ 0.6-0.9 and Delta_B ~ 1.1-1.4 -- BUT (Sec. 7 correction) that phi is the
+intermediate/small-zeta CROSSOVER exponent, not phi_Born, so the inversion has no standing.
+
+DEMOTED STATUS of Delta_B(lambda_c) ~ 1.1-1.4:  it survives ONLY as a conjecture contingent
+on the Born fixed point dominating the intermediate-zeta window (phi_global ~ phi_Born).
+There is no a-priori reason for that.  It is NOT a bracketed prediction.
+
+CORRECT (forward) logic, settled by the run:
+    measure Delta_B(lambda_c(1))   =>   y_zeta^Born = 2 - Delta_B^IR
+    =>  PREDICT the local boundary slope:
+            lambda_c(1) - lambda_c(zeta) ~ (1 - zeta)^{ 1/(2 y_zeta^Born) }
+    =>  TEST by fitting the boundary at zeta >~ 0.7 (the (1-zeta) regime).
+The operator dimension drives; the near-zeta=1 boundary is the consistency test.  Whether the
+existing B_L grid is dense enough at zeta in {0.7,0.8,0.9,1.0} to do that cleanly is itself
+open (likely the thinnest part of the grid).
 
 --------------------------------------------------------------------------------
 ## 10. The measurement that determines y_zeta [the run]
@@ -180,10 +214,17 @@ MIPT-relevant (nonlinear-in-rho) single-copy-mass correlator is the trajectory C
 fitted (bulk-windowed, translation-averaged) to give Delta_B(lambda_c), hence
 y_zeta = 2 - Delta_B and phi = 1/(2 y_zeta).  [Why the covariance, not <B_x B_y>_Q: the
 ket-bra (cross-contour) piece of M_sc^2 is E_traj[<B_x>_Q <B_y>_Q], whose connected part
-is exactly C_sc; the same-contour piece is linear-in-rho and trivial at long times.]
-Run at a small lambda grid bracketing lambda_c(1) ~ 0.5; the lambda with the cleanest
-power law is lambda_c, and Delta_B there is the IR dimension.  Independent cross-check:
-the boundary-collapse y_zeta from extract_yzeta.py should agree with 2 - Delta_B(lambda_c).
+is exactly C_sc; the same-contour piece is linear-in-rho and EXPECTED short-ranged at long
+times -- to be CONFIRMED via cq(r), not assumed.]
+Run at a small lambda grid bracketing lambda_c(1) ~ 0.5; the lambda with the cleanest power
+law is lambda_c, and Delta_B there is the IR dimension.  CROSS-CHECK (corrected, Sec. 7):
+the right comparison is a fit of lambda_c(1) - lambda_c(zeta) ~ (1-zeta)^{1/(2 y_zeta)} using
+boundary data NEAR zeta=1 -- NOT the extract_yzeta.py zeta->0 collapse (that is the small-zeta
+object).  The same-contour triviality assumed in (10.1) is the diagnostic cq(r) already
+recorded by worker_opdim_pps: if cq(r) is short-ranged while C_sc(r) is critical, C_sc cleanly
+carries Delta_B.  A stronger but costlier probe is the PPS linear-response susceptibility
+chi_B = d/d(1-zeta) E_zeta[obs]|_{zeta=1}, which needs zeta<1 runs (reweighting/cloning) and is
+a flagged follow-up, not part of the zeta=1 run.
 From the same trajectories: X1, X_typ, x2 (squared Majorana correlator -> Case B vs Jian's
 class) and c_ent (S(L/2) vs log L).  Code: pps_qj/parallel/worker_opdim_pps.py,
 slurm/submit_opdim.sh, analysis/fit_opdim.py.
@@ -192,3 +233,39 @@ WHAT STAYS OPEN: the first-principles y_zeta (identify the SO(R)_q primary of th
 single-copy mass and track it to R->1) is obstructed by the change of anchor between the
 project's free-fermion point (K0=1) and Foster's R=2 boson (K_c=2/pi) -- a Meidan-scale
 calculation.  The measurement (10.1) sidesteps it.
+
+
+--------------------------------------------------------------------------------
+## 11. Post-review deviation ledger (2026-06-07)
+
+External review (ChatGPT, vetting this document) flagged one load-bearing error and
+confirmed the rest of the epistemic map.  Status of each link, ranked by load:
+
+  D-SCALE (load-bearing; CORRECTED above).  The boundary law was written lambda_c(zeta) ~
+    zeta^phi, mixing the Born corner (zeta=1) with the singular no-click endpoint (zeta=0).
+    Correct local law: lambda_c(1) - lambda_c(zeta) ~ (1-zeta)^{y_lambda/y_zeta}.  The zeta=1
+    measurement fixes the BORN-CORNER y_zeta only.  The 1.1-1.4 figure is demoted to a
+    conjecture (needs Born-dominance of the intermediate window).  The right cross-check is a
+    near-zeta=1 (1-zeta) boundary fit, NOT the extract_yzeta zeta->0 collapse.
+  D3 (heaviest standing).  y_lambda = 1/2 is Jian's NUMERICAL nu~2.1 fed through Foster's
+    UNCONTROLLED (eps=1), FITTED (x=3) eps-expansion.  Numerically anchored, not derived.
+  D1 (central; the run removes it).  Delta_B~1, Delta_cross~2 are NO-CLICK (UV) values, not
+    MIPT (IR).  The C_sc(r) measurement at lambda_c gives the IR Delta_B directly.
+  D-CORR (correlator).  C_sc (= trajectory covariance, ChatGPT's C_2) is a valid Delta_B
+    probe IFF the same-contour piece (cq = ChatGPT's C_1, already recorded) is subleading;
+    physically expected (averaged state -> featureless Lindblad steady state) but to be
+    confirmed.  PPS linear-response chi_B is a stronger, costlier (zeta<1) follow-up.
+  D2 (class identification).  Case B's distance-3 bond inheriting Jian/Foster's class is an
+    inference (symmetry + Foster's deterministic-Hamiltonian result), tested by the
+    multifractal X_typ/x2/c_ent.
+  D4/D5 (n->1 along the line; exactly two relevant fields; :B+B-: marginal at IR).  Well-
+    motivated, data-consistent; D5 is where QJ diverges from QSD (marginal vs relevant cross
+    vertex -> no zeta*).
+  A0 (replica continuation R->1).  Standing assumption of the whole field.
+
+CONFIRMED STRONG by the review: the projector expansion + single-copy mass prop (zeta-1)
+(Sec. 2); Born = R->1, forced = R->0 (Sec. 5); finite-nu DIII, not KT (Sec. 6).
+
+ONE-LINE STATE: the only step both load-bearing AND untested is Delta_B(lambda_c) itself
+(D1) -- the run measures it; the only step load-bearing AND permanently assumed is
+y_lambda = 1/2 (D3), honest to carry as the established numerical class-DIII value.

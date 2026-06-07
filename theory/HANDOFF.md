@@ -1,5 +1,51 @@
 # ppsQJ_m2 Project — Handoff Notes
 
+> **★ 2026-06-07 SESSION — y_ζ MEASUREMENT PIPELINE + LOAD-BEARING SCALING-VARIABLE CORRECTION.**
+>
+> **Canonical derivation doc for the y_ζ question is now `theory/Y_ZETA_DERIVATION.md`**
+> (model → recycling expansion → operator dims → y_ζ=2−Δ_B → Foster/Jian class → boundary
+> → the run). Read it together with §D7–D10 of `OPEN_ANALYTIC_PROBLEMS.md`.
+>
+> **THE CORRECTION (after external review; Y_ZETA_DERIVATION §7/§9/§11).** The boundary law
+> had been written λ_c(ζ) ~ ζ^φ. That is the WRONG scaling variable for a perturbation
+> around the Born corner ζ=1. The PPS field is h ∝ (ζ−1), which vanishes at ζ=1, so the
+> correct LOCAL law is **λ_c(1) − λ_c(ζ) ~ (1−ζ)^{y_λ/y_ζ}**. Consequences:
+> the ζ=1 operator-dimension measurement fixes the **Born-corner** y_ζ ONLY, not the global
+> small-ζ boundary; and the old "Δ_B(λ_c)≈1.1−1.4" is **demoted to a conjecture** (it was
+> inverted from the global φ, the wrong corner). Internal tell that this is right: our own
+> global fit λ_c≈0.96√ζ does NOT pass through λ_c(1)≈0.5.
+>
+> **THREE-REGIME PICTURE** (do not collapse to one φ): Born corner (ζ=1, Δ_B^IR, the run
+> measures it) / no-click endpoint (ζ→0, different fixed point, Δ_B≈1 measured there) /
+> intermediate ζ∈[0.1,0.7] crossover (effective φ≈0.56, neither).
+>
+> **NEW CODE (committed + pushed): the y_ζ measurement.** At ζ=1 (Born, NO cloning) sample
+> QJ trajectories; from each final covariance Γ record b_x=Γ_{2x,2x+3} and form the
+> trajectory covariance C_sc(r)=Cov_traj(⟨B_x⟩,⟨B_{x+r}⟩) ~ r^{−2Δ_B} → Δ_B(λ_c) → y_ζ.
+> Also g(r)→X₁,X_typ,x² (Case-B class vs Jian Table I), cq(r) (the C₁/same-contour check),
+> S(L/2)→c_ent. Files: `pps_qj/parallel/worker_opdim_pps.py`, `slurm/submit_opdim.sh`,
+> `analysis/fit_opdim.py`. C_sc is valid IFF cq is subleading (built-in check); χ_B
+> (PPS linear response, needs ζ<1) is a costlier flagged follow-up.
+>
+> **IMMEDIATE NEXT TASK (forward logic):** run opdim (calibration
+> `PPS_L_LIST=128 PPS_LAM_LIST=0.50 PPS_N_TRAJ=64 ARRAY=0-0 WALL=00:20:00 CPUS=16 bash
+> slurm/submit_opdim.sh`, then production `CPUS=24 bash slurm/submit_opdim.sh`, analyse
+> `python analysis/fit_opdim.py /scratch/$USER/pps_qj/pps_opdim`) → get Δ_B(λ_c(1)) →
+> y_ζ^Born=2−Δ_B → PREDICT λ_c(1)−λ_c(ζ)~(1−ζ)^{1/(2y_ζ^Born)} → TEST by fitting the
+> boundary at ζ≳0.7 (NOT the extract_yzeta ζ→0 collapse). Whether the B_L grid is dense
+> enough at ζ∈{0.7,0.8,0.9,1.0} for that fit is itself open.
+>
+> **Class anchor (D7–D9):** Born=n→1, forced=n→0 are *different* classes (Jian); along the
+> PPS line ν≈2.1 is fixed (n→1 throughout, QJ marginal cross-vertex ⇒ no ζ*); y_λ≈1/2 is
+> Foster–Guo–Jian–Ludwig's R=2−ε expansion CALIBRATED to Jian's ν (numerically anchored,
+> not derived). Foster's setup is a deterministic-Hamiltonian monitored Kitaev SC ⇒ nearly
+> removes the random-vs-deterministic caveat for Case B.
+>
+> **Numerics audit (D10):** final covariances are NOT persisted by the production worker;
+> `corr_decay` is the wrong object (single-particle ⟨c†c⟩, drops pairing, abs-averaged) for
+> the Jian/Foster discriminators — hence the dedicated opdim worker.
+
+
 **Last major update: 2026-06-06** (theory: replica field-theory routes recorded
 in `OPEN_ANALYTIC_PROBLEMS.md` §D — convergent n→1 non-perturbative obstruction;
 the boundary universality was revised again after external review (see §D6): NO

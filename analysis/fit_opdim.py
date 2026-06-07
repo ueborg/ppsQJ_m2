@@ -6,7 +6,11 @@ Reads all opdim_*.npz in a directory, and for each (L, lam):
   * C_sc(r) = bulk-windowed trajectory covariance of the bond expectation
         C_sc(r) = mean_{bulk x} [ <b_x b_{x+r}>_traj - <b_x>_traj <b_{x+r}>_traj ],
     fitted as |C_sc(r)| ~ r^{-2 Delta_B}  ->  Delta_B, y_zeta = 2 - Delta_B,
-    phi = y_lambda / y_zeta = 1/(2 y_zeta)  (y_lambda = 1/2, Foster/Jian).
+    phi_Born = y_lambda / y_zeta = 1/(2 y_zeta)  (y_lambda = 1/2, Foster/Jian).
+    NB: this is the LOCAL BORN-CORNER exponent. It governs
+        lambda_c(1) - lambda_c(zeta) ~ (1-zeta)^{phi_Born}  near zeta=1,
+    NOT the global lambda_c(zeta) ~ zeta^phi (that is the small-zeta endpoint,
+    a different fixed point).  See theory/Y_ZETA_DERIVATION.md Sec. 7/11.
   * X1     from <g(r)>_traj         ~ r^{-2 X1}
   * X_typ  from exp<log g(r)>_traj  ~ r^{-2 X_typ}
   * x2     from Var(log g(r))_traj  ~ -2 x2 * log r
@@ -138,7 +142,7 @@ def main():
                              logg_mean=logg_mean, logg_var=logg_var)
 
     rows.sort()
-    print("\n=== per-(L, lam) fits  (y_lambda=1/2 assumed; phi=1/(2 y_zeta)) ===")
+    print("\n=== per-(L, lam) fits  (y_lambda=1/2 assumed; phi_Born=1/(2 y_zeta)) ===")
     hdr = f"{'L':>4} {'lam':>5} | {'Delta_B':>8} {'y_zeta':>7} {'phi':>6} {'R2':>5} |" \
           f" {'X1':>6} {'X_typ':>6} {'x2':>6} | {'S(L/2)':>7} {'N':>5}"
     print(hdr); print("-" * len(hdr))
@@ -166,11 +170,15 @@ def main():
         print("\n=== PRIMARY RESULT (largest L) ===")
         print(f"  L={Lbig}, lambda_c~{best[1]:.3f}")
         print(f"  Delta_B(lambda_c) = {best[2]:.3f}   "
-              f"[no-click/UV value ~1.0; predicted IR ~1.1-1.4]")
+              f"[no-click/UV value ~1.0; this IS the Born-corner IR dimension]")
         print(f"  y_zeta = 2 - Delta_B = {best[3]:.3f}")
         print(f"  phi    = 1/(2 y_zeta) = {best[4]:.3f}")
-        # contrast with the boundary-collapse y_zeta if available
-        print("  (cross-check against extract_yzeta.py boundary-collapse y_zeta)")
+        # CORRECT cross-check (Y_ZETA_DERIVATION Sec. 7/11): predict the LOCAL boundary
+        # slope and test it against boundary data NEAR zeta=1, NOT the extract_yzeta
+        # zeta->0 collapse (that is the small-zeta endpoint, a different fixed point).
+        print(f"  => PREDICT  lambda_c(1)-lambda_c(zeta) ~ (1-zeta)^{best[4]:.3f}  near zeta=1")
+        print( "     TEST: fit boundary at zeta>~0.7 (the (1-zeta) regime).")
+        print( "     (do NOT cross-check against extract_yzeta.py zeta->0 collapse)")
 
     # --- c_ent: S_half vs log L at the chosen lambda_c (use the modal lam) ---
     if len(chosen) >= 2:
