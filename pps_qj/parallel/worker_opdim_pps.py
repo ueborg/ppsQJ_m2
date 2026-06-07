@@ -49,6 +49,7 @@ Output: <output_dir>/opdim_{task_id:04d}.npz
 from __future__ import annotations
 import os, sys, time
 import numpy as np
+from pps_qj.parallel.worker_clone_pps import _batched_compute_B_L  # identical CMI/B_L tripartition
 
 from pps_qj.gaussian_backend import (
     build_gaussian_chain_model,
@@ -68,7 +69,7 @@ def _pool_init(L, w, alpha, T):
 
 
 def _observables_from_cov(Gamma, L, bulk_frac):
-    """Return (b, g, cq, S_half) for one trajectory's final covariance."""
+    """Return (b, g, cq, S_half, S_AB, S_BC, S_B, S_ABC, CMI, B_L) for one cov."""
     w0 = int(round(bulk_frac * L))
     n2 = 2 * L
 
@@ -97,7 +98,16 @@ def _observables_from_cov(Gamma, L, bulk_frac):
                                   - Gamma[a, c] * Gamma[bb, d]))
 
     S_half = float(entanglement_entropy(Gamma, L // 2))
-    return b, g, cq, S_half
+
+    # crossing observables: quarter-chain tripartition CMI / B_L, IDENTICAL to
+    # the clone pipeline (reuse _batched_compute_B_L on a batch of one).
+    # A=[0,L/2) B=[L/2,L) C=[L,3L/2) (Majorana idx); CMI=S_AB+S_BC-S_B-S_ABC,
+    # B_L = CMI * S_AB. NaN when L % 4 != 0.
+    _bl = _batched_compute_B_L([Gamma], L)
+    return (b, g, cq, S_half,
+            float(_bl["S_AB"][0]), float(_bl["S_BC"][0]),
+            float(_bl["S_B"][0]),  float(_bl["S_ABC"][0]),
+            float(_bl["CMI"][0]),  float(_bl["B_L"][0]))
 
 
 def _run_one(args):
@@ -164,12 +174,52 @@ def main():
     gs  = np.stack([r[1] for r in results], axis=0)              # (N, r_max_g)
     cqs = np.stack([r[2] for r in results], axis=0)              # (N, r_max_b)
     Sh  = np.asarray([r[3] for r in results], dtype=np.float64)  # (N,)
+    S_AB_t  = np.asarray([r[4] for r in results], dtype=np.float64)
+    S_BC_t  = np.asarray([r[5] for r in results], dtype=np.float64)
+    S_B_t   = np.asarray([r[6] for r in results], dtype=np.float64)
+    S_ABC_t = np.asarray([r[7] for r in results], dtype=np.float64)
+    CMI_t   = np.asarray([r[8] for r in results], dtype=np.float64)
+    B_L_t   = np.asarray([r[9] for r in results], dtype=np.float64)
+
+    # block over trajectories -> per-block means (analog of per-realisation
+    # means across clones); spread across blocks gives the crossing error bar.
+    n_blocks = max(1, min(int(os.environ.get("PPS_N_BLOCKS", "20")), N_traj))
+    idx_blocks = np.array_split(np.arange(N_traj), n_blocks)
+    def _bmeans(a):
+        return np.array([np.nanmean(a[ix]) for ix in idx_blocks], dtype=np.float64)
+    def _msem(a):
+        a = a[np.isfinite(a)]; n = a.size
+        return ((float(np.mean(a)) if n else float("nan")),
+                (float(np.std(a) / np.sqrt(n)) if n else float("nan")))
+    B_L_means_all   = _bmeans(B_L_t)
+    CMI_means_all   = _bmeans(CMI_t)
+    S_AB_means_all  = _bmeans(S_AB_t)
+    S_BC_means_all  = _bmeans(S_BC_t)
+    S_B_means_all   = _bmeans(S_B_t)
+    S_ABC_means_all = _bmeans(S_ABC_t)
+    S_means_all     = _bmeans(Sh)
+    B_L_mean,  B_L_err   = _msem(B_L_means_all)
+    CMI_mean,  CMI_err   = _msem(CMI_means_all)
+    S_AB_mean, S_AB_err  = _msem(S_AB_means_all)
+    S_BC_mean, S_BC_err  = _msem(S_BC_means_all)
+    S_B_mean,  S_B_err   = _msem(S_B_means_all)
+    S_ABC_mean,S_ABC_err = _msem(S_ABC_means_all)
+    S_mean,    S_err     = _msem(S_means_all)
 
     np.savez_compressed(
         out_file,
-        L=L, lam=lam, w=w, alpha=alpha, zeta=1.0, T=T,
-        N_traj=N_traj, bulk_frac=bulk_frac, seed0=seed0, task_id=task_id,
+        L=L, lam=lam, w=w, alpha=alpha, zeta=1.0, T=T, N_c=1,
+        N_traj=N_traj, n_blocks=n_blocks, bulk_frac=bulk_frac,
+        seed0=seed0, task_id=task_id,
         b=bs, g=gs, cq=cqs, S_half=Sh,
+        # crossing observables (quarter-chain tripartition; identical to dense)
+        B_L_mean=B_L_mean, B_L_err=B_L_err, B_L_means_all=B_L_means_all,
+        CMI_mean=CMI_mean, CMI_err=CMI_err, CMI_means_all=CMI_means_all,
+        S_AB_mean=S_AB_mean, S_AB_err=S_AB_err, S_AB_means_all=S_AB_means_all,
+        S_BC_mean=S_BC_mean, S_BC_err=S_BC_err, S_BC_means_all=S_BC_means_all,
+        S_B_mean=S_B_mean, S_B_err=S_B_err, S_B_means_all=S_B_means_all,
+        S_ABC_mean=S_ABC_mean, S_ABC_err=S_ABC_err, S_ABC_means_all=S_ABC_means_all,
+        S_mean=S_mean, S_err=S_err, S_means_all=S_means_all,
         wall_time=time.time() - t0,
     )
     print(f"[opdim] task {task_id} done in {time.time() - t0:.1f}s -> {out_file}",

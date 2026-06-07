@@ -18,7 +18,7 @@
 #SBATCH --job-name=lever_checks
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=128
+#SBATCH --cpus-per-task=32
 #SBATCH --time=12:00:00
 #SBATCH --partition=regular
 #SBATCH --output=/scratch/%u/pps_qj/logs/lever_checks_%j.out
@@ -37,7 +37,7 @@ export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
 export PPS_BACKEND=scalar
 
-WORKERS=${WORKERS:-120}
+WORKERS=${WORKERS:-${SLURM_CPUS_PER_TASK:-32}}
 OUT=outputs/diagnostics/levers
 mkdir -p ${OUT} /scratch/${USER}/pps_qj/logs
 

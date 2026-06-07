@@ -28,9 +28,17 @@ OUTPUT_DIR=${OUTBASE:-$SCRATCH/pps_opdim}
 LOG_DIR=$SCRATCH/logs
 mkdir -p "$OUTPUT_DIR" "$LOG_DIR"
 
+# Cost ~ N_c * T * L^4 with T = T_MULT * L, i.e. ~ L^5 here: an L=128 task is
+# ~32x an L=64 task, so one shared WALL is wasteful. Re-running with the new
+# CMI/B_L observables means ALL tasks must be regenerated (FORCE_RERUN=1).
+# Submit per L (full grid kept, so task_id->(L,lam) and filenames stay stable):
+#   PPS_FORCE_RERUN=1 ARRAY=0-4   WALL=03:00:00 CPUS=24 bash slurm/submit_opdim.sh  # L=64
+#   PPS_FORCE_RERUN=1 ARRAY=5-9   WALL=08:00:00 CPUS=24 bash slurm/submit_opdim.sh  # L=96
+#   PPS_FORCE_RERUN=1 ARRAY=10-14 WALL=24:00:00 CPUS=24 bash slurm/submit_opdim.sh  # L=128
+# Size walls from a finished L=64 task's wall_time * (L/64)^5.
 CPUS=${CPUS:-24}
 CONC=${CONC:-15}
-WALL=${WALL:-02:00:00}
+WALL=${WALL:-08:00:00}
 PARTITION=${PARTITION:-"regular,parallel"}
 
 PPS_L_LIST=${PPS_L_LIST:-"64,96,128"}
