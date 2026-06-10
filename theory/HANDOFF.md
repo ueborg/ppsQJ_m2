@@ -3,14 +3,29 @@
 > **★ 2026-06-10 SESSION — BOUNDARY DERIVED FROM THE ζ=0 ANCHOR (φ=1/2 [P], CONDITIONAL); ξ_ps~λ⁻² REFUTED; QSD/QJ DICHOTOMY RETRACTED; CASE-A ISING RELOCATED.**
 >
 > **GATING NUMERICAL TESTS (these BLOCK confirmation; run before writing exponents into the thesis):**
-> 1. **ζ=0 anchor scan** (minutes, deterministic, single-particle): no-click steady state vs λ.
->    Predictions [V if it passes]: Fermi-step critical segment 0<λ<λ* with EP at w=κ (λ*≈4/5
->    in the H=iwΣηη′, L=√α·n conventions — re-derive in code units first), ν₀=1 at the EP,
->    state ξ ~ 1/ln(4/λ) at small λ. Blocks φ=1/2 (tests the whole anchor).
+> 1. **ζ=0 anchor scan** — PARTIALLY CLEARED 2026-06-10 (single-particle band level);
+>    Δ_B+reduction SCRIPT NOW WRITTEN (not yet run).
+>    Analytical SSH (E²=w²−κ²−2iκw·cos q, w=1−λ, κ=α/4): Fermi step pinned at q=±π/2 for all
+>    λ<λ*=4/5 [V]; state ξ short (~1/ln(4/λ) small λ), diverging ONLY at the EP ⟹ ξ_ps~λ⁻²
+>    REFUTED numerically [V]; ν₀=0.98≈1 [V]; λ*=4/5 confirmed in code units. (a)+(b) now
+>    instrumented by `analysis/delta_B_zeta0.py`: builds the REAL no-click steady-state
+>    Majorana covariance, computes the connected single-state bond correlator
+>    cq(r)=Γ[2x,2y+3]Γ[2x+3,2y]−Γ[2x,2y]Γ[2x+3,2y+3] (= worker_opdim's cq; Wick-derived,
+>    matches verbatim), fits Δ_B on EVEN r (expect ≈1, ties to measured 1.009), odd-r null
+>    as the decoupling/reduction check. Deterministic, O(L³), runs on Mac/Habrok in
+>    seconds — NO cluster. RUN IT to close gate 1. φ=1/2 not fully gated until Δ_B≈1 lands.
+>    Scripts: analysis/anchor_scan.py (band level), analysis/delta_B_zeta0.py (Δ_B+reduction).
 > 2. **Area-phase ξ(ζ,λ)** just above λ_c: ξ∝ζ^{−1/2} and λ-flat (saturated-defect window law,
 >    φ=1/2) vs ξ∝ζ^{−1} (coherent channel, φ=1) vs essential form (marginal asymptote).
 >    Blocks φ=1/2 and fixes the small-ζ asymptote. [Companion gate: Case-A Born-line ν via
 >    dB_L/dλ at exactly λ=1/2 → blocks the SU(2)₁ [P] assignment.]
+>    WORKER READY 2026-06-10 (not yet run): `worker_areaphase_pps.py` +
+>    `analysis/fit_areaphase.py` + `slurm/submit_areaphase.sh`. Cloning at ζ<1 →
+>    clone-population C_sc(r)=Cov(b_x,b_{x+r}), b[x]=Γ[2x,2x+3]; ξ from exp-fit on EVEN r
+>    (odd-r null built in); auto-places λ=λ_c(ζ)+offset in the area phase; 30-task grid
+>    (2 L × 5 ζ × 3 offsets). Discriminator validated on synthetic (p=0.51 vs 1.01).
+>    **MUST run an N_c=500 rung vs 250 first** — clone-population Cov carries genealogical
+>    bias; check ξ is N_c-stable before banking φ.
 >
 > Results (chains in Y_ZETA §12 + chat log):
 > 1. **ζ=0 Case-B anchor SOLVED [V].** Per decoupled chain: non-Hermitian SSH, t₂=w real,
@@ -835,6 +850,29 @@ All in `~/Downloads/continuousmeasurements(2)/references.bib`.
   (site-click fractions agree to 3 digits → site convention correct, no
   flip), and Case A(γ=0) = Case B(w=0). Self-duality S-check is
   informational only (S is not duality-invariant).
+
+## File map (code added this iteration, 2026-06-10) — anchor scan (gate 1) + area-phase (gate 2)
+
+- `analysis/anchor_scan.py` — single-particle test of the ζ=0 SSH anchor under
+  real conventions (α=λ, w=1−λ, κ=λ/4, EP at λ*=4/5). Confirms Fermi step at
+  q=±π/2, state ξ ~ 1/ln(4/λ) (ξ_ps~λ⁻² refuted), ν₀≈1. Δ_B left as a hook
+  (`delta_B_hook`) — needs the real no-click Majorana covariance, not the band
+  structure. Runs in seconds; no cluster.
+- `analysis/delta_B_zeta0.py` — GATE 1 (a)+(b) closer. Builds the REAL no-click
+  steady-state Majorana covariance (replicates the worker_zeta0 evolution loop),
+  computes the connected single-state bond correlator cq(r) (Wick form; = opdim's
+  cq), fits Δ_B on EVEN r (expect ≈1, ties to 1.009), reports odd-r null as the
+  decoupling/reduction check. Deterministic, O(L³); seconds on Mac/Habrok, no
+  cluster. Fit logic validated on synthetic data (recovers Δ_B=1.000 / 1.200).
+- `pps_qj/parallel/worker_areaphase_pps.py` — GATE 2 worker. Cloning at ζ<1
+  (reuses run_cloning), then clone-population C_sc(r)=Cov(b_x,b_{x+r}) with
+  b[x]=Γ[2x,2x+3]; ξ from exp-fit on EVEN r (odd-r null built in). Env grid
+  auto-places λ=λ_c(ζ)+offset in the area phase. CAVEAT: clone-pop Cov has
+  genealogical bias — run an N_c=500 rung vs 250 before banking φ.
+- `analysis/fit_areaphase.py` — loads areaphase_*.npz; fits ξ(ζ)~ζ^{−p} per
+  (L,offset) → p≈0.5 (φ=1/2 window law) vs p≈1 (φ=1 coherent); λ-flatness +
+  odd-r-null + exp-fit-R² health checks. Discriminator validated on synthetic.
+- `slurm/submit_areaphase.sh` — 30-task array (2 L × 5 ζ × 3 offsets), 5 cpus/task.
 
 The most important documents to read first are `HANDOFF.md` (this file),
 then `SUMMARY_2026_05_22.md`, then `PROMPT_INTERNSHIP_REPORT.md`.

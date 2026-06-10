@@ -1,6 +1,17 @@
 # Derivation of the y_zeta prediction (Delta_B at the MIPT), QJ Case B
+>> ★ SUPERSEDED IN PART (2026-06-10) — read HANDOFF.md top block first.
+>> The boundary derivation in Sec. 7 (and its "0.96 tell" / r_c-vs-λ_c wording flagged
+>> in §11) is REPLACED. The boundary is no longer obtained from a Born-corner
+>> y_zeta = 2 - Delta_B matching: it is a CORNER-MATCHING law derived at the ζ=0 anchor
+>> (ℓ_λ = ξ_×, λ_c = A√ζ, φ=1/2 [P], CONDITIONAL on the area-phase ξ gate). ξ_ps~λ⁻²
+>> is REFUTED (the ζ=0 anchor is solved exactly; the only diverging ξ is at the EP, ν₀=1;
+>> the λ⁻¹ scale is the SELECTION length, not a state ξ). φ=1/2 is a corner-matching
+>> exponent of a doubly singular endpoint, NOT the eigenvalue ratio y_λ/y_ζ. What STILL
+>> stands from this doc: §0 conventions, §2 recycling expansion (the (ζ−1) single-copy /
+>> ζ cross-vertex split), and the Δ_B=1 / Δ_cross=2 anchor values. The y_ζ=2−Δ_B chain
+>> is retained as historical context for the Born-corner question only.
 
-Canonical chain from the microscopic model to the Born-corner relation y_zeta = 2 - Delta_B(lambda_c),
+
 and the single measurement that closes it.  Epistemic tags: [V]=verified in-project,
 [L]=literature-anchored, [P]=plausible/data-consistent, [O]=open.
 

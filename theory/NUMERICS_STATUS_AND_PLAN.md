@@ -1,5 +1,14 @@
 # Numerics Status and Plan — QJ-PPS Case B
 
+> ★ PARTIALLY SUPERSEDED (2026-06-10) — dated 2026-06-03; read `HANDOFF.md` top block
+> for current numerics state. The λ_c-vs-r_c discussion below is now EXPLAINED, not just
+> observed: φ=1/2 is a small-ζ CORNER-MATCHING exponent (so global r_c fits give ~0.7 by
+> crossover-dressing — expected, not a contradiction). Two NEW gating runs define the
+> plan: (1) ζ=0 anchor scan — single-particle part DONE (Fermi step, ξ_ps~λ⁻² refuted,
+> ν₀≈1; `analysis/anchor_scan.py`), Δ_B + reduction check pending; (2) area-phase
+> ξ(ζ,λ) — worker READY (`worker_areaphase_pps.py`), predicts ξ∝ζ^{−1/2} (φ=1/2) vs
+> ζ^{−1} (φ=1), run with an N_c=500-vs-250 bias check before banking φ.
+
 **Last update: 2026-06-03.** Companion to `CURRENT_THEORY_STATUS.md` and
 `OPEN_ANALYTIC_PROBLEMS.md`. Built from a direct re-analysis of the cloning
 aggregates (`clone_aggregate(1).pkl`, 1920 entries, L=8–128; plus the

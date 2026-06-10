@@ -1,5 +1,15 @@
 # Current Theory Status — QJ-PPS Case B
 
+> ★ SUPERSEDED (2026-06-10) — this file is dated 2026-06-03 and is stale. Read
+> `HANDOFF.md` top block for the canonical state. Key reversals since: the ζ=0 anchor
+> is solved exactly (Fermi-step critical line, EP at λ*=4/5, ν₀=1); **ξ_ps~λ⁻² is
+> REFUTED** (no scale has that exponent; the λ⁻¹ scale is the SELECTION length ℓ_λ, not
+> a state ξ); the boundary is a CORNER-MATCHING law λ_c=A√ζ (φ=1/2 [P], gated by the
+> area-phase ξ run), NOT a y_λ/y_ζ ratio; the Case-A Ising tag belongs to the ζ=0
+> endpoint, with the Born line SU(2)₁ (ν=2/3 [P]); QSD/QJ are BOTH marginal at the
+> anchor (the "QSD relevant" dichotomy is retracted). Treat anything below about the
+> boundary derivation or no-click localization length as historical.
+
 **Canonical theoretical state. Last update: 2026-06-03.**
 Supersedes the "√ζ is closed" framing in the older `HANDOFF.md` TL;DR and in
 `ONE_LOOP_RG.md`. Companion docs: `OPEN_ANALYTIC_PROBLEMS.md`,
