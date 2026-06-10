@@ -42,17 +42,17 @@ CONC=${2:-80}
 OUTBASE=${3:-/scratch/${USER}/pps_qj}
 
 case "${TIER}" in
-  zeta1)    WALL="24:00:00" ;;
-  lt1_L32)  WALL="24:00:00" ;;
-  lt1_L64)  WALL="36:00:00" ;;
-  lt1_L128) WALL="48:00:00" ;;
+  zeta1)    WALL="${WALL:-24:00:00}" ;;
+  lt1_L32)  WALL="${WALL:-24:00:00}" ;;
+  lt1_L64)  WALL="${WALL:-36:00:00}" ;;
+  lt1_L128) WALL="${WALL:-48:00:00}" ;;
   *) echo "TIER must be zeta1 | lt1_L32 | lt1_L64 | lt1_L128 (got ${TIER})"; exit 1 ;;
 esac
 
 OUTPUT_DIR="${OUTBASE}/pps_caseA"
 LOG_DIR="${OUTBASE}/logs"
 JOB_NAME="caseA_${TIER}"
-PARTITION="regular"
+PARTITION="${PARTITION:-regular}"
 CPUS_PER_TASK=5
 
 read LO HI < <(cd "${HOME}/pps_qj" && python3 - "${TIER}" <<'PY'
@@ -87,6 +87,7 @@ cd \${HOME}/pps_qj
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
 export PPS_N_WORKERS=${CPUS_PER_TASK}
+export PPS_ENTROPY_STRIDE=${PPS_ENTROPY_STRIDE:-1}
 
 mkdir -p ${OUTPUT_DIR} ${LOG_DIR}
 
