@@ -474,11 +474,15 @@ That conflation is the mistake ChatGPT flagged. Correct picture:
   drift ≲0.4 ∝ ζ^{1+p} is a MARGINAL correction-to-scaling (from the ζ-dependent marginal
   cross vertex), not a true exponent change; unmeasurable either way, but the clean thesis
   statement is "ν fixed at the Born value, λ_c(ζ) the only ζ-dependent quantity."
-- QJ-vs-QSD origin (sharp): in LMR (QSD) the cross vertex is RELEVANT → a genuine ζ* can
-  appear WITHIN n→1 (exponents vary / multicritical point); the QJ cross vertex is MARGINAL →
-  no ζ*, ν fixed. This is the precise field-theory reason the two unravelings differ. (The
-  Rényi-k≥2 ζ* test remains live and is compatible with this: a Rényi feature can exist and
-  wash out at n→1.)
+- QJ-vs-QSD origin (REVISED 2026-06-10; "QSD relevant vs QJ marginal" RETRACTED): the sharp
+  difference is record statistics → vertex weight [V]: a Gaussian record reverse-HS-resums to
+  a weight-≤2 vertex −γ[Σ_μ(M^μ)² − (ζ/2R)(Σ_μM^μ)²]; a point-process record gives the full
+  2R-fold ζΓΠ_μn^μ. Both are Δ=2 (tree-marginal) at the common Majorana anchors; LMR's
+  ζ*≈0.28 is an R=2 finite-coupling AT-line drift (rate ∝(2n−2)) that dies at n→1, and the
+  mechanism is equally available to QJ at R=2 — it is NOT a field-theory reason the
+  unravelings differ at vN. (The Rényi-k≥2 ζ* test remains live, sharpened: the feature
+  should strengthen monotonically with Rényi index and vanish toward vN; its location is
+  non-universal and need not sit at 0.28.)
 - Jian's argument (i)+(ii) that Born = n→1 (Born probabilities + POVM normalization → constant
   partition function) survives the PPS tilt: still Born-based, still POVM-normalized after the
   tilt, so still n→1.

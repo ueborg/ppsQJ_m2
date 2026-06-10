@@ -107,8 +107,16 @@ n->1; field-theoretically "zeta enters only the cross vertex" (Sec. 2) = zeta mo
 a vertex inside the n->1 theory; it does not change the replica limit.  Consequences:
 the TRANSVERSE exponent (nu, Sec. 6) is fixed along the line; the forced n->0 value is
 off the line; zeta=0 is singular (only the no-click trajectory survives, replica trick
-degenerates).  Contrast QSD (LMR): there the cross vertex is RELEVANT -> a genuine
-zeta* within n->1; the QJ cross vertex is MARGINAL -> no zeta*, nu fixed.
+degenerates).  RETRACTED (2026-06-10): the "QSD relevant vs QJ marginal" contrast conflated
+the anchor with the unraveling. Derived vertex structures [V]: QSD's Gaussian
+record reverse-HS-resums to a weight-<=2 vertex -gamma[Sum_mu (M^mu)^2 -
+(zeta/2R)(Sum_mu M^mu)^2]; QJ's point-process record gives the full 2R-fold
+zeta*Gamma*Prod_mu n^mu. Identical at R=1 (same Lindbladian). At the common
+Majorana anchors BOTH cross vertices are Delta=2 (pair = 2*Delta_eps
+additivity): tree-marginal. LMR's zeta*~0.28 is an R=2 finite-coupling
+AT-line drift (rate prop. to (2n-2)) that dies at n->1; the same mechanism is
+available to QJ at R=2. No interior zeta* survives n->1 for either unraveling
+[P]. See Sec. 12.
 
 --------------------------------------------------------------------------------
 ## 6. Universality class and the transverse exponent y_lambda [L]
@@ -158,19 +166,33 @@ CORRECTION (load-bearing; Sec. 11).  An earlier version wrote lambda_c(zeta) ~ z
 the collapse lambda_c*sqrt(L) = F(zeta L^{y_zeta}) of analysis/extract_yzeta.py.  That uses
 zeta (which vanishes at zeta=0) as the scaling field -- it is anchored at the SINGULAR
 no-click endpoint (zeta->0, lambda_c->0), a DIFFERENT fixed point, NOT the Born corner.
-Symptom in our own data: the global fit gives lambda_c ~ 0.96 sqrt(zeta), which does not pass
-through lambda_c(1) ~ 0.5 (0.96*1 != 0.5).  Eq. (7.1) does, by construction.  Consequence:
+Symptom in our own data (CORRECTED 2026-06-10): the 0.96 prefactor belongs to
+r_c = lambda_c/(1-lambda_c), NOT to lambda_c. The lambda_c fit gives A ~ 0.50
+and DOES pass through lambda_c(1) ~ 0.5 (ladder result, no Mobius needed).
+The Born-corner reframing stands on the derivation invalidity and the r_c
+exponent (0.65-0.85), not on this tell.  Eq. (7.1) passes through the corner
+by construction.  Consequence:
 the zeta=1 operator-dimension measurement constrains the BORN CORNER only; it does NOT by
 itself fix the global/small-zeta phase-boundary exponent.
 
 THREE-REGIME PICTURE (the honest statement of the critical line):
   - Born corner (zeta=1, lambda~0.5): Delta_B^IR at the MIPT -> controls (7.1) LOCALLY.
     This is what worker_opdim_pps measures.
-  - No-click endpoint (zeta->0, lambda->0): a DIFFERENT fixed point (deterministic non-
-    Hermitian critical point, xi_nc ~ lambda^{-1}), where Delta_B~1 was measured (Sec. 3,
-    free/UV) -> controls the small-zeta boundary lambda_c ~ zeta^{...}.
-  - Intermediate zeta in [0.1,0.7]: a crossover between the two; the fitted phi~0.56 is an
-    EFFECTIVE exponent controlled by neither cleanly.
+  - No-click end (REVISED 2026-06-10): NOT a conventional fixed point with a
+    y-ratio. The zeta=0 axis is itself CRITICAL for the whole segment
+    0<lambda<lambda* [V] (band-selected Fermi-step state; EP at w=kappa with
+    nu_0=1; state xi ~ 1/ln(4/lambda) at small lambda; the lambda^{-1} scale
+    is the SELECTION length l_lambda=4w/lambda, not a state xi). The
+    small-zeta boundary is a CORNER-MATCHING law of a doubly singular
+    endpoint: l_lambda vs the click-destruction length
+    xi_x = (4*nbar*zeta)^{-1/2} (lambda-INDEPENDENT: one projective hit per
+    slow-cone formation cell), giving lambda_c = A*sqrt(zeta), phi = 1/2
+    [P] -- the strong-defect WINDOW law, CONDITIONAL on the area-phase xi
+    gate (Sec. 12). Strict zeta->0 asymptote [O].
+  - Intermediate zeta in [0.1,0.7]: the strong-defect regime (clicks per
+    formation cell ~ 4*nbar*zeta = O(1) already for zeta > few*10^-2); the
+    fitted phi~0.56 and the r_c exponents 0.65-0.85 are crossover-dressed
+    effective slopes. This is what the five-form degeneracy was telling us.
 A single phi describing the whole line presupposes one fixed point dominates it -- unproven.
 So with y_lambda fixed (Sec. 6), the only unknown in the BORN-CORNER exponent is y_zeta.
 
@@ -269,3 +291,64 @@ CONFIRMED STRONG by the review: the projector expansion + single-copy mass prop 
 ONE-LINE STATE: the only step both load-bearing AND untested is Delta_B(lambda_c) itself
 (D1) -- the run measures it; the only step load-bearing AND permanently assumed is
 y_lambda = 1/2 (D3), honest to carry as the established numerical class-DIII value.
+
+--------------------------------------------------------------------------------
+## 12. 2026-06-10 CONSOLIDATION: the boundary from the zeta=0 anchor
+
+Chain (Case B; independent of any SU(2)_1/Born identification):
+  1. [V] Exact decoupling -> per-chain sweet-spot Kitaev + on-site density
+     monitoring.
+  2. [V] zeta=0 anchor SOLVED: non-Hermitian SSH, t2=w real, t1=-i*kappa,
+     kappa=alpha/4; E^2(q) = w^2 - kappa^2 - 2i*kappa*w*cos q. Lifetime zeros
+     pinned at q=+-pi/2 for kappa<w -> band-selected Fermi-step steady state:
+     CRITICAL for ALL 0<lambda<lambda* (w=kappa; ~4/5 in these conventions).
+     Reproduces measured Delta_B=1.009 (<BB> ~ r^-2) and Delta_cross=2.02
+     (~r^-4) exactly.
+  3. [V] Three lengths: state xi ~ 1/ln(4/lambda) at small lambda (SHORT);
+     SELECTION length l_lambda = 4w/lambda (this is the previously "verified
+     xi_nc ~ lambda^-1" -- a formation scale, NOT a state xi); EP
+     xi ~ |lambda*-lambda|^-1, nu_0=1.  ==> xi_ps ~ lambda^-2 REFUTED
+     everywhere on the zeta=0 line; the old matching zeta*xi~1 with the true
+     lambda^-1 gives phi=1: the old derivation fails BOTH ways.
+  4. [V] Click-perturbation content at the anchor: identity -> SCGF; coherent
+     single-copy (same-sign B-pinning) -> redundant kappa_eff shift (motion
+     along the critical manifold); Delta=1 cross-bilinears parity-forbidden;
+     stochastic residue = pair channel with damage integral
+     D(r) = rho_tilde * Int d^2z [g(z)g(r-z)/g(r)]^2 ~ 16*pi*nbar*zeta*ln(r/a):
+     EXACTLY MARGINAL, h_d^pert = 2 (derived; matches measured Delta_cross).
+  5. [P] Effective coupling = clicks per slow-cone formation cell
+     ~ 4*nbar*zeta: O(1) for zeta > few*10^-2 ==> the whole measured window
+     zeta in [0.02,1] is STRONG defect coupling. Saturated one-hit-per-cell
+     law: xi_x = (kappa/rho)^{1/2} = (4*nbar*zeta)^{-1/2}, lambda-INDEPENDENT
+     (click rate prop. zeta*lambda vs cone velocity kappa prop. lambda).
+  6. [P, CONDITIONAL] Corner matching l_lambda = xi_x ==>
+     lambda_c = A*sqrt(zeta), phi = 1/2 -- a CORNER-MATCHING exponent of a
+     doubly singular endpoint, NOT y_lambda/y_zeta of any fixed point.
+     A non-universal [O] (measured 0.50). Explains the r_c mismatch and the
+     five-form degeneracy.
+  7. [O] Strict zeta->0 asymptote: marginal flow (lambda_c ~ exp(-c/zeta)
+     candidate, possibly huge 1/c) vs anomalous typical-channel h_d^typ < 2
+     (multifractal, replica-limit object; no controlled tool). h_d is NOT
+     derivable at weak coupling. Numerics carries it.
+
+GATING TESTS (block thesis exponents):
+  (i)  zeta=0 anchor scan (single-particle, deterministic, minutes):
+       Fermi-step critical segment, EP at w=kappa with nu_0=1,
+       xi ~ 1/ln(4/lambda) at small lambda. Blocks phi=1/2.
+  (ii) Area-phase xi(zeta,lambda) just above lambda_c: zeta^{-1/2} and
+       lambda-flat (window law, phi=1/2) vs zeta^{-1} (coherent channel,
+       phi=1) vs essential. Boundary FITS cannot adjudicate: the 9-sigma
+       exclusion kills only pure-linear-through-origin; linear+intercept
+       fits (five-form degeneracy). The earlier claim that the 9-sigma
+       "corroborates the defect counting" is RETRACTED.
+
+TERMINOLOGY (do not conflate as "Delta_zeta"): NORMAL component = single-copy
+mass, Delta_B ~ 1.009 -- relevant by dimension, manifold-redundant at zeta=0,
+the boundary-moving channel away from the anchor. TANGENTIAL component =
+cross vertex, Delta ~ 2.02 -- exactly marginal.
+
+SUPERSEDED by this section: the lambda^-2 matching (historical TL;DR text);
+the "QSD relevant vs QJ marginal" dichotomy (Sec. 5, retracted in place);
+the logarithmic (1/ln) zeta->0 crossover forms from the 2026-06-10 chat
+turn-4 analysis -- crossover scales are POWER LAWS, xi_x ~ zeta^{-1/2},
+and the Case-A small-zeta plateau edge is zeta_x(L) prop. L^-2.

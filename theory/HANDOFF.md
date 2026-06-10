@@ -1,5 +1,48 @@
 # ppsQJ_m2 Project — Handoff Notes
 
+> **★ 2026-06-10 SESSION — BOUNDARY DERIVED FROM THE ζ=0 ANCHOR (φ=1/2 [P], CONDITIONAL); ξ_ps~λ⁻² REFUTED; QSD/QJ DICHOTOMY RETRACTED; CASE-A ISING RELOCATED.**
+>
+> **GATING NUMERICAL TESTS (these BLOCK confirmation; run before writing exponents into the thesis):**
+> 1. **ζ=0 anchor scan** (minutes, deterministic, single-particle): no-click steady state vs λ.
+>    Predictions [V if it passes]: Fermi-step critical segment 0<λ<λ* with EP at w=κ (λ*≈4/5
+>    in the H=iwΣηη′, L=√α·n conventions — re-derive in code units first), ν₀=1 at the EP,
+>    state ξ ~ 1/ln(4/λ) at small λ. Blocks φ=1/2 (tests the whole anchor).
+> 2. **Area-phase ξ(ζ,λ)** just above λ_c: ξ∝ζ^{−1/2} and λ-flat (saturated-defect window law,
+>    φ=1/2) vs ξ∝ζ^{−1} (coherent channel, φ=1) vs essential form (marginal asymptote).
+>    Blocks φ=1/2 and fixes the small-ζ asymptote. [Companion gate: Case-A Born-line ν via
+>    dB_L/dλ at exactly λ=1/2 → blocks the SU(2)₁ [P] assignment.]
+>
+> Results (chains in Y_ZETA §12 + chat log):
+> 1. **ζ=0 Case-B anchor SOLVED [V].** Per decoupled chain: non-Hermitian SSH, t₂=w real,
+>    t₁=−iκ, κ=α/4; E²(q)=w²−κ²−2iκw·cos q. Lifetime zeros pinned at q=±π/2 for κ<w →
+>    band-selected Fermi-step steady state: CRITICAL for all 0<λ<λ*. Reproduces measured
+>    Δ_B=1.009 and Δ_cross=2.02 exactly. Lengths: state ξ~1/ln(4/λ) (small λ, short!);
+>    ℓ_λ=4w/λ = the previously "verified ξ_nc~λ⁻¹", now identified as the SELECTION length
+>    (a formation scale, not a state correlation length); EP ν₀=1. ⟹ **ξ_ps~λ⁻² refuted**;
+>    the old ζξ~1 matching with the true λ⁻¹ gives φ=1 — the old derivation fails both ways.
+> 2. **Boundary [P, conditional on gate 2].** Clicks = projective O(1) defects, density
+>    ρ=ζλn̄. Coherent channel = redundant κ_eff shift [V]; Δ=1 cross-bilinears parity-
+>    forbidden [V]; stochastic residue EXACTLY MARGINAL: damage D(r)≈16πn̄ζ·ln r [V derived].
+>    Effective coupling = clicks per slow-cone formation cell ≈ 4n̄ζ ⇒ the measured window
+>    ζ∈[0.02,1] is STRONG coupling. Window law: one-hit-per-cell ξ_×=(4n̄ζ)^{−1/2},
+>    λ-independent; matching ℓ_λ=ξ_× ⟹ **λ_c=A√ζ, φ=1/2 — a CORNER-MATCHING exponent of a
+>    doubly singular endpoint, NOT y_λ/y_ζ of any fixed point.** Explains the r_c-exponent
+>    mismatch and the five-form degeneracy. h_d not derivable at weak coupling (h_d^pert=2);
+>    strict ζ→0 asymptote [O]. NOTE: the 9σ "φ=1 excluded" does NOT adjudicate h_d
+>    (linear+intercept fits the boundary).
+> 3. **Unraveling [V structure].** QSD's Gaussian record ⟹ weight-≤2 replica vertex (Σ_μM^μ)²;
+>    QJ's point-process record ⟹ the 2R-fold ζΠ_μn^μ; identical at R=1 (same Lindbladian).
+>    Both ζ-vertices are Δ=2 at Majorana anchors (pair = 2Δ_ε additivity). "QSD relevant vs
+>    QJ marginal" RETRACTED — LMR's ζ*≈0.28 is an R=2 finite-coupling (AT-line drift, rate
+>    ∝(2n−2)) feature that dies at n→1. No interior ζ* for either unraveling at n→1 [P].
+> 4. **Case A.** ζ=0 endpoint solved [V]: imaginary-time projection onto the uniform zigzag
+>    Majorana chain ground state at λ=1/2 ⟹ ISING (c=1/2; ν₀=1 from dimerization ∝(λ−½)) —
+>    the Ising tag belongs HERE. Born line ζ∈(0,1]: class-D coset; R=2 anchor = S² at θ=π →
+>    SU(2)₁ (c=1, ν=2/3) [P]; n→1 values [O]. ζ marginal on the pinned line, no interior ζ*;
+>    ζ→0 crossovers are POWER-LAW ξ_×~ζ^{−1/2}, plateau edge ζ_×(L)∝L^{−2} (supersedes the
+>    earlier 1/ln-form).
+> 5. **opdim pre-run fixes (load-bearing):** see ⚠️ note at the y_ζ-measurement block below.
+
 > **★ 2026-06-07 SESSION (cont. 2) — N_c-LADDER DATA LANDED + ANALYZED; LEVER CHECKS.**
 > The {250,500,800} N_c-ladder (399 tasks) finished on Habrok, aggregated per rung
 > (`ladder_nc{250,500,800}.pkl`), analyzed on Mac. Outcome CONFIRMS the cont.-1 block below
@@ -67,6 +110,14 @@
 > S(L/2)→c_ent. Files: `pps_qj/parallel/worker_opdim_pps.py`, `slurm/submit_opdim.sh`,
 > `analysis/fit_opdim.py`. C_sc is valid IFF cq is subleading (built-in check); χ_B
 > (PPS linear response, needs ζ<1) is a costlier flagged follow-up.
+>
+> **⚠️ PRE-RUN FIXES (2026-06-10, LOAD-BEARING — implement in `fit_opdim.py`
+> before the run):** (1) fit C_sc(r) on EVEN r only — odd-r values are ≡0 by
+> the exact two-chain decoupling (use them as a free null test); (2) restrict
+> G(r), X_typ, x² to intrachain Majorana pairs (r ≡ 0 mod 4 safest) —
+> interchain entries are exact zeros and poison ⟨log G⟩; (3) divide the
+> measured S(L/2) log-slope by 2 before comparing c_ent to Jian's 0.39 (two
+> identical decoupled chains add).
 >
 > **IMMEDIATE NEXT TASK (forward logic):** run opdim (calibration
 > `PPS_L_LIST=128 PPS_LAM_LIST=0.50 PPS_N_TRAJ=64 ARRAY=0-0 WALL=00:20:00 CPUS=16 bash
@@ -152,14 +203,23 @@ For deeper theoretical detail see `theory/SUMMARY_2026_05_22.md` and
 `theory/qj_pps_theory_summary.md`. **For the chat-agent protocol (start-of-chat
 read + handoff-update workflow), see `theory/AGENTS.md`.**
 
-> **⚠️ THEORY STATUS REVISED (2026-06-03).** The √ζ derivation in the TL;DR
-> below (Δ_ζ=1, ξ~λ⁻²) is **invalid** for the projector-jump model. The genuine
-> cross vertex is **marginal** (Δ≈2, verified); the no-click length is
-> **ξ_nc~λ⁻¹** (verified). The phase-boundary exponent is **unresolved** (free
-> fits give φ≈0.56 on λ_c, ≈0.8 on r_c). See `theory/CURRENT_THEORY_STATUS.md`
-> for the corrected canonical state, `theory/OPEN_ANALYTIC_PROBLEMS.md` for the
-> analytic attempts, and `theory/NUMERICS_STATUS_AND_PLAN.md` for the data plan.
-> The √ζ material below is retained as historical context only.
+> **⚠️ THEORY STATUS REVISED (2026-06-03; SUPERSEDED 2026-06-10 — see ★ top
+> block).** The √ζ derivation in the TL;DR below (Δ_ζ=1, ξ~λ⁻²) is **invalid**,
+> and as of 2026-06-10 the ζ=0 anchor is solved exactly: **ξ~λ⁻² is refuted
+> outright** (the only diverging ξ on the ζ=0 line is at the EP, ν₀=1), and the
+> previously "verified ξ_nc~λ⁻¹" is the **SELECTION length ℓ_λ=4w/λ** — a
+> formation scale, not a state correlation length. TERMINOLOGY (do not conflate
+> the two measured ζ-channel dimensions under one "Δ_ζ"): the **NORMAL**
+> (boundary-moving) component is the single-copy mass, Δ_B≈1.009 — relevant by
+> dimension but manifold-redundant at ζ=0 (coherent κ_eff shift); the
+> **TANGENTIAL** component is the cross vertex, Δ≈2.02 — exactly marginal. The
+> boundary is now DERIVED at [P] as a corner-matching law λ_c=A√ζ (strong-defect
+> window law; CONDITIONAL on the area-phase ξ gate — top block). Free fits
+> (φ≈0.56 on λ_c, ≈0.8 on r_c) are crossover-dressed effective slopes,
+> consistent with corner matching. `theory/CURRENT_THEORY_STATUS.md` and
+> `theory/NUMERICS_STATUS_AND_PLAN.md` are NOT yet reconciled to 2026-06-10
+> (open item); `OPEN_ANALYTIC_PROBLEMS.md` §D8 is patched. The √ζ material
+> below is retained as historical context only.
 
 > **⚠️ REPLICA-LIMIT REFRAMING (2026-06-04).** The class-DIII ν≈2 the project
 > relied on was mis-cited as "König-Brouwer 2014" (non-existent paper). Real
@@ -399,9 +459,17 @@ $\zeta^{N_T}$ depends only on the total click count $N_T = N_c + N_d$, not
 on which channel fired. Therefore the self-dual line $\lambda_c^A = 1/2$
 is pinned for all $\zeta \in (0, 1]$.
 
-**Universality class.** Class D with self-duality $\Rightarrow$ Ising,
-$\nu = 1$, $c = 1/2$. Different from Case B's class DIII multicritical
-$\nu = 2$.
+**Universality class (REVISED 2026-06-10).** Class D ✓ — but "self-duality
+⇒ Ising" conflated the class with the fixed point. The Ising values
+(c = 1/2, ν₀ = 1) are DERIVED at the **ζ=0 endpoint** [V] (imaginary-time
+projection onto the uniform zigzag Majorana ground state at λ = 1/2); they
+do NOT transfer to the Born line. On the Born line ζ ∈ (0,1] the R=2 anchor
+is SO(4)/U(2) ≅ S² at θ = π (pinned by duality) → SU(2)₁: c = 1, ν = 2/3
+[P]; the n→1 values are [O]. Self-duality pins the LOCATION (λ_c^A = 1/2
+for all ζ, exact) and θ = π — it does not pin Ising. GATE before any
+universality claim enters the thesis: measure ν via dB_L/dλ at exactly
+λ = 1/2 (location pinned ⇒ best ν estimator available). Case B remains
+class DIII (exact decoupling → two identical DIII chains).
 
 **Status.** Backend validated 2026-06-06 (Gaussian vs exact Fock space, L=6,
 agree at λ_A = 0.3, 0.5, 0.7). The λ_c^A = 1/2 and universality *physics*
@@ -558,8 +626,9 @@ and not removable by more statistics at fixed L.
 
 ### What CAN currently be concluded
 
-- The genuine PPS cross vertex is **marginal** (Δ≈2); the no-click length is
-  **ξ_nc~λ⁻¹**; the Born endpoint λ_c(1)=1/2 is recovered. [VERIFIED]
+- The genuine PPS cross vertex is **marginal** (Δ≈2); the λ⁻¹ no-click scale
+  is the **selection length ℓ_λ=4w/λ** (2026-06-10: a formation scale, not a
+  state ξ); the Born endpoint λ_c(1)=1/2 is recovered. [VERIFIED]
 - The √ζ *derivation* (Δ_ζ=1 + ξ~λ⁻²) is **invalid** for this model.
 - Fitting the physical ratio r_c=λ_c/(1−λ_c) gives φ≈0.7–0.85 (not ½);
   √ζ overshoots, linear undershoots; neither Möbius form fits well. The
@@ -710,7 +779,11 @@ All in `~/Downloads/continuousmeasurements(2)/references.bib`.
 - `qj_pps_theory_summary.md` ← long-form derivations (604 lines)
 - `qj_pps_final_synthesis.md` ← compact synthesis
 - `ONE_LOOP_RG.md` ← matched-NLSM derivation
-- `NLSM_FRAMEWORK.md` ← Case A/B structural distinction
+- `NLSM_FRAMEWORK.md` ← STALE ENTRY (2026-06-10): file absent from theory/
+  (likely archive/). Its Case A/B content is superseded by the chat-derived
+  class analysis (Case A: class D, SO(2R)/U(R) coset; Case B: exact two-chain
+  decoupling → class DIII per chain, Foster constraint S16 → SO(R) PCM).
+  Do not cite the old file.
 - `CASE_A_IMPLEMENTATION_SPEC.md` ← Case A code spec (612 lines)
 - `COLLABORATOR_RESPONSE*.md` ← peer commentary integration
 - `PROMPT_*.md` ← prompts for new chats on specific subproblems
