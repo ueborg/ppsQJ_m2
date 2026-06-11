@@ -17,7 +17,8 @@ so Delta_B comes from the connected SINGLE-STATE bond correlator (= worker_opdim
 fit to r^{-2 Delta_B} on EVEN r (odd r are exact zeros by the two-chain decoupling).
 
 Conventions (from worker_zeta0_pps / gaussian_backend): alpha=lambda, w=1-lambda;
-Gamma_{ab}=(i/2)<[g_a,g_b]>, b[x]=Gamma[2x,2x+3].  Critical segment 0<lambda<0.8.
+Gamma_{ab}=(i/2)<[g_a,g_b]>, b[x]=Gamma[2x,2x+3].  No-click critical CORNER at
+small lambda (Delta_B->1 as lambda->0; gapped, Delta_B>1, for lambda>~0.15).
 
 Run on the Mac/Habrok (needs the backend). Deterministic, O(L^3) per (L,lam); seconds.
   python analysis/delta_B_zeta0.py
@@ -84,12 +85,14 @@ def fit_delta_B(rs, cq):
 def main():
     print("=" * 66)
     print("GATE 1 (a)+(b): Delta_B at the real zeta=0 no-click anchor")
-    print("  expect Delta_B ~ 1.0 (measured 1.009); odd-r null ~ 0 (decoupling);")
-    print("  Delta_B~1 across 0<lam<0.8 confirms the SSH Fermi-step reduction.")
+    print("  expect Delta_B ~ 1.0 (measured 1.009) near the no-click critical")
+    print("  CORNER (small lambda); odd-r null ~ 0 (decoupling). NOTE: the")
+    print("  no-click state is GAPPED for lambda>~0.15 (Delta_B grows with L,lambda)")
+    print("  and the fit breaks down for lambda<~0.03 (xi>L); sample lambda~0.04-0.10.")
     print("=" * 66)
     for L in [128, 256]:
         print(f"\n--- L = {L} ---  ({'lam':>5} {'Delta_B':>9} {'R2':>7} {'odd_null':>9})")
-        for lam in [0.20, 0.30, 0.40]:
+        for lam in [0.04, 0.05, 0.06, 0.08, 0.10]:
             G = steady_cov(L, lam)
             rs, cq = cq_connected(G, L)
             dB, R2, odd = fit_delta_B(rs, cq)
