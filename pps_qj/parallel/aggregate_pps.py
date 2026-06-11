@@ -23,6 +23,7 @@ from pps_qj.parallel.grid_pps import (
     make_clone_grid,
     make_doob_grid,
     n_tasks_clone,
+    n_tasks_clone_dense,
     n_tasks_doob,
 )
 from pps_qj.parallel.grid_caseA import n_tasks_caseA
@@ -147,6 +148,39 @@ def check_caseA_completion(output_dir) -> tuple[list[int], list[int]]:
     return sorted(done_ids), sorted(all_ids - done_ids)
 
 
+def aggregate_dense(output_dir) -> dict:
+    """Aggregate the clone-DENSE grid (4112 tasks; worker writes clone_*.npz into
+    a dedicated pps_clone_dense dir). Auto-slurps every npz field, so the CMI
+    tripartition and Renyi-2/3 entropies all carry through. Same file prefix as
+    the regular clone grid -- they live in different output dirs."""
+    output_dir = Path(output_dir)
+    data: dict = {}
+    n_files = 0
+    for path in sorted(output_dir.glob("clone_*.npz")):
+        rec = _npz_to_dict(path)
+        key = _key(rec["L"], rec["lam"], rec["zeta"])
+        data[key] = rec
+        n_files += 1
+    expected = n_tasks_clone_dense()
+    print(
+        f"[aggregate_dense] {n_files}/{expected} tasks loaded "
+        f"(missing {expected - n_files})"
+    )
+    return data
+
+
+def check_dense_completion(output_dir) -> tuple[list[int], list[int]]:
+    output_dir = Path(output_dir)
+    all_ids = set(range(n_tasks_clone_dense()))
+    done_ids: set[int] = set()
+    for path in output_dir.glob("clone_*.npz"):
+        try:
+            done_ids.add(int(path.stem.split("_")[-1]))
+        except ValueError:
+            pass
+    return sorted(done_ids), sorted(all_ids - done_ids)
+
+
 def _compress_ids_to_slurm_ranges(ids: Iterable[int]) -> str:
     ids = sorted(set(int(i) for i in ids))
     if not ids:
@@ -174,7 +208,7 @@ def _main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(
             "usage: python -m pps_qj.parallel.aggregate_pps "
-            "<doob|clone|caseA|check_missing> <output_dir> [clone|doob|caseA]"
+            "<doob|clone|caseA|dense|check_missing> <output_dir> [clone|doob|caseA|dense]"
         )
         return 1
     cmd = argv[0]
@@ -207,6 +241,17 @@ def _main(argv: list[str]) -> int:
         save_pkl(data, output_dir / "caseA_aggregate.pkl")
         print(f"saved: {output_dir / 'caseA_aggregate.pkl'}")
         return 0
+    if cmd == "dense":
+        output_dir = Path(argv[1])
+        data = aggregate_dense(output_dir)
+        completed, missing = check_dense_completion(output_dir)
+        print(f"completed: {len(completed)}, missing: {len(missing)}")
+        # Save unconditionally: the dense grid fills incrementally (large-zeta
+        # L=96/128 land later), so a partial aggregate is useful. Re-run as
+        # tasks finish. Output name is distinct from the regular clone aggregate.
+        save_pkl(data, output_dir / "dense_aggregate.pkl")
+        print(f"saved: {output_dir / 'dense_aggregate.pkl'}")
+        return 0
     if cmd == "check_missing":
         which = argv[1] if len(argv) > 1 else "doob"
         output_dir = Path(argv[2]) if len(argv) > 2 else Path(".")
@@ -214,6 +259,8 @@ def _main(argv: list[str]) -> int:
             _, missing = check_doob_completion(output_dir)
         elif which == "caseA":
             _, missing = check_caseA_completion(output_dir)
+        elif which == "dense":
+            _, missing = check_dense_completion(output_dir)
         else:
             _, missing = check_clone_completion(output_dir)
         # Emit a SLURM-compatible range spec on stdout.

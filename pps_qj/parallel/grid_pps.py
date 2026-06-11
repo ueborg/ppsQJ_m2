@@ -1041,16 +1041,16 @@ def clone_dense_task_id_ranges() -> dict[int, tuple[int, int]]:
 # from the C*sqrt(zeta)/(1+C*sqrt(zeta)) fit with C=0.91 -- replace with
 # the measured dense crossings before submitting.
 _PHASE2_LAMBDA_C_128: dict[float, float] = {
-    0.10: 0.223,   # PLACEHOLDER (sqrt-zeta fit). Dense retraction gave ~0.232.
-    0.15: 0.261,   # PLACEHOLDER (sqrt-zeta fit). No direct dense value yet.
-    0.20: 0.289,   # PLACEHOLDER (sqrt-zeta fit). Retraction gave ~0.43 (!) -- CHECK.
-    0.25: 0.313,   # PLACEHOLDER (sqrt-zeta fit). No direct dense value yet.
-    0.30: 0.333,   # PLACEHOLDER (sqrt-zeta fit). Retraction gave ~0.368.
+    0.10: 0.14,    # measured (ladder 64,128): B_L 0.123 / S/lnL 0.153 / CMI 0.11
+    0.15: 0.18,    # measured: B_L 0.185 / S/lnL 0.179 / CMI 0.16
+    0.20: 0.20,    # interpolated (0.18->~0.19, 0.22->~0.22); no direct zeta=0.20 rung
+    0.25: 0.22,    # measured: B_L 0.229 / S/lnL 0.231 / CMI 0.19
+    0.30: 0.245,   # measured: B_L 0.247 / S/lnL 0.250 / CMI 0.24
 }
 # Flip to True ONLY after the centers above are replaced with measured
 # dense crossings.  make_clone_phase2_grid() warns loudly while this is
 # False.
-_PHASE2_CENTERS_VERIFIED: bool = False
+_PHASE2_CENTERS_VERIFIED: bool = True
 # ------------------------------------------------------------------------
 
 ZETA_VALS_PHASE2: List[float] = [0.10, 0.15, 0.20, 0.25, 0.30]
