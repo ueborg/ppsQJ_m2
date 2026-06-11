@@ -25,6 +25,7 @@ from pps_qj.parallel.grid_pps import (
     n_tasks_clone,
     n_tasks_doob,
 )
+from pps_qj.parallel.grid_caseA import n_tasks_caseA
 
 
 def _npz_to_dict(path: Path) -> dict:
@@ -114,6 +115,38 @@ def check_clone_completion(output_dir) -> tuple[list[int], list[int]]:
     return completed, missing
 
 
+def aggregate_caseA(output_dir) -> dict:
+    """Aggregate Case A outputs (caseA_*.npz). Auto-slurps every npz field via
+    _npz_to_dict, so the full CMI tripartition (CMI, S_AB, S_BC, S_B, S_ABC and
+    their errs) and per-realisation arrays all carry through to the pickle."""
+    output_dir = Path(output_dir)
+    data: dict = {}
+    n_files = 0
+    for path in sorted(output_dir.glob("caseA_*.npz")):
+        rec = _npz_to_dict(path)
+        key = _key(rec["L"], rec["lam"], rec["zeta"])
+        data[key] = rec
+        n_files += 1
+    expected = n_tasks_caseA()
+    print(
+        f"[aggregate_caseA] {n_files}/{expected} tasks loaded "
+        f"(missing {expected - n_files})"
+    )
+    return data
+
+
+def check_caseA_completion(output_dir) -> tuple[list[int], list[int]]:
+    output_dir = Path(output_dir)
+    all_ids = set(range(n_tasks_caseA()))
+    done_ids: set[int] = set()
+    for path in output_dir.glob("caseA_*.npz"):
+        try:
+            done_ids.add(int(path.stem.split("_")[-1]))
+        except ValueError:
+            pass
+    return sorted(done_ids), sorted(all_ids - done_ids)
+
+
 def _compress_ids_to_slurm_ranges(ids: Iterable[int]) -> str:
     ids = sorted(set(int(i) for i in ids))
     if not ids:
@@ -141,7 +174,7 @@ def _main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(
             "usage: python -m pps_qj.parallel.aggregate_pps "
-            "<doob|clone|check_missing> <output_dir> [clone|doob]"
+            "<doob|clone|caseA|check_missing> <output_dir> [clone|doob|caseA]"
         )
         return 1
     cmd = argv[0]
@@ -163,11 +196,24 @@ def _main(argv: list[str]) -> int:
             save_pkl(data, output_dir / "clone_aggregate.pkl")
             print(f"saved: {output_dir / 'clone_aggregate.pkl'}")
         return 0
+    if cmd == "caseA":
+        output_dir = Path(argv[1])
+        data = aggregate_caseA(output_dir)
+        completed, missing = check_caseA_completion(output_dir)
+        print(f"completed: {len(completed)}, missing: {len(missing)}")
+        # Save unconditionally: Case A is run/analysed incrementally (e.g. the
+        # L=128 tier and the 48/96 backfill land later), so a partial aggregate
+        # is useful. Re-run this command as more tasks finish.
+        save_pkl(data, output_dir / "caseA_aggregate.pkl")
+        print(f"saved: {output_dir / 'caseA_aggregate.pkl'}")
+        return 0
     if cmd == "check_missing":
         which = argv[1] if len(argv) > 1 else "doob"
         output_dir = Path(argv[2]) if len(argv) > 2 else Path(".")
         if which == "doob":
             _, missing = check_doob_completion(output_dir)
+        elif which == "caseA":
+            _, missing = check_caseA_completion(output_dir)
         else:
             _, missing = check_clone_completion(output_dir)
         # Emit a SLURM-compatible range spec on stdout.

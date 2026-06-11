@@ -6,7 +6,7 @@
 # pps_qj.parallel.grid_caseA.caseA_tier_ranges(). Each array element is one
 # 5-core task (N_REAL=5 realisations run in parallel via PPS_N_WORKERS), so a
 # task's wall time is ONE realisation. All tiers share ONE output dir: task
-# ids are globally unique (0..237), so filenames never collide.
+# ids are globally unique (0..373), so filenames never collide.
 #
 # Tiers:
 #   zeta1     153-237 (85)  Born anchor, bias-free, CHEAP. Run FIRST; needs no
@@ -14,10 +14,16 @@
 #   lt1_L32     0-50  (51)  zeta<1 cloning, L=32.
 #   lt1_L64    51-101 (51)  zeta<1 cloning, L=64.
 #   lt1_L128  102-152 (51)  zeta<1 cloning, L=128 (the expensive tier).
+#   --- backfill (2026-06-11), intermediate FSS sizes L in {48,96} ---
+#   lt1_L48   238-288 (51)  zeta<1 cloning, L=48. CHEAP (~1.4h/task).
+#   lt1_L96   289-339 (51)  zeta<1 cloning, L=96. EXPENSIVE (~44h/task, 72h wall)
+#                           and ESS-noisy at N_c=300 -- weakest data in the set.
+#   zeta1_bf  340-373 (34)  zeta=1 anchor backfill, L in {48,96}. Bias-free; the
+#                           clean KMR/LMR-style crossing lives here. Run with zeta1.
 #
 # Usage:
 #   bash slurm/submit_caseA.sh <TIER> [CONCURRENCY] [OUTBASE]
-#     TIER        : zeta1 | lt1_L32 | lt1_L64 | lt1_L128
+#     TIER        : zeta1 | zeta1_bf | lt1_L32 | lt1_L48 | lt1_L64 | lt1_L96 | lt1_L128
 #     CONCURRENCY : max array elements running at once (default 80).
 #                   cores used = CONCURRENCY*5; nodes ~= cores/120.
 #     OUTBASE     : parent of the output dir (default /scratch/$USER/pps_qj).
@@ -37,16 +43,19 @@
 # =============================================================================
 set -euo pipefail
 
-TIER=${1:?"give a tier: zeta1 | lt1_L32 | lt1_L64 | lt1_L128"}
+TIER=${1:?"give a tier: zeta1 | zeta1_bf | lt1_L32 | lt1_L48 | lt1_L64 | lt1_L96 | lt1_L128"}
 CONC=${2:-80}
 OUTBASE=${3:-/scratch/${USER}/pps_qj}
 
 case "${TIER}" in
   zeta1)    WALL="${WALL:-24:00:00}" ;;
+  zeta1_bf) WALL="${WALL:-24:00:00}" ;;
   lt1_L32)  WALL="${WALL:-24:00:00}" ;;
+  lt1_L48)  WALL="${WALL:-24:00:00}" ;;
   lt1_L64)  WALL="${WALL:-36:00:00}" ;;
+  lt1_L96)  WALL="${WALL:-72:00:00}" ;;
   lt1_L128) WALL="${WALL:-48:00:00}" ;;
-  *) echo "TIER must be zeta1 | lt1_L32 | lt1_L64 | lt1_L128 (got ${TIER})"; exit 1 ;;
+  *) echo "TIER must be zeta1 | zeta1_bf | lt1_L32 | lt1_L48 | lt1_L64 | lt1_L96 | lt1_L128 (got ${TIER})"; exit 1 ;;
 esac
 
 OUTPUT_DIR="${OUTBASE}/pps_caseA"

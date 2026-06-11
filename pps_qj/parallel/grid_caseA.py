@@ -42,6 +42,10 @@ _LAMBDAS = sorted(set(
 _ZETA_LT1 = [0.10, 0.30, 0.50]
 _L_CORE = [32, 64, 128]          # zeta < 1 FSS core (Friedel-clean sizes)
 _L_ZETA1 = [16, 32, 64, 128, 160]  # zeta = 1 anchor (bias-free, extra sizes)
+# Backfill (2026-06-11): intermediate FSS sizes added at BOTH zeta<1 and the
+# zeta=1 anchor. Appended as ids >= 238 so the already-run ids 0..237 (and the
+# L=128 job in flight) keep their output files. See caseA_tier_ranges().
+_L_BACKFILL = [48, 96]
 
 N_REAL = 5
 
@@ -58,8 +62,8 @@ def nc_for_L_caseA(L: int, zeta: float) -> int:
     more. zeta < 1: cloning population; 300 base, gated by the 2-rung check.
     """
     if zeta >= 1.0:
-        return {16: 1000, 32: 800, 64: 500, 128: 400, 160: 300}[L]
-    return {32: 300, 64: 300, 128: 300}[L]
+        return {16: 1000, 32: 800, 48: 650, 64: 500, 96: 450, 128: 400, 160: 300}[L]
+    return {32: 300, 48: 300, 64: 300, 96: 300, 128: 300}[L]
 
 
 def time_horizon_caseA(L: int) -> float:
@@ -104,6 +108,30 @@ def _build_tasks() -> List[dict]:
                 N_c=int(nc_for_L_caseA(L, 1.0)),
                 seed=_seed(L, lam, 1.0),
             ))
+    # --- Backfill block (appended 2026-06-11). Ordered zeta<1 L=48, zeta<1
+    # L=96, then zeta=1 {48,96} so each submit tier is a contiguous id range
+    # (see caseA_tier_ranges()). Ids start at 238; ids 0..237 are unchanged.
+    for L in _L_BACKFILL:                       # Block 3a: zeta < 1 backfill
+        for zeta in _ZETA_LT1:
+            for lam in _LAMBDAS:
+                gamma_rate, alpha_rate = alpha_gamma_from_lam(lam)
+                tasks.append(dict(
+                    L=int(L), lam=float(lam),
+                    gamma_rate=gamma_rate, alpha_rate=alpha_rate,
+                    zeta=float(zeta), T=time_horizon_caseA(L),
+                    N_c=int(nc_for_L_caseA(L, zeta)),
+                    seed=_seed(L, lam, zeta),
+                ))
+    for L in _L_BACKFILL:                       # Block 3b: zeta = 1 backfill
+        for lam in _LAMBDAS:
+            gamma_rate, alpha_rate = alpha_gamma_from_lam(lam)
+            tasks.append(dict(
+                L=int(L), lam=float(lam),
+                gamma_rate=gamma_rate, alpha_rate=alpha_rate,
+                zeta=1.0, T=time_horizon_caseA(L),
+                N_c=int(nc_for_L_caseA(L, 1.0)),
+                seed=_seed(L, lam, 1.0),
+            ))
     return tasks
 
 
@@ -129,6 +157,11 @@ def caseA_tier_ranges() -> dict:
         ranges[f"lt1_L{L}"] = (base, base + per_L_lt1 - 1)
         base += per_L_lt1
     ranges["zeta1"] = (base, base + len(_L_ZETA1) * nL - 1)
+    base += len(_L_ZETA1) * nL                  # advance past zeta=1 anchor (-> 238)
+    for L in _L_BACKFILL:                        # backfill zeta<1 tiers (lt1_L48, lt1_L96)
+        ranges[f"lt1_L{L}"] = (base, base + per_L_lt1 - 1)
+        base += per_L_lt1
+    ranges["zeta1_bf"] = (base, base + len(_L_BACKFILL) * nL - 1)  # zeta=1 backfill {48,96}
     return ranges
 
 
