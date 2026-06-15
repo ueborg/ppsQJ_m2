@@ -1,5 +1,54 @@
 # ppsQJ_m2 Project — Handoff Notes
 
+### zeta=0 no-click anchor (Cut B) — CORRECTED 2026-06-15 (supersedes the 2026-06-10 block)
+
+The 2026-06-10 [V] block (Fermi step at q=+-pi/2, lambda*=4/5, nu0~1,
+"xi_ps ~ lambda^-2 REFUTED") is WITHDRAWN. All of it was an artifact of
+analysis/anchor_scan.py's hardcoded kernel. Audit + a deterministic zeta=0 run
+(2026-06-15) resolve the endpoint.
+
+- anchor_scan.py is WRONG, do not trust it. Its E_analytic(q,w,kappa) =
+  sqrt(w^2 - kappa^2 - 2j*kappa*w*cos q) (kappa=lambda/4, lambda*=4/5) drops the
+  hopping w from the measured bond. Its own docstring calls it "the SSH-anchor
+  self-consistency check" and delta_B_hook() raises NotImplementedError, so its
+  Fermi-step / lambda* / nu0 output is the wrong symbol confirming itself, never
+  tested against the real model. [V, read 2026-06-15]
+- The backend is CORRECT. gaussian_backend.effective_generator adds -1j*alpha to
+  h_eff[a,b] on the SAME bond (a,b)=bond_jump_pair(bond) that carries the hopping w,
+  so h_eff[measured bond] = w - i*alpha (both couplings, anti-Hermitian orthogonal
+  to the real hopping). The cloning DATA (lambda_c(zeta), Delta_B, Delta_cross)
+  therefore STAND. delta_B_zeta0.py is correct (uses the backend) and was simply
+  never run. [V]
+- Corrected no-click physics [V, audit + run]: no Fermi step; area-law for every
+  lambda>0; critical ONLY at lambda=0; lambda_c(0)=0 reached CONTINUOUSLY
+  (lim_{zeta->0+} lambda_c = 0). Correct kernel E^2(q)=4w(w+i*kappa)cos^2(q/2)-kappa^2,
+  kappa=alpha/2. Modulus dimerization delta=sqrt(w^2+kappa^2)-w ~ kappa^2/2w ~ lambda^2
+  (second order). Band-structure xi_nc = 2/ln(1+kappa^2/w^2) ~ lambda^-2. So
+  xi_nc ~ lambda^-2 is CONFIRMED for the no-click state; the 2026-06-10 "refutation"
+  was the artifact.
+- Numerical confirmation (deterministic, real backend, 2026-06-15): half-chain
+  entropy S(L/2) SATURATES (area-law) at lambda=0.3,0.5,0.6 for L=16->128, all below
+  the spurious lambda*~0.8; only lambda=0.1 still grows (xi_nc > L). Decisive,
+  fit-free.
+- OPEN [O]: the MEASURED steady-state xi_nc exponent over the accessible window
+  lambda in [0.2,0.5] is flatter (~lambda^-1.5) than the band-structure lambda^-2
+  — crossover, since the asymptotic small-lambda regime needs L >> xi_nc > 256.
+  Pin it with analysis/exponent_noclick.py + run_exponent_noclick.sh (eigenvector
+  steady state, validated to 1e-15 vs the orbital loop). RUN ON HABROK.
+- Field theory unchanged where it was right [V]: zeta-vertex marginal (eps+ eps-,
+  Delta=2); dimension-1 cross-bilinear parity-forbidden; sqrt(zeta) EMPIRICAL only
+  (both the patch-counting and the y_lambda/y_zeta derivations are dead);
+  small-zeta exponent OPEN (one-loop flow of the marginal vertex; random-bond-Ising
+  analogy hints marginal irrelevance / logs, but the sign depends on R->1 vs R->0).
+
+Thesis [V]: chap:fieldtheory sec:ft-boundary (all three subsections), sec:ft-summary,
+chap:results sec:results-cutB, and chap:intro sec:intro-thiswork rewritten 2026-06-15
+to this picture (paste-ready LaTeX delivered to chat; apply to m1thesislatex).
+sec:ft-classes ("combined hopping and measurement coupling") was right all along;
+sec:ft-noclick-spectrum now agrees with it.
+
+> **⛔ SUPERSEDED 2026-06-15 — see the "zeta=0 no-click anchor (Cut B) — CORRECTED 2026-06-15" block at the top of this file.** The no-click claims in this 2026-06-10 block are WRONG. There is NO Fermi step, NO lambda*, NO extended critical interval. anchor_scan.py's kernel (t1 = -i*kappa) drops the hopping w from the measured bond; this was audited and falsified by a deterministic zeta=0 run (2026-06-15). The real no-click state is area-law for every lambda>0, critical only at lambda=0, xi_nc ~ lambda^-2, with lambda_c(0)=0 reached continuously. SURVIVING from this block: the marginal cross-vertex (Delta=2), the parity-forbidden dimension-1 bilinear, and sqrt(zeta) as an EMPIRICAL law. WITHDRAWN: Fermi step at q=+-pi/2, lambda*=4/5, nu0=1, "xi_ps~lambda^-2 refuted", and the corner-matching phi=1/2 derivation.
+>
 > **★ 2026-06-10 SESSION — BOUNDARY DERIVED FROM THE ζ=0 ANCHOR (φ=1/2 [P], CONDITIONAL); ξ_ps~λ⁻² REFUTED; QSD/QJ DICHOTOMY RETRACTED; CASE-A ISING RELOCATED.**
 >
 > **GATING NUMERICAL TESTS (these BLOCK confirmation; run before writing exponents into the thesis):**

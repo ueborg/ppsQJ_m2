@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# WARNING (2026-06-15): the E_analytic kernel in this file is WRONG. It drops the
+# hopping w from the measured bond (it uses t1 = -i*kappa), so its Fermi-step /
+# lambda*=4/5 / nu0 output is a self-consistency check of an incorrect symbol, NOT
+# a test of the real model. The correct no-click physics (area-law for lambda>0,
+# critical only at lambda=0, xi_nc ~ lambda^-2) is in delta_B_zeta0.py and
+# exponent_noclick.py. See theory/HANDOFF.md (zeta=0 anchor, CORRECTED 2026-06-15).
+# Do not trust this file.
 """
 anchor_scan.py  --  GATE 1 (single-particle band level): numerical test of the
 analytical zeta=0 (no-click) anchor for the Case B Kitaev subchain (ppsQJ_m2).
