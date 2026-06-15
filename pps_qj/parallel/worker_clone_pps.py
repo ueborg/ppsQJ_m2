@@ -47,6 +47,7 @@ from pps_qj.gaussian_backend import build_gaussian_chain_model
 from pps_qj.parallel.grid_pps import (
     task_params_clone,
     task_params_clone_slope,
+    task_params_clone_guided,
 )
 
 N_REAL = 5
@@ -306,8 +307,9 @@ def main(argv: Optional[list[str]] = None) -> int:
             break
 
     _GRID_DISPATCH = {
-        "v1":    task_params_clone,
-        "slope": task_params_clone_slope,
+        "v1":     task_params_clone,
+        "slope":  task_params_clone_slope,
+        "guided": task_params_clone_guided,
     }
     if grid_name not in _GRID_DISPATCH:
         raise SystemExit(f"Unknown --grid value '{grid_name}'. Choices: {list(_GRID_DISPATCH)}")

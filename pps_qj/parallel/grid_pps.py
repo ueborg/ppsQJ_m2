@@ -1418,3 +1418,87 @@ def clone_ladder_rung_ranges() -> dict[int, tuple[int, int]]:
     for p in make_clone_ladder_grid():
         by_nc[p["N_c"]].append(p["task_id"])
     return {nc: (min(ids), max(ids)) for nc, ids in sorted(by_nc.items())}
+
+
+# ======================================================================
+# Guided-cloning production grid (Cut B) — dense low-zeta crossing scan
+# ======================================================================
+# Built 2026-06-15. Uses the guided importance-sampling cloning upgrade
+# (PPS_GUIDED=1, proposal_c=zeta), which tolerates window lengthening
+# (PPS_DTAU_MULT) in the regime where standard cloning's ESS collapses.
+# Dense zeta up to 0.85; 13-point lambda windows centered on the MEASURED
+# crossing law lambda_c(zeta) ~ 0.51*sqrt(zeta) (HANDOFF dense+ladder fit;
+# the "0.96" in older notes is the r_c prefactor, NOT lambda_c). Halfwidth
+# +/-0.08 brackets the finite-L crossing drift across the 5 FSS sizes.
+# 5 L x 15 zeta x 13 lambda = 975 tasks (<= Habrok MaxArraySize 1001).
+# N_c raised vs the v1 grid: guided gives a flatter 1/N_c bias and window
+# lengthening recovers the wall time.
+#
+# Task layout: L outer, zeta middle, lambda inner.
+#   L=32  ids   0..194  N_c=500
+#   L=48  ids 195..389  N_c=400
+#   L=64  ids 390..584  N_c=350
+#   L=96  ids 585..779  N_c=300
+#   L=128 ids 780..974  N_c=300
+# Run with: worker_clone_pps --grid guided, PPS_GUIDED=1, PPS_DTAU_MULT=6.
+# ======================================================================
+
+L_GUIDED: List[int] = [32, 48, 64, 96, 128]
+
+ZETA_VALS_GUIDED: List[float] = [
+    0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20,
+    0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 0.70, 0.85,
+]  # 15 points, dense at small zeta where guided helps and sqrt(zeta) lives
+
+_GUIDED_N_LAMBDA: int = 13
+_GUIDED_HALFWIDTH: float = 0.08
+
+
+def _nc_guided(L: int) -> int:
+    return {32: 500, 48: 400, 64: 350, 96: 300, 128: 300}[L]
+
+
+def _lambda_c_guided(zeta: float) -> float:
+    """Measured Cut-B crossing law lambda_c ~ 0.51*sqrt(zeta)."""
+    return 0.51 * float(np.sqrt(zeta))
+
+
+def _guided_lambda_window(zeta: float) -> np.ndarray:
+    lc = _lambda_c_guided(zeta)
+    lo = max(0.02, lc - _GUIDED_HALFWIDTH)
+    hi = min(0.92, lc + _GUIDED_HALFWIDTH)
+    return np.linspace(lo, hi, _GUIDED_N_LAMBDA)
+
+
+def make_clone_guided_grid() -> List[dict]:
+    grid: List[dict] = []
+    tid = 0
+    for L in L_GUIDED:                          # L outer (contiguous size tiers)
+        for zeta in ZETA_VALS_GUIDED:           # zeta middle
+            for lam in _guided_lambda_window(zeta):   # lambda inner
+                lam = float(round(float(lam), 4))
+                alpha, w = _alpha_w_from_lam(lam)
+                # Saturation term capped at 128 for ALL L (L=96 would otherwise
+                # get 2L=192 > L=128's capped 128). The 5/alpha relaxation term
+                # is kept uncapped: low-lambda points genuinely need it.
+                T = max(30.0, 5.0 / max(alpha, 1e-9), min(2.0 * L, 128.0))
+                grid.append(dict(
+                    task_id=tid, L=int(L), lam=lam, alpha=alpha, w=w,
+                    zeta=float(zeta), T=float(T), N_c=_nc_guided(L),
+                    seed=_seed(L, lam, zeta) + 5_000_000_000,
+                ))
+                tid += 1
+    return grid
+
+
+def guided_task_id_ranges() -> dict[int, tuple[int, int]]:
+    """L -> (first_id, last_id) inclusive, for size-binned SLURM arrays."""
+    per_L = len(ZETA_VALS_GUIDED) * _GUIDED_N_LAMBDA
+    return {L: (i * per_L, (i + 1) * per_L - 1) for i, L in enumerate(L_GUIDED)}
+
+
+def task_params_clone_guided(task_id: int) -> dict:
+    grid = make_clone_guided_grid()
+    if not (0 <= task_id < len(grid)):
+        raise IndexError(f"Guided task_id {task_id} out of range [0, {len(grid)})")
+    return grid[task_id]
