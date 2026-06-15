@@ -1502,3 +1502,86 @@ def task_params_clone_guided(task_id: int) -> dict:
     if not (0 <= task_id < len(grid)):
         raise IndexError(f"Guided task_id {task_id} out of range [0, {len(grid)})")
     return grid[task_id]
+
+
+# ======================================================================
+# Cut B guided HIGHER-SIZE array (L=160) -- extends the FSS lever arm for nu
+# ======================================================================
+# Separate SLURM array (Habrok MaxArraySize=1001). Same lambda windows and
+# zeta set as the production grid, so (128,160) crossings and the 6-size
+# collapse are directly computable. N_c=250 single rung; the ladder grid
+# below adds the N_c=500 rung for the 1/N_c bias extrapolation at L=160.
+# 1 L x 15 zeta x 13 lambda = 195 tasks (ids 0..194). --grid guided_highL.
+# ======================================================================
+
+L_GUIDED_HIGHL: List[int] = [160]
+_NC_GUIDED_HIGHL: int = 250
+
+
+def make_clone_guided_highL_grid() -> List[dict]:
+    grid: List[dict] = []
+    tid = 0
+    for L in L_GUIDED_HIGHL:
+        for zeta in ZETA_VALS_GUIDED:
+            for lam in _guided_lambda_window(zeta):
+                lam = float(round(float(lam), 4))
+                alpha, w = _alpha_w_from_lam(lam)
+                T = max(30.0, 5.0 / max(alpha, 1e-9), min(2.0 * L, 128.0))
+                grid.append(dict(
+                    task_id=tid, L=int(L), lam=lam, alpha=alpha, w=w,
+                    zeta=float(zeta), T=float(T), N_c=_NC_GUIDED_HIGHL,
+                    seed=_seed(L, lam, zeta) + 6_000_000_000,
+                ))
+                tid += 1
+    return grid
+
+
+def task_params_clone_guided_highL(task_id: int) -> dict:
+    g = make_clone_guided_highL_grid()
+    if not (0 <= task_id < len(g)):
+        raise IndexError(f"highL task_id {task_id} out of range [0, {len(g)})")
+    return g[task_id]
+
+
+# ======================================================================
+# Cut B guided N_c LADDER array -- 1/N_c bias extrapolation for clean nu
+# ======================================================================
+# Adds the SECOND N_c rung at the large sizes, on the CENTRAL 7 lambda of the
+# production window (lambda values align with the prod/highL grids, so each
+# (L,lambda,zeta) has two N_c -> linear 1/N_c extrapolation to B_inf). Pairs:
+#   L=96  : prod  N_c=300 + ladder N_c=600
+#   L=128 : prod  N_c=300 + ladder N_c=600
+#   L=160 : highL N_c=250 + ladder N_c=500
+# Ladder writes its OWN output dir; analysis keys by (L,lambda,zeta,N_c) and
+# merges across the prod/highL/ladder dirs. 3 L x 15 zeta x 7 lambda = 315
+# tasks (ids 0..314). --grid guided_ladder.
+# ======================================================================
+
+_LADDER_NC_GUIDED: dict = {96: 600, 128: 600, 160: 500}
+_GUIDED_LADDER_LCENTRAL = slice(3, 10)   # central 7 of the 13-point window
+
+
+def make_clone_guided_ladder_grid() -> List[dict]:
+    grid: List[dict] = []
+    tid = 0
+    for L in (96, 128, 160):
+        nc = _LADDER_NC_GUIDED[L]
+        for zeta in ZETA_VALS_GUIDED:
+            for lam in _guided_lambda_window(zeta)[_GUIDED_LADDER_LCENTRAL]:
+                lam = float(round(float(lam), 4))
+                alpha, w = _alpha_w_from_lam(lam)
+                T = max(30.0, 5.0 / max(alpha, 1e-9), min(2.0 * L, 128.0))
+                grid.append(dict(
+                    task_id=tid, L=int(L), lam=lam, alpha=alpha, w=w,
+                    zeta=float(zeta), T=float(T), N_c=nc,
+                    seed=_seed(L, lam, zeta) + 7_000_000_000,
+                ))
+                tid += 1
+    return grid
+
+
+def task_params_clone_guided_ladder(task_id: int) -> dict:
+    g = make_clone_guided_ladder_grid()
+    if not (0 <= task_id < len(g)):
+        raise IndexError(f"ladder task_id {task_id} out of range [0, {len(g)})")
+    return g[task_id]

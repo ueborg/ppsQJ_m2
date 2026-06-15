@@ -48,6 +48,8 @@ from pps_qj.parallel.grid_pps import (
     task_params_clone,
     task_params_clone_slope,
     task_params_clone_guided,
+    task_params_clone_guided_highL,
+    task_params_clone_guided_ladder,
 )
 
 N_REAL = 5
@@ -310,6 +312,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         "v1":     task_params_clone,
         "slope":  task_params_clone_slope,
         "guided": task_params_clone_guided,
+        "guided_highL":  task_params_clone_guided_highL,
+        "guided_ladder": task_params_clone_guided_ladder,
     }
     if grid_name not in _GRID_DISPATCH:
         raise SystemExit(f"Unknown --grid value '{grid_name}'. Choices: {list(_GRID_DISPATCH)}")
