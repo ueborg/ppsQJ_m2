@@ -236,6 +236,7 @@ class GaussianTrajectoryResult:
     n_jumps: int
     jump_times: list[float]
     jump_channels: list[int]
+    Lambda: float = 0.0   # integrated physical hazard over segment (guided cloning)
 
 
 def gaussian_born_rule_trajectory(
@@ -249,6 +250,7 @@ def gaussian_born_rule_trajectory(
     ja_cached: Optional[np.ndarray] = None,
     jb_cached: Optional[np.ndarray] = None,
     initial_uniform_override: Optional[float] = None,
+    proposal_c: float = 1.0,
 ) -> GaussianTrajectoryResult:
     """Exact Born-rule quantum-jump trajectory.
 
@@ -306,6 +308,8 @@ def gaussian_born_rule_trajectory(
     t = 0.0
     jump_times: list[float] = []
     jump_channels: list[int] = []
+    lambda_acc = 0.0           # integrated physical hazard (guided-cloning compensator)
+    _inv_c = 1.0 / proposal_c
     _first_iter_override = initial_uniform_override is not None
 
     while t < T:
@@ -314,6 +318,7 @@ def gaussian_born_rule_trajectory(
             _first_iter_override = False
         else:
             U = float(rng.uniform(0.0, 1.0))
+        U_eff = U if proposal_c == 1.0 else max(U ** _inv_c, 1e-300)
         T_rem = T - t
 
         # V⁻¹ @ orbitals — reused both in branch-norm and in propagation.
@@ -347,8 +352,9 @@ def gaussian_born_rule_trajectory(
                 return float(np.exp(0.5 * logdet - model.alpha * n_monitored * dt))
 
         bn_end = _fast_branch_norm(T_rem)
-        if bn_end >= U:
+        if bn_end >= U_eff:
             # No jump in remaining time — propagate to T using cached eig.
+            lambda_acc += -np.log(max(bn_end, 1e-300))
             exp_d = np.exp(evals * T_rem)
             orbs_tilde = V @ (exp_d[:, None] * coeffs)
             q_mat, _ = np.linalg.qr(orbs_tilde, mode="reduced")
@@ -359,7 +365,7 @@ def gaussian_born_rule_trajectory(
         # Find jump time via Brent's method: ~5–8 evals vs ~40 for bisection.
         try:
             dt_star = brentq(
-                lambda dt: _fast_branch_norm(dt) - U,
+                lambda dt: _fast_branch_norm(dt) - U_eff,
                 0.0, T_rem,
                 xtol=bisection_tol,
                 maxiter=50,
@@ -377,6 +383,7 @@ def gaussian_born_rule_trajectory(
         orbitals = q_mat
         cov = covariance_from_orbitals(orbitals)
         t += dt_star
+        lambda_acc += -np.log(U_eff)
 
         # Select jump channel proportional to q_j (vectorised over all bonds).
         probs = np.clip(0.5 * (1.0 - cov[_ja, _jb]), 0.0, 1.0)
@@ -399,6 +406,7 @@ def gaussian_born_rule_trajectory(
         n_jumps=len(jump_times),
         jump_times=jump_times,
         jump_channels=jump_channels,
+        Lambda=lambda_acc,
     )
 
 

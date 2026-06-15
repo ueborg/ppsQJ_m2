@@ -90,6 +90,13 @@ def _run_one_realisation(args: dict) -> dict:
     else:
         cloning_kw   = {}
 
+    # Guided cloning: thinned proposal (intensity proposal_c*lambda, c=zeta) with
+    # exact compensator weight exp[-(1-zeta)*Delta_Lambda]. Set PPS_GUIDED=1.
+    # Combine with PPS_DTAU_MULT to lengthen windows (the main cost lever; the
+    # smooth weight tolerates long windows where zeta^n collapses). Forces scalar.
+    if os.environ.get("PPS_GUIDED", "0") not in ("0", "", "false", "False"):
+        cloning_kw["proposal_c"] = zeta
+
     # Optional Renyi + correlation-function extraction from env var.
     # Set PPS_RECORD_RENYI=1 to enable. Backward-compatible: default off.
     record_renyi = os.environ.get("PPS_RECORD_RENYI", "0") not in ("0", "", "false", "False")
@@ -345,6 +352,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         f"    env: PPS_BACKEND={os.environ.get('PPS_BACKEND', 'scalar')!r}  "
         f"PPS_ENTROPY_STRIDE={os.environ.get('PPS_ENTROPY_STRIDE', '1')}  "
         f"PPS_DTAU_MULT={os.environ.get('PPS_DTAU_MULT', '1.0')}  "
+        f"PPS_GUIDED={os.environ.get('PPS_GUIDED', '0')}  "
         f"PPS_RECORD_RENYI={os.environ.get('PPS_RECORD_RENYI', '0')}",
         flush=True,
     )

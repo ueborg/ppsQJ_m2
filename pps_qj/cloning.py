@@ -242,6 +242,7 @@ def run_cloning(
     record_renyi: bool = False,
     snapshot_times: Optional[list] = None,
     snapshot_fn: Any = None,
+    proposal_c: Optional[float] = None,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -280,6 +281,15 @@ def run_cloning(
         raise ValueError("N_c must be >= 1")
     if backend not in ("scalar", "batched"):
         raise ValueError(f"backend must be 'scalar' or 'batched', got {backend!r}")
+
+    # Guided cloning: thinned proposal (intensity proposal_c*lambda) + exact
+    # compensator weight. Needs the scalar path (returns integrated hazard).
+    if proposal_c is not None:
+        backend = "scalar"
+        if backward_data is not None:
+            raise NotImplementedError("guided cloning incompatible with backward_data")
+        if not (0.0 < proposal_c <= 1.0):
+            raise ValueError("proposal_c must be in (0, 1]")
 
     L, alpha, w = model.L, model.alpha, model.w
 
@@ -362,6 +372,8 @@ def run_cloning(
         # --- Evolve all clones ---
         if backend == "scalar":
             n_jumps = np.zeros(N_c, dtype=np.int64)
+            delta_Lambda = np.zeros(N_c, dtype=np.float64)
+            _pc = 1.0 if proposal_c is None else proposal_c
             for i in range(N_c):
                 r = gaussian_born_rule_trajectory(
                     model, T=delta_tau_eff, rng=sub_rngs[i],
@@ -369,10 +381,12 @@ def run_cloning(
                     orbitals0_override=orbs[i],
                     ja_cached=_ja_cache,
                     jb_cached=_jb_cache,
+                    proposal_c=_pc,
                 )
                 covs[i]    = r.final_covariance
                 orbs[i]    = r.final_orbitals
                 n_jumps[i] = r.n_jumps
+                delta_Lambda[i] = r.Lambda
         else:  # backend == "batched"
             cov_stack_in  = np.stack(covs, axis=0)
             orbs_stack_in = np.stack(orbs, axis=0)
@@ -398,7 +412,10 @@ def run_cloning(
             weights = np.ones(N_c, dtype=np.float64)
             log_W_k = 0.0
         else:
-            log_w = n_jumps * np.log(zeta)
+            if proposal_c is not None:
+                log_w = n_jumps * np.log(zeta / proposal_c) - (1.0 - proposal_c) * delta_Lambda
+            else:
+                log_w = n_jumps * np.log(zeta)
 
             if use_js:
                 t_s = _k * delta_tau_eff
