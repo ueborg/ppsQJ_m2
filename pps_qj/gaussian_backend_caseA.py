@@ -165,6 +165,7 @@ def gaussian_born_rule_trajectory_caseA(
     *,
     gamma0_override: Optional[np.ndarray] = None,
     orbitals0_override: Optional[np.ndarray] = None,
+    proposal_c: float = 1.0,
 ) -> GaussianTrajectoryResult:
     """Exact Born-rule quantum-jump trajectory for Case A.
 
@@ -199,9 +200,12 @@ def gaussian_born_rule_trajectory_caseA(
     t = 0.0
     jump_times: list[float] = []
     jump_channels: list[int] = []
+    lambda_acc = 0.0           # integrated physical hazard (guided-cloning compensator)
+    _inv_c = 1.0 / proposal_c
 
     while t < T:
         U = float(rng.uniform(0.0, 1.0))
+        U_eff = U if proposal_c == 1.0 else max(U ** _inv_c, 1e-300)
         T_rem = T - t
         coeffs = V_inv @ orbitals  # (2L, L), reused in branch-norm + propagation
 
@@ -224,8 +228,9 @@ def gaussian_born_rule_trajectory_caseA(
                 return float(np.exp(0.5 * logdet - uniform_decay * dt))
 
         bn_end = _branch_norm(T_rem)
-        if bn_end >= U:
+        if bn_end >= U_eff:
             # No jump in the remaining time -- propagate to T.
+            lambda_acc += -np.log(max(bn_end, 1e-300))
             exp_d = np.exp(evals * T_rem)
             orbs_tilde = V @ (exp_d[:, None] * coeffs)
             q_mat, _ = np.linalg.qr(orbs_tilde, mode="reduced")
@@ -235,7 +240,7 @@ def gaussian_born_rule_trajectory_caseA(
 
         try:
             dt_star = brentq(
-                lambda dt: _branch_norm(dt) - U,
+                lambda dt: _branch_norm(dt) - U_eff,
                 0.0, T_rem, xtol=bisection_tol, maxiter=50,
             )
         except ValueError:
@@ -247,6 +252,7 @@ def gaussian_born_rule_trajectory_caseA(
         orbitals = q_mat
         cov = covariance_from_orbitals(orbitals)
         t += dt_star
+        lambda_acc += -np.log(U_eff)
 
         # Rate-weighted channel selection (vectorised over all 2L-1 channels).
         probs = _rates * np.clip(0.5 * (1.0 - cov[_ja, _jb]), 0.0, 1.0)
@@ -267,4 +273,5 @@ def gaussian_born_rule_trajectory_caseA(
         n_jumps=len(jump_times),
         jump_times=jump_times,
         jump_channels=jump_channels,
+        Lambda=lambda_acc,
     )

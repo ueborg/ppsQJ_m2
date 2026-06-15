@@ -50,6 +50,7 @@ def run_cloning_caseA(
     n_burnin_frac: float = 0.25,
     record_entropy: bool = True,
     entropy_stride: int = 1,
+    proposal_c: Optional[float] = None,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta for Case A.
 
@@ -62,6 +63,8 @@ def run_cloning_caseA(
         raise ValueError("T_total must be positive")
     if N_c < 1:
         raise ValueError("N_c must be >= 1")
+    if proposal_c is not None and not (0.0 < proposal_c <= 1.0):
+        raise ValueError("proposal_c must be in (0, 1]")
 
     L = model.L
     gamma_rate = model.gamma_rate
@@ -94,15 +97,19 @@ def run_cloning_caseA(
     for _k in range(n_steps):
         # --- Evolve all clones one cloning window (scalar) ---
         n_jumps = np.zeros(N_c, dtype=np.int64)
+        delta_Lambda = np.zeros(N_c, dtype=np.float64)
+        _pc = 1.0 if proposal_c is None else proposal_c
         for i in range(N_c):
             r = gaussian_born_rule_trajectory_caseA(
                 model, T=delta_tau_eff, rng=sub_rngs[i],
                 gamma0_override=covs[i],
                 orbitals0_override=orbs[i],
+                proposal_c=_pc,
             )
             covs[i] = r.final_covariance
             orbs[i] = r.final_orbitals
             n_jumps[i] = r.n_jumps
+            delta_Lambda[i] = r.Lambda
 
         # --- Per-step weight W_k = mean_i(w_i), tilt zeta^{n_jumps} ---
         if zeta == 0.0:
@@ -112,7 +119,10 @@ def run_cloning_caseA(
             weights = np.ones(N_c, dtype=np.float64)
             log_W_k = 0.0
         else:
-            log_w = n_jumps * np.log(zeta)
+            if proposal_c is not None:
+                log_w = n_jumps * np.log(zeta / proposal_c) - (1.0 - proposal_c) * delta_Lambda
+            else:
+                log_w = n_jumps * np.log(zeta)
             lw_max = float(log_w.max())
             if not np.isfinite(lw_max):
                 weights = np.zeros(N_c, dtype=np.float64)

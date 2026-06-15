@@ -180,3 +180,64 @@ if __name__ == "__main__":
           f"-> {len(_L_ZETA1)*len(_LAMBDAS)} tasks")
     for tid in (0, len(_TASKS) // 2, len(_TASKS) - 1):
         print(f"  task {tid}: {task_params_caseA(tid)}")
+
+
+# ======================================================================
+# Guided dense crossing scan (Case A self-dual: lambda_c = 1/2 for all zeta)
+# ======================================================================
+# Mirrors the Cut B guided production grid. lambda_c is pinned to 1/2 by
+# self-duality for every zeta, so the 13-point window is centered on 0.5 with
+# no sqrt(zeta) drift. 5 L x 15 zeta x 13 lambda = 975 tasks (< MaxArraySize
+# 1001). zeta=1 is omitted: the existing Case A grid already carries the
+# bias-free zeta=1 anchor (no cloning) at L in {16,32,64,128,160}. Run with
+# PPS_GUIDED=1 and a large PPS_DTAU_MULT -- Case A dt0 ~ 1/(2L) gives
+# thousands of windows at x6 (far past equilibration), so the window
+# lengthening is what makes Case A tractable. --grid guided.
+# Seeds: _seed(...)+8e9 keeps this disjoint from the existing Case A grid.
+# ======================================================================
+
+ZETA_GUIDED_CASEA: List[float] = [
+    0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.25,
+    0.30, 0.35, 0.40, 0.50, 0.60, 0.70, 0.85,
+]
+L_GUIDED_CASEA: List[int] = [32, 48, 64, 96, 128]
+_NC_GUIDED_CASEA: dict = {32: 500, 48: 400, 64: 350, 96: 300, 128: 300}
+_GUIDED_CASEA_NLAM: int = 13
+_GUIDED_CASEA_HALFWIDTH: float = 0.08   # window [0.42, 0.58] around lambda_c=1/2
+
+
+def _time_horizon_guided_caseA(L: int) -> float:
+    return max(30.0, min(2.0 * L, 128.0))
+
+
+def make_guided_caseA_grid() -> List[dict]:
+    lams = [round(float(x), 4) for x in np.linspace(
+        0.5 - _GUIDED_CASEA_HALFWIDTH, 0.5 + _GUIDED_CASEA_HALFWIDTH,
+        _GUIDED_CASEA_NLAM)]
+    grid: List[dict] = []
+    tid = 0
+    for L in L_GUIDED_CASEA:
+        T = _time_horizon_guided_caseA(L)
+        for zeta in ZETA_GUIDED_CASEA:
+            for lam in lams:
+                gamma_rate, alpha_rate = alpha_gamma_from_lam(lam)
+                grid.append(dict(
+                    task_id=tid, L=int(L), lam=float(lam),
+                    gamma_rate=float(gamma_rate), alpha_rate=float(alpha_rate),
+                    zeta=float(zeta), T=float(T), N_c=_NC_GUIDED_CASEA[L],
+                    seed=_seed(L, lam, zeta) + 8_000_000_000,
+                ))
+                tid += 1
+    return grid
+
+
+def task_params_guided_caseA(task_id: int) -> dict:
+    g = make_guided_caseA_grid()
+    if not (0 <= task_id < len(g)):
+        raise IndexError(f"guided caseA task_id {task_id} out of range [0, {len(g)})")
+    return g[task_id]
+
+
+def guided_caseA_tier_ranges() -> dict:
+    per_L = len(ZETA_GUIDED_CASEA) * _GUIDED_CASEA_NLAM
+    return {L: (i * per_L, (i + 1) * per_L - 1) for i, L in enumerate(L_GUIDED_CASEA)}

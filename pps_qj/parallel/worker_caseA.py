@@ -31,7 +31,11 @@ import numpy as np
 from pps_qj.cloning import CloningCollapse, CloningResult
 from pps_qj.cloning_caseA import run_cloning_caseA
 from pps_qj.gaussian_backend_caseA import build_caseA_model
-from pps_qj.parallel.grid_caseA import task_params_caseA, N_REAL
+from pps_qj.parallel.grid_caseA import (
+    task_params_caseA,
+    task_params_guided_caseA,
+    N_REAL,
+)
 from pps_qj.parallel.worker_clone_pps import (
     _batched_compute_B_L,
     _nanstat,
@@ -57,12 +61,27 @@ def _run_one_realisation_caseA(args: dict) -> dict:
 
     entropy_stride = max(1, int(os.environ.get("PPS_ENTROPY_STRIDE", "1")))
     # zeta = 1: one window = one full trajectory per clone (no resampling).
-    delta_tau = T if zeta >= 1.0 else None
+    # PPS_DTAU_MULT lengthens the cloning window; PPS_GUIDED=1 uses the thinned
+    # proposal (proposal_c=zeta) + exact compensator weight (Case A guided
+    # cloning), which tolerates the lengthening where standard ESS collapses.
+    dtau_mult = float(os.environ.get("PPS_DTAU_MULT", "1.0"))
+    cloning_kw: dict = {}
+    if os.environ.get("PPS_GUIDED", "0") not in ("0", "", "false", "False") and zeta < 1.0:
+        cloning_kw["proposal_c"] = zeta
+    if zeta >= 1.0:
+        delta_tau = T
+    elif dtau_mult != 1.0:
+        total_rate = gamma_rate * L + alpha_rate * (L - 1)
+        dt0 = 1.0 / max(2.0 * total_rate, 1e-6)
+        delta_tau = dtau_mult * dt0
+    else:
+        delta_tau = None
 
     try:
         result: CloningResult = run_cloning_caseA(
             model, zeta=zeta, T_total=T, N_c=N_c, rng=rng,
             delta_tau=delta_tau, entropy_stride=entropy_stride,
+            **cloning_kw,
         )
         return {
             "ok": True,
@@ -96,6 +115,18 @@ def main(argv: Optional[list[str]] = None) -> int:
     output_dir = Path(argv[1])
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Grid selector: --grid v1 (default, existing Case A grid) or guided.
+    grid_name = "v1"
+    _rest = argv[2:]
+    for _i, _a in enumerate(_rest):
+        if _a == "--grid" and _i + 1 < len(_rest):
+            grid_name = _rest[_i + 1]
+    _GRID_DISPATCH = {
+        "v1": task_params_caseA,
+        "guided": task_params_guided_caseA,
+    }
+    _task_params = _GRID_DISPATCH.get(grid_name, task_params_caseA)
+
     output_file = output_dir / f"caseA_{task_id:05d}.npz"
     summary_file = output_dir / f"summary_caseA_{task_id:05d}.json"
     partial_file = output_dir / f"caseA_{task_id:05d}_partial.pkl"
@@ -106,7 +137,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 0
 
     t_start = time.time()
-    task = task_params_caseA(task_id)
+    task = _task_params(task_id)
     L = int(task["L"])
     lam = float(task["lam"])
     gamma_rate = float(task["gamma_rate"])
