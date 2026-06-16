@@ -33,6 +33,7 @@ from .cloning import (
     CloningCollapse,
     _systematic_resample_idxs,
     _batched_entanglement_entropy,
+    _spawn_rngs,
 )
 from .gaussian_backend_caseA import (
     GaussianCaseAModel,
@@ -78,7 +79,7 @@ def run_cloning_caseA(
 
     covs = [model.gamma0.copy() for _ in range(N_c)]
     orbs = [model.orbitals0.copy() for _ in range(N_c)]
-    sub_rngs = rng.spawn(N_c)
+    sub_rngs = _spawn_rngs(rng, N_c)
 
     log_Z_acc = 0.0
     log_Z_history: list[float] = []

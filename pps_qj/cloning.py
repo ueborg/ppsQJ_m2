@@ -37,6 +37,21 @@ from .overlaps import log_gaussian_overlap_from_orbitals
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _spawn_rngs(rng, n):
+    """Return ``n`` independent child Generators.
+
+    Uses ``Generator.spawn`` (numpy >= 1.25) when available; otherwise reseeds
+    fresh generators from the parent (numpy < 1.25, where ``Generator.spawn``
+    does not exist -- e.g. when an old SciPy-bundle module shadows the venv).
+    The >= 1.25 path is bit-identical to ``rng.spawn(n)``.
+    """
+    n = int(n)
+    if hasattr(rng, "spawn"):
+        return list(rng.spawn(n))
+    seeds = rng.integers(0, np.iinfo(np.int64).max, size=n)
+    return [np.random.default_rng(int(s)) for s in seeds]
+
+
 def _batched_entanglement_entropy(
     covs: list[np.ndarray],
     ell: int,
@@ -324,7 +339,7 @@ def run_cloning(
     # Pre-spawn one independent RNG stream per clone, shared across all steps.
     # Each clone advances its own state; equivalent to per-step spawning but
     # eliminates N_c Generator allocations × n_steps.
-    sub_rngs = rng.spawn(N_c)
+    sub_rngs = _spawn_rngs(rng, N_c)
 
     log_Z_acc = 0.0
     log_Z_history: list[float] = []
@@ -632,7 +647,7 @@ def sweep_zeta(
     **kwargs,
 ) -> list[CloningResult]:
     """Run run_cloning over an array of zeta values, one sub-rng each."""
-    sub_rngs = rng.spawn(len(zeta_vals))
+    sub_rngs = _spawn_rngs(rng, len(zeta_vals))
     out: list[CloningResult] = []
     for idx, z in enumerate(zeta_vals):
         try:

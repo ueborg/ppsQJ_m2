@@ -40,9 +40,13 @@ OUTPUT_DIR="${OUTPUT_DIR:-/scratch/$USER/pps_qj/pps_clone_${GRID}}"
 mkdir -p logs "$OUTPUT_DIR"
 module purge
 module load Python/3.10.8-GCCcore-12.2.0
-module load SciPy-bundle/2023.02-gfbf-2022b
+# Do NOT load SciPy-bundle: its numpy 1.24 lacks Generator.spawn (added in
+# numpy 1.25) and shadows the venv's numpy 2.2.6 via PYTHONPATH on compute
+# nodes, which silently NaNs every realisation. The venv is self-contained
+# for numpy/scipy, so use it alone and pin PYTHONPATH to just the repo.
 source "$VENV_DIR/bin/activate"
-export PYTHONPATH="$REPO_DIR:${PYTHONPATH:-}"
+export PYTHONPATH="$REPO_DIR"
+python -c "import numpy; print('using numpy', numpy.__version__, '@', numpy.__file__)"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
