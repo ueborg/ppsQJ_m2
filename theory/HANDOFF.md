@@ -1,5 +1,93 @@
 # ppsQJ_m2 Project — Handoff Notes
 
+### Ruche migration + trajectory speedups + cost/r calibration (2026-07-07) — SUPERSEDES the "L≥192 out of reach / L=256 infeasible" conclusion in "Dense campaign empirical findings"; updates Operational (Habrok→Ruche)
+
+**Code (committed + pushed, ueborg/ppsQJ_m2 main, commits f2a6b68 + e67d26d).** Two trajectory speedups, both flag-guarded (default off, production path byte-unchanged):
+- **Low-rank active-subspace jump update** [V]: replaces the per-jump eigendecomposition with a rank-≤4 orbital rotation, O(L²) vs O(L³). ~2.2× per trajectory, BIT-IDENTICAL to the eigh path (same-seed to ~1e-13 over full trajectories; 84 single-jump tests; cloning population θ/S/CMI/ESS to ~1e-14, no bias). `jump_update_method="lowrank"` / env `PPS_JUMP_METHOD=lowrank`.
+- **Safeguarded-Newton waiting-time solver** [V]: analytic integrated-hazard derivative Λ'(t)=−Re Tr(Q†KQ)+αN (K=h_effective), bracketed Newton with bisection fallback, ~3.7 evals/jump vs ~14 for brentq, returns the normalised propagated orbitals (fuses the QR). STATISTICAL, not bit-identical — perturbs the accepted waiting time at ~1e-6 (eps_hazard); paired-seed cloning θ/S/CMI/ESS agree to ~1e-7 (no population bias); jump counts identical; eps_hazard-robust in [1e-8,1e-10]. `solver_method="newton"` / env `PPS_SOLVER=newton`. 16 regression tests pass.
+- Cumulative: ~4.5–4.9× on a single long trajectory, but **~2.8× at the CLONING level** (short windows shrink Newton's gain: 2.2×lowrank × 1.27×newton). Report 2.8× for production. NOTE (Ruche cProfile 2026-07-07): the no-jump-window QR (`gaussian_backend.py:496`) is the #1 cost in the CLONING regime (~41% of the scalar trajectory, 5696 calls) — single-long-trajectory profiling missed it (few no-jump windows). Reusing the Cholesky already built by the no-jump check on the line above (Q=Y·R⁻¹ instead of a fresh QR; bit-identical since only the covariance propagates between windows) is a PENDING ~1.4× cloning win, so 2.8× is NOT the final cloning number. LOW-LEVEL speedup is exhausted: profiling shows ~94% of the solver is BLAS (matmul/chol/trisolve) so numba/Cython/C give nothing; grouped-roots eliminated (guided-cloning ESS~0.97 ⇒ no per-window clone coalescence); the L⁵ cost (=N_c·T·L⁴ at fixed T, matches the on-disk cost law) is intrinsic (n_jumps∝L², per-jump O(L³)).
+
+**Runner + Ruche infrastructure (committed).** `scripts/run_local_boundary.py`: checkpointed, resumable (per-realisation JSON, idempotent), `--shard/--nshards` round-robin for Slurm arrays, `run`/`aggregate` modes (aggregate → B_L crossings λ_x, λ_x/ζ vs Lζ²). `scripts/ruche/`: `submit_pps_boundary.sh` (size-binned arrays: cpu_med L≤128, cpu_prod L=192, cpu_long L=256; %K throttle so K·40 ≤ core cap), `setup_ruche.sh` (conda env numpy2+scipy/MKL under $WORKDIR), `calib_ruche.sh`, `profile_code.py` + `profile_ruche.sh`, README.
+
+**Cost model + r calibration [V].** Confirms the on-disk cost law t ∝ N_c·T·L⁴ (= N_c·L⁵ at T=L). Optimised anchor (lowrank+newton) L=128/N_c=128/T=128 = **25.5 min on Mac (Apple/Accelerate) / 62 min on Ruche (Cascade Lake Xeon 6230 + MKL, 1 core, threads pinned, ESS 126/128)** ⇒ **r = Ruche/Mac = 2.43** (measured, job 1232455). Per-realisation on Ruche (r=2.43, T=L): L=64 ~4 min, L=96 ~20 min, L=128 ~62 min, L=160 ~5 h, L=192 ~13 h, L=256 ~55 h. ESS ~0.97–0.99 across ζ∈[0.2,1] (guided cloning; the old "ESS collapses at large L" was the NON-guided estimator).
+
+**FEASIBILITY REFRAME [V].** The "L≥192 out of reach / L=256 structurally infeasible" verdict (Dense-campaign findings) was for the OLD non-guided code on Habrok and rested on TWO blockers now both removed: (i) compute — the 2.8× speedup + Ruche (cpu_long 160c/168h, cpu_med 1000c/4h, cpu_prod 2000c/6h nights); (ii) ESS variance inflation — guided cloning gives ESS~0.97 (not collapsing). So **L=256 is now compute-feasible (~55 h/realisation at T=L on cpu_long)**, enabling the ONE lever the 2026-06-17 correction-model analysis said was needed to tighten ν_B (larger L to suppress L^{−ω}), previously cost-blocked. HONEST caveats: (a) the correction-model confidence set [1.5,3] means L=256 may TIGHTEN rather than PIN ν_B; (b) the ν tier needs T≥2L (below) ⇒ L=256 ν ~110 h/realisation (still < 168 h cpu_long cap for one realisation, but a multi-λ×n_real L=256 ν dataset is ~1–2 weeks wall).
+
+**T probe [O, inconclusive].** A value-at-λ_c snapshot probe (CMI/S_AB vs t within one run, L=96/128, N_c=128) is noise-dominated at single-realisation level (fixed-t CoV ~10% S_AB, ~25% CMI) and does NOT resolve t*. The T-cap finding STANDS: boundary/λ_c tier can use T~L (values saturate by ~0.5L per the 2026-06-07 lever-check), but the ν tier needs **T≥2L** (slopes ∂_λI), NOT reduced — a cost-motivated T-reduction for the ν tier was considered and REJECTED. Data-plan item #3 (τ_int / ∂_λI-stationarity pilot, multi-realisation) is still owed BEFORE committing the expensive large-L ν tier.
+
+### Updated-data reanalysis + FSS-method calibration + T-cap finding (2026-06-17) — QUALIFIES "Numerics (best current estimate)", "Key result: $\phi$ from global FSS", and the "N_c-ladder campaign" sections below
+
+Worked entirely from the guided-cloning aggregates on disk. No jobs submitted, no theory files changed. Five external strategy memos were reviewed and reconciled; the operative conclusions are below.
+
+**Aggregates rebuilt** in `~/Downloads/pps_aggregates/` (full scalar set; ladder also keeps per-realisation `_all` arrays): `agg_caseB_combined.pkl` (1046 rows = prod 925 + highL 121), `agg_pps_caseA_guided.pkl` (574), `agg_ladder.pkl` (161). Case B grew: L=160 complete to ζ=0.3, L=128 to ζ=0.5, L=96 to ζ=0.85, L∈{32,48,64} complete across ζ. Quicklook figures fig1–fig9 in `~/Downloads/pps_quicklook/`.
+
+**[V, CRITICAL] T was capped at 128 for L≥96.** Production T/L = 2.0 for L≤64 but 1.33, 1.0, 0.80 at L=96, 128, 160 (independent of ζ). Size-correlated under-relaxation: the largest systems had the least relaxation relative to size. Near criticality the relaxation time grows as L^z, so T<L at L=160 is almost certainly too short, and it biases large-L observables, the slope ∂_λI especially, hence ν. The existing L≥96 data is suspect for ν and should be RE-RUN at proper T (T≥2L, or T from a measured τ_int pilot), NOT merely supplemented. Fix T before any expensive campaign.
+
+**[V, DECISIVE] The global FSS collapse cannot resolve ν at this L-range/noise.** Synthetic calibration (known ν_true, real L-grid, real λ-grid, real error bars, run through the same pipeline): recovered ν̂ is non-monotonic and compressed to ≈1.2–1.7 regardless of ν_true ∈ {1, 1.5, 2, 2.5}. Cause: a flat χ² surface — a flexible master curve plus a free λ_c absorbs the x-rescaling that changing ν produces, so the ν-minimum is noise-located (at true ν=2 the synthetic collapse already has χ²_r≈1 yet the fit lands at 1.4). Consequence: collapse-based ν (1.3 from B_L, 1.6 from CMI) are NOT measurements of ν, and the older "ν scattered around ~2 plateau" is NOT established by collapse. The "ν drifts 1.3→3 / maybe ζ-dependent" worry raised earlier this session was largely a B_L+collapse artifact. Do not re-derive it.
+
+**[V] Use ⟨CMI⟩, not B_L, for exponents.** B_L = ⟨CMI·S_{L/2}⟩ carries an explicit lnL factor that biases ν LOW (synthetic ν=2 → B_L collapse 1.66 vs CMI collapse 1.92). Primary scaling observable = ⟨CMI⟩. Secondary locators = the KMR product ⟨CMI⟩⟨S_{L/2}⟩ and ΔS_L = S(L/2)−S(L/4) (cancels the non-universal additive constant; its critical value ∝ c). Never use the trajectory product ⟨CMI·S⟩ for exponents.
+
+**[P] Quotients (phenomenological-RG slope ratio) is the usable Cut B ν method, but marginal.** ν_eff = ln2/ln(m_2L/m_L) at the crossing tracks ν_true MONOTONICALLY (unlike collapse), so it has real power, but at n_real=25 pooled over 5 ζ it separates ν=1.5 from ν=2 at only ~1σ on (48,96). Per-pair ν_eff is biased low and drifts up with L, so it must be extrapolated over the pair sequence — which is why L=80 (giving the missing (80,160) pair) is high value at 1/16 the cost of an L=160 run. A clean ν needs n_real≥25 PLUS the full pair sequence with extrapolation PLUS coupled-λ slopes (√2) PLUS ζ-pooling under the constant-ν null. Calibrate before trusting; quotients at n_real=5 is pure noise.
+
+**[V] What still stands for λ_c/φ.** In the clean window ζ≥0.25 the crossings are well-defined, λ_c(ζ) tracks 0.5√ζ, a free power-law gives φ≈0.5–0.6 (consistent with 1/2, B_L leaning ~0.6), and the boundary extrapolates to the Born point, A(ζ→1)≈0.48–0.53 (B_L collapse A=0.50). The Born-endpoint reproduction is the robust headline. Small-ζ (ζ≤0.2) is NOT resolved: the L=96/128/160 curves bunch and spike near λ→0 (approach to the gapless Hermitian λ=0 point), and the "crossing" depends on the λ-window (13λ→0.105 vs 7λ→0.18 at ζ=0.1). Report small-ζ λ_c as bounded, not measured.
+
+**[V] N_c ladder result** (`~/Downloads/pps_clone_guided_ladder`, L=96/128 at N_c=600, L=160 at N_c=500, ζ≤0.4 — the 2× rung over the crossing region): finite-N_c bias on B_L/CMI VALUES is ~3% (lower at higher N_c), size-correlated because production N_c itself falls with L (500→250 from L=32→160). But the bias CANCELS in crossings: on a fixed λ-grid the (96,128) prod-300 vs ladder-600 crossings agree within MC error (ζ=0.1: 0.181±0.018 vs 0.182±0.004). N_c is NOT the lever for crossings or for the small-ζ problem. This refines the 2026-06-05/07 N_c-ladder block: more N_c does not repair small-ζ. Do not decrease N_c with L; use a constant baseline N_c≈400–500.
+
+**[P→parked] Split coupling.** Prototype `/tmp/split_coupling.py` (fine-dt joint +δ/−δ evolver; shared occurrence uniform = min/residual jump split, maximally coupled channel + resampling) built and physics-validated vs the exact backend (+2–4% common-mode operator-splitting bias that cancels in differences). NO demonstrated variance benefit: VR_S=0.36, VR_B=0.54 at δ=0.06, but NR=8 is noise-dominated (F(7,7) 95% spread ≈ [0.2,5]). Use the validated naive CRN coupling (δ≤0.04, ~2× on ⟨CMI⟩/⟨S⟩ differences) for production slopes. Split coupling stays optional, only at NR≥30. The variance-reduction banner's "Next: split coupling" item is thus answered (no win yet).
+
+**Data plan (reconciliation of 5 memos). Depth, not breadth; λ_c is done.** Order:
+1. Build + calibrate a GLOBAL shared-ν corrections-aware fit (one ν, one ω, parametric scaling function, λ_c(ζ)=Aζ^φ, fit to all clean ζ and L jointly). DECISION GATE — RESOLVED 2026-06-17 (RUN, FAILED). All FOUR collapse variants — per-ζ free cubic, global free-shape, global shared-shape, and shared-shape with λ_c FIXED to the crossing — fail to recover a known ν at n_real=25: recovered ν is non-monotonic and bound-hitting (ν_true=1.0→3.0, 1.5→1.6, 2.0→3.3, 2.5→3.2). Cut B ν is NOT extractable by any collapse/global fit at L≤160 (log-range only ~1.6; a flexible scaling function absorbs ν and the L^{-ω} term only adds freedom). Only LOCAL estimators have power: (a) quotients ν_eff=ln2/ln(m_2L/m_L), monotonic but ~1σ for ν=1.5-vs-2 at n_real=25, needs the full pair sequence incl (80,160) + extrapolation + coupled-λ slopes; (b) Cut A curvature κ_L~L^{2/ν_A}, clean ν_A=1.09±0.09 at ν_true=1 with the ν≈1-tuned grid, but it only CONFIRMS ν≈1 and cannot robustly detect a crossover (fixed grid loses power for ν≠1; the adaptive-window variant is noisier). NET: make Cut A the headline ν (confirm Ising ν_A≈1); report Cut B ν as bounded / consistent-with-2 via quotients. The binding constraint for a PRECISE ν is the L-RANGE, not n_real/N_c/T, so do not over-invest statistics at L≤160 expecting a sharp Cut B ν. Calibration scripts: /tmp/pps_global_fit.py, /tmp/pps_global_shared.py, /tmp/pps_global_fixedlc.py, /tmp/pps_cutA_curv.py, /tmp/pps_cutA_adapt.py, /tmp/pps_calib.py, /tmp/pps_calib_quot.py.
+
+   **LMR/Lavasani interpolation collapse — RUN 2026-06-17, the one ν method that WORKS [V].** The nonparametric interpolation objective ε(λ_c,ν)=Σ_i (y_i − interp from x-neighbours)²/V_i on CMI (LMR SciPost; Lavasani 'estimating errors'), cross-size variant = predict each point from OTHER sizes only (kills the same-L-smoothness degeneracy), is genuinely DIFFERENT from the 4 failed parametric collapses: no flexible F to absorb ν. Noiseless sanity exact. On synthetic known-ν it is MONOTONIC and tight (unlike every parametric collapse). It is STATISTICS-DEPENDENT: at n_real=25 the recovered-vs-true map is 1.5→1.20, 2.0→1.44, 2.5→1.60 (compressed-but-monotonic; ν=1.5-vs-2 at ~2σ) so it is a CALIBRATED estimator (invert the map); at n_real=5 (current data) the map SATURATES ~1.3 for ν≥2 (2.0→1.31, 2.5→1.36, 3.0→1.31) and cannot distinguish 2 from 3. THIS CORRECTS the 'binding constraint is L-range not n_real' sentence above: for the LMR method n_real IS the lever (5→25 restores ν~2 discrimination), so the high-n_real ζ=1 ladder is JUSTIFIED as the route to a defensible Cut B ν. REAL-DATA application (existing aggregates, cross-size VerB): (i) Cut A with λ_c=1/2 FIXED is nearly unbiased and very tight even at n_real=5 (true→recovered ≈ identity), real ν_A≈0.9 → CONSISTENT with Ising ν_A=1 (corroborates the curvature method; reliable only at small ζ where 4 sizes 32/48/64/96 exist, large-ζ Cut A is sparse-L and reads spuriously low ~0.5). (ii) Cut B (n_real=5, all L incl T-capped) pooled ν̂≈1.5 → consistent with ν_B≳2 but UNPINNED (saturated map; do NOT quote a point value). NET upgrade to the gate verdict: ν_A≈1 is defensible by two methods NOW; Cut B ν_B is consistent-with-2 and becomes PIN-ABLE with the n_real=25 ζ=1 cloning-free ladder + LMR-VerB + calibration-inversion (and T fixed). Scripts: /tmp/pps_lmr.py (objective + Cut B calib), /tmp/pps_lmr_real.py (real application + inversion), /tmp/pps_lmr_calib2.py (n_real=5 map + Cut A fixed-λ_c calib/inversion).
+
+   **CONFIDENCE-CONSTRUCTION UPDATE 2026-06-17 — RETRACTS the 'pin-able at n_real=25' claim in the paragraph above [V].** The single-curve inversion (ν̂≈1.5 → ν_B≈2.2) is NOT valid. The proper simulation-based confidence construction marginalises the recovered-ν̂ distribution over a correction-model FAMILY (F-shape {logistic,tanh,erf} × correction {additive-const, additive-slope, x-shift, poly} × ω∈{0.5,1,2} × ±amplitude, 7 representative members, real grids/errors/missing-cells). Result: the model-marginal ν̂ distributions for different ν_0 OVERLAP heavily, so for the observed Cut B ν̂≈1.5 the 95% confidence SET is {1.25,…,3.0} (essentially everything) and the 68% set is {1.5,1.67,2.0,2.5,3.0} — AND this does NOT tighten from n_real=5 to n_real=25. The earlier 'n_real un-saturates the map → ladder pins ν_B' was a SINGLE-model artifact; once correction-model uncertainty is included (mandatory, the real corrections being unknown) it DOMINATES, and sampling noise (n_real) is secondary. CONSEQUENCE: pinning ν_B at L≤160 is NOT achievable by adding statistics — it requires LARGER L (suppress L^{-ω} corrections; L^4-expensive) OR constraining the correction family to the measured crossing-height + crossing-location drift (the LMR-memo refinement, NOT yet done — could tighten the set, but the L-range still limits it). HONEST Cut B status: consistent with ν_B≈2 but confidence set ~[1.5,3]; NOT a measured exponent. n_real still helps the precision of the statistic at FIXED model, and the ζ=1 cloning-free ladder is still worth running for λ_c/φ/Born and a cleaner ν̂, but it must NOT be sold as pinning ν_B. Cut A (λ_c=1/2 fixed) is far less affected and remains the clean ν route (still owes a corrections-included calibration before a final number, per the LMR memo; current read ν_A≈0.9 ⇒ report as 'consistent with Ising ν_A=1', not a ±small number). Script: /tmp/pps_lmr_robust.py.
+
+   **ν(ζ) IS A HYPOTHESIS TO TEST, NOT ASSUME — LMR PRECEDENT VERIFIED 2026-06-17 [V].** Read the actual LMR paper (PhysRevX.15.021020, Leung–Meidan–Romito; on Mac at ~/Downloads/PhysRevX.15.021020.pdf). For the measurement-only transition it finds ν NOT constant in ζ: ν≈1 (Ising) at strong PPS (small ζ), an ABRUPT deviation in a narrow window around a finite ζ*, OVERSHOOT to ν≈2.3 near the transition, then the monitored value ν=5/3 by ζ≈1 — strongly nonmonotonic, driven by a Luttinger-parameter divergence at finite ζ* (LMR Fig. 7 + Sec. VI A; ζ convention IDENTICAL to ours, ζ=1 monitored / ζ=0 postselected; LMR extract ν with the SAME interpolation-collapse ε(ν) objective, App. H, e.g. ν=1.83 in their Fig. 14). IMPLICATIONS: (1) symmetry class constrains the manifold/operators but does NOT pin a unique ν along the boundary; 'class DIII ⇒ ν=2 for all ζ' is NOT a theorem, only the Born/ζ=1 endpoint benchmark. (2) CORRECTION to the Cut A framing in the LMR paragraph above: 'confirm Ising ν_A≈1' both assumes the answer AND is supported only by the existing SMALL-ζ Cut A data (ν_A≈0.9 = the postselected/Ising regime where any crossover has NOT yet happened); the LMR-analogous crossover appears near ζ≈1 where our Cut A data is SPARSE/absent. We confirmed the uncontroversial regime, not the interesting one. (3) The project NLSM predicts Cut A self-dual Ising ν=1 for ALL ζ (no crossover); LMR's measurement-only analogue (closest map to w=0 Cut A) shows a crossover to 5/3. These CONFLICT — genuine open question: does Cut A's exact self-duality (λ_c=1/2 ∀ζ) PROTECT Ising across ζ, or does it cross over to monitored 5/3 like LMR? The Cut A campaign must target LARGE ζ (→1) to settle it, framed as H0(constant Ising ν=1) vs H2(crossover 1→5/3, possibly overshooting), NOT 'confirm ν=1'. (4) For Cut B the confidence set [1.5,3] (above) already spans 5/3, 2, and 2.3, so current data can neither REQUIRE nor EXCLUDE a ζ-dependent ν_B — ν(ζ) is untestable for Cut B at L≤160. ANALYSIS STRUCTURE (per the ν(ζ) memo): extract ν̂_LMR(ζ) per ζ with per-ζ calibration, build per-ζ confidence sets, test common overlap, fit H0/H1/H2/H3 to the calibrated likelihood, and use synthetic to check the design CAN distinguish them — it CANNOT for Cut B; for Cut A only if the campaign reaches large ζ with ≥4 sizes. The whole 'Cut B is class DIII ν≈2' headline is therefore a CONSISTENCY statement, and the live physics is the Cut A crossover test.
+
+   **ASHKIN–TELLER/THIRRING mechanism for Cut B ν(ζ) — new analytic input 2026-06-17, with a CRUX vs the project's OWN archived chirality result [P].** A memo maps the strong-PPS (ζ→0, free-Majorana) corner of replicated Cut B to a non-Hermitian Ashkin–Teller/Thirring theory. Exact ket–bra decomposition: single-branch m_0~α(1-ζ) + cross-branch click g_0~αζ (exact; matches 'ζ multiplies only the cross vertex'). At the Ising point the connected click is S=g∫ε_+ε_- with ε_+ε_- = -J_R J_L (VERIFIED: ε=iξ_Rξ_L/flavour ⇒ ε_+ε_-=ξ_{R+}ξ_{R-}ξ_{L+}ξ_{L-}=-J_R J_L), the marginal current-current (Thirring/AT) coupling with continuously varying thermal dims x_±=K,1/K ⇒ ν_B(ζ)=1/(2-K(ζ)) [IF λ couples to the dim-K symmetric thermal M_+; if M_- the relation flips to 1/(2-1/K) and the 1→2 story FAILS — assignment NOT derived]. MOST USEFUL PIECE = the longitudinal/transverse distinction that DISSOLVES the project's long-running ν=1-vs-2 confusion: at ζ=0 the no-click tuning field is t~λ² (ξ_nc~λ^{-2}; the linear term is an imaginary O(κ) momentum shift, real localization only at O(κ²)) ⇒ ν_∥=2; at finite ζ the tuning field is linear in δλ ⇒ ν_⊥=1/(2-K). ν_∥(0)=2 and ν_⊥(0+)→1 are different scaling directions, NOT a contradiction. CRUX: this APPEARS to conflict with `theory/archive/qj_chiral_vertex_result.md`, which found the cross-replica vertex PURELY CHIRAL (exp(-4iφ_L); renormalizes velocity u_L not K ⇒ K=1 all orders ⇒ c_eff & ν CONSTANT). Likely RESOLUTION: the archive expands around the ζ=1 Born/Luttinger-liquid (Dirac) gapless theory; the memo around the ζ=0 free-Majorana (Ising) point — DIFFERENT gapless field content, so B_j's continuum image (chiral exp(iφ_L) in the Luttinger liquid vs non-chiral ε at the Ising point) can legitimately differ. If so they are COMPLEMENTARY corners, NOT a contradiction, and TOGETHER give the crossover: AT/Ising ν→1 at small ζ (memo) → chiral-stable DIII ν≈2 near Born (archive) → consistent with LMR's 1→overshoot→monitored. MUST BE CHECKED: is the cross-vertex chiral at the Ising corner too? then the AT mechanism is undercut. OTHER HONEST GAPS in the AT memo: K(ζ) is NOT computed (mechanism, not a quantitative prediction); the non-Hermiticity (imaginary Majorana mass; possibly complex K) is not reconciled with the Hermitian-AT relation ν=1/(2-K); the weak-g AT expansion is controlled only at small ζ (g~αζ/w is O(1) at Born), so ν→2 is a handoff to the DIII σ-model, not within AT. The memo also argues √ζ is an EFFECTIVE finite-window law (true √ζ needs the unnatural m_c(g)~g^{2/3}; marginal-relevant flow dg/dℓ=Ag² gives ξ~exp(c/αζ), an essential singularity = the already-[P] BKT mechanism). BEST FALSIFIABLE TEST (memo §11.6): measure an INDEPENDENT scaling dimension predicted to be K or 1/K and check K=2-1/ν — far stronger than another entanglement collapse. NET: a genuine analytic advance for the strong-PPS corner + the ν_∥/ν_⊥ clarification; the ν(ζ)=1/(2-K) prediction is mechanism-level and conditional; reconciling it with the archived chirality result is the next THEORY task.
+2. Re-aggregate production keeping per-realisation arrays (I_r, S_r, ΔS_r, n_r, ΔΛ_r) for nonparametric/paired bootstrap. (Ladder aggregate already has them.)
+3. τ_int pilot at ζ=0.5,1 and L=64/96/128: set T from T_burn≳5τ_int, T_meas≳20τ_int, and require ∂_λI (not just ⟨CMI⟩) to be T-stationary. Output the T(L) rule.
+4. ζ=1 Cut B ladder FIRST (cloning-free: weights ≡1, no population needed, cheapest, cleanest anchor): L={32,48,64,80,96,128,160}, identical grid 0.45–0.55, Δλ 0.01→0.005, n_real 25–30 central / ~10 outer. Analyse with CMI collapse + max-slope + quotients (32,64),(48,96),(64,128),(80,160).
+5. Then ζ∈{0.5,0.7,0.85} large-L at proper T, identical grids; model-compare constant-ν vs ν(ζ) via bootstrap-calibrated likelihood / held-out error (expected null: ν≈2 + finite-size drift).
+6. Cut A curvature campaign (the CLEAN ν route, λ_c=1/2 exact): symmetric grid λ_A=1/2±{0,0.004,…,0.028}, ζ∈{0.1,0.3,0.5,0.7,1.0}, L={64,80,96,128,160}; estimator κ_L=−∂²_λ I|_{1/2} ~ L^{2/ν_A} (Richardson in δ); monitor the antisymmetric part I^(−)(δ), which must vanish by duality (pure systematic-error monitor).
+Keep one N_c slope-calibration at ζ=1, L=128/160 (N_c vs 2N_c). Budget goes to n_real, not N_c. Defer L=192, small-ζ, geometry re-optimisation, and the score-function derivative estimator. Headline target: Cut B one exponent ν≈2 vs Cut A ν_A≈1. Realistic expectation: Cut A ν clean; Cut B "consistent with 2, wide bars."
+
+**Scratch infra (will vanish on /tmp clear — promote if kept):** `/tmp/split_coupling.py`, `/tmp/pps_collapse{,2,3}.py`, `/tmp/pps_fig8.py`, `/tmp/pps_quotients.py`, `/tmp/pps_synth.py`, `/tmp/pps_calib.py`, `/tmp/pps_calib_quot.py`, `/tmp/pps_ladder_*.py`, `/tmp/pps_build_aggregates.py`, `/tmp/pps_agg_ladder.py`, `/tmp/pps_Tcheck.py`. Suggested home: `analysis/fss/` (collapse/quotients/calibration) and `analysis/var_reduction/split_coupling.py`.
+
+### Methodology study — variance reduction for guided cloning (2026-06-16/17)
+
+A self-contained five-round study on reducing cloning-estimator variance. Full
+results + saved prototypes in `theory/VARIANCE_REDUCTION.md`. Bottom line for
+any future chat:
+
+- The guided proposal **c=zeta is practically optimal** (ESS/N_c ~ 0.97-0.99; a
+  c-scan shows ESS peaks exactly at c=zeta; the cost-aware metric Var x wall also
+  keeps c=zeta). The weight-degeneracy problem is solved. Do NOT invest further
+  in the proposal, state-dependent/learned-Doob controls, adaptive resampling,
+  online-c, or annealed-zeta. All tested and CLOSED (the residual per-window
+  weight variance is within-window Poisson noise, unpredictable from any
+  window-start Gaussian feature, R^2~0).
+- Two estimation-side wins survive END-TO-END validation, both ~2-3x and free,
+  on DISJOINT observables:
+  * **coupled neighbouring lambda-points -> ~2x** on entanglement FSS
+    differences (entropy 2.0x, <CMI> 1.76x, KMR <CMI><S> 1.98x). Robust at
+    delta<=0.04, BREAKS at delta=0.06 (trajectory desync). Tightens slopes,
+    crossings, nu. Next: split coupling + maximally coupled resampling + paired
+    covariance/bootstrap. L-scaling beyond L=32 unverified.
+  * **compensated-count martingale CV M=n-zeta*Delta_Lambda -> ~3x on the tilted
+    activity <n>_Q only** (theory-side: K_eff, channel activities). Does NOTHING
+    for entanglement (1.0x) or the SCGF (1.03x), via the SNIS cancellation.
+- CORRECTION recorded in the doc: one-window/fixed-start tests OVERSTATED the CV
+  (apparent 4.2x on E[G], ~400x on activity). The real end-to-end numbers are
+  1.03x (SCGF) and 3.26x (activity). Always validate end-to-end.
+- Observable choice (carries to the FSS pipeline): the production B_L was the
+  trajectory product <CMI*S> (noisy). Prefer **<CMI> and the KMR product
+  <CMI><S>** for crossings/slopes, since the coupling works on these and they
+  are cleaner.
+
+Methodology only. No physics claims changed, no jobs submitted, no theory files
+touched.
+
 ### zeta=0 no-click anchor (Cut B) — CORRECTED 2026-06-15 (supersedes the 2026-06-10 block)
 
 The 2026-06-10 [V] block (Fermi step at q=+-pi/2, lambda*=4/5, nu0~1,
@@ -330,6 +418,8 @@ QSD setup, where the no-click problem does have a well-defined BdG localization
 length.
 
 ### Numerics (best current estimate)
+
+> NOTE (2026-06-17): the ν statement here is QUALIFIED by the top banner. The global FSS collapse cannot resolve ν at this L-range (synthetic calibration: recovered ν̂ ≈1.2–1.7 regardless of true ν), and B_L biases ν low; use ⟨CMI⟩ with quotients / Cut-A curvature. The φ and λ_c results (√ζ, Born endpoint) still stand for the clean ζ≥0.25 window.
 
 Global FSS on merged cloning data ($L \le 256$, $\zeta \in [0.02, 1.00]$):
 - $\phi = 0.56 \pm 0.05$ on $\zeta \in [0.03, 0.85]$
@@ -662,6 +752,8 @@ blue curve still has structure. The L=128 rescue is what resolves this.
 
 ### Key result: $\phi$ from global FSS
 
+> NOTE (2026-06-17): the ν statement here is QUALIFIED by the top banner. The global FSS collapse cannot resolve ν at this L-range (synthetic calibration: recovered ν̂ ≈1.2–1.7 regardless of true ν), and B_L biases ν low; use ⟨CMI⟩ with quotients / Cut-A curvature. The φ and λ_c results (√ζ, Born endpoint) still stand for the clean ζ≥0.25 window.
+
 Global FSS collapse on the cleanest range $\zeta \in [0.03, 0.85]$,
 all L ∈ {64, 96, 128, 192, 256}:
 - $\phi = 0.56 \pm 0.05$ (free power-law fit)
@@ -802,10 +894,18 @@ small-ζ ξ data; the ν=3.1 blow-up at ζ=0.02 is what force-fitting BKT looks 
 
 ## Operational
 
-- **HPC**: Habrok cluster (RUG), user `s4629701`. SLURM partitions
-  `regularsh`, `regularme`, `regular`. venv at `~/venvs/pps_qj/`.
-- **Git push from Habrok fails** (SSH key issue). All commits must be made
-  on Mac, pushed to GitHub, then pulled on Habrok.
+- **HPC (2026-07-07): Ruche** (Paris-Saclay Mésocentre), user `ercetinut`,
+  `ssh ruche.mesocentre.universite-paris-saclay.fr`. Rocky Linux 8, Intel Xeon
+  Gold 6230 (Cascade Lake, 40 cores/node). Repo cloned to `$HOME/ppsQJ_m2`
+  (=/gpfs/users/ercetinut, 50 GB); results to `$WORKDIR/pps/...`
+  (=/gpfs/workdir/ercetinut, 500 GB), both visible on compute nodes. conda env
+  `$WORKDIR/envs/pps_qj` (numpy 2 + scipy, MKL) via `scripts/ruche/setup_ruche.sh`.
+  Partitions: cpu_short (1h/1000c), cpu_med (4h/1000c), cpu_long (168h/160c),
+  cpu_prod (6h/2000c, nights+weekends), cpu_scale (1h/4000c). Submit via
+  `scripts/ruche/submit_pps_boundary.sh` (size-binned arrays, `--shard`). r=2.43
+  (Ruche/Mac core-time ratio; scale cost estimates by it).
+- **Git**: push from Mac over HTTPS (works, credential-cached); pull on Ruche.
+  Prior HPC was Habrok (RUG, user s4629701) — migrated off 2026-07-07.
 - **Repo**: `ueborg/ppsQJ_m2`. Mac path: `/Users/catlover1337/Documents/ppsQJ_m2/`.
 - **Aggregate script**: `scripts/aggregate.py` or `scripts/aggregate_runs.py`.
   Auto-slurps all .npz fields; new fields (CMI, $S_{AB}$, Rényi) should
@@ -922,6 +1022,21 @@ All in `~/Downloads/continuousmeasurements(2)/references.bib`.
   (L,offset) → p≈0.5 (φ=1/2 window law) vs p≈1 (φ=1 coherent); λ-flatness +
   odd-r-null + exp-fit-R² health checks. Discriminator validated on synthetic.
 - `slurm/submit_areaphase.sh` — 30-task array (2 L × 5 ζ × 3 offsets), 5 cpus/task.
+
+## File map (docs/code added this iteration, 2026-06-16) — variance reduction
+
+- `theory/VARIANCE_REDUCTION.md` — full variance-reduction methodology study
+  (c=zeta optimal; coupling ~2x for entanglement FSS; martingale CV ~3x for
+  activity only; closed negative directions; implementation plan; the
+  fixed-start-artifact corrections).
+- `analysis/var_reduction/coupling_lambda.py` — coupled lambda-points prototype
+  (delta-scan + L-scan; entropy and B_L differences).
+- `analysis/var_reduction/coupling_cmi_kmr.py` — coupling on clean <CMI> and the
+  KMR product <CMI><S>.
+- `analysis/var_reduction/activity_cv.py` — end-to-end tilted-activity martingale
+  CV (the validated ~3x).
+- `analysis/var_reduction/scgf_cv.py` — end-to-end SCGF CV (the negative result;
+  shows 1.03x, documents the fixed-start artifact).
 
 The most important documents to read first are `HANDOFF.md` (this file),
 then `SUMMARY_2026_05_22.md`, then `PROMPT_INTERNSHIP_REPORT.md`.
