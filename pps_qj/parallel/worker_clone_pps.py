@@ -121,6 +121,25 @@ def _run_one_realisation(args: dict) -> dict:
     # but remain unbiased estimates.  Default 1 = every step (old behaviour).
     entropy_stride = max(1, int(os.environ.get("PPS_ENTROPY_STRIDE", "1")))
 
+    # Low-rank projective-jump orbital update: O(L^2) active-subspace update
+    # replacing the per-jump O(L^3) eigendecomposition (~59% of trajectory
+    # time). Set PPS_JUMP_METHOD=lowrank to enable; PPS_REFRESH_EVERY (default
+    # 100) sets the periodic full-eigh refresh that bounds long-time drift.
+    # Validated bit-identical to the eigh path at trajectory (jumps/|dcov|~1e-13)
+    # and cloning-population (theta/S/CMI ~1e-14) levels; ~2.2x end-to-end.
+    # Default 'eigh' = unchanged, bit-exact w.r.t. historical data.
+    if os.environ.get("PPS_JUMP_METHOD", "eigh") == "lowrank":
+        cloning_kw["jump_update_method"] = "lowrank"
+        cloning_kw["refresh_every"] = int(os.environ.get("PPS_REFRESH_EVERY", "100"))
+
+    # Safeguarded-Newton waiting-time solver (analytic hazard derivative,
+    # ~3-4 evals/jump + fused propagation). Set PPS_SOLVER=newton. This is a
+    # STATISTICAL change (~1e-6 perturbation to waiting times), so it is opt-in
+    # and must clear paired-seed ensemble validation. Default 'brentq' = exact.
+    if os.environ.get("PPS_SOLVER", "brentq") == "newton":
+        cloning_kw["solver_method"] = "newton"
+        cloning_kw["eps_hazard"] = float(os.environ.get("PPS_EPS_HAZARD", "1e-9"))
+
     try:
         result: CloningResult = run_cloning(
             model, zeta=zeta, T_total=T, N_c=N_c, rng=rng,

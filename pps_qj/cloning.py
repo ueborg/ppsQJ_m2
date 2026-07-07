@@ -258,6 +258,10 @@ def run_cloning(
     snapshot_times: Optional[list] = None,
     snapshot_fn: Any = None,
     proposal_c: Optional[float] = None,
+    jump_update_method: str = "eigh",
+    refresh_every: int = 100,
+    solver_method: str = "brentq",
+    eps_hazard: float = 1e-9,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -397,6 +401,10 @@ def run_cloning(
                     ja_cached=_ja_cache,
                     jb_cached=_jb_cache,
                     proposal_c=_pc,
+                    jump_update_method=jump_update_method,
+                    refresh_every=refresh_every,
+                    solver_method=solver_method,
+                    eps_hazard=eps_hazard,
                 )
                 covs[i]    = r.final_covariance
                 orbs[i]    = r.final_orbitals
