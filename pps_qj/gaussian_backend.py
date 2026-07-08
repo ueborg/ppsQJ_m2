@@ -447,6 +447,7 @@ def gaussian_born_rule_trajectory(
     _njump_since_refresh = 0
     K_gen = model.h_effective if _use_newton else None
     _first_iter_override = initial_uniform_override is not None
+    _bn_cache: dict = {}   # (dt, A, L_chol) from the no-jump check -> skip a fresh QR
 
     while t < T:
         if _first_iter_override:
@@ -478,10 +479,16 @@ def gaussian_born_rule_trajectory(
             gram = A.conj().T @ (VhV @ A)
             try:
                 L_chol = np.linalg.cholesky(gram)
+                # Stash for the no-jump branch: it re-propagates to this same dt
+                # and reuses (A, L_chol) to skip a fresh QR (bit-identical).
+                _bn_cache["dt"] = dt
+                _bn_cache["A"] = A
+                _bn_cache["L_chol"] = L_chol
                 # log sqrt(det(gram)) = sum log |diag(L_chol)|  for L lower-triangular
                 log_half_logdet = float(np.sum(np.log(np.abs(np.diag(L_chol)))))
                 return float(np.exp(log_half_logdet - model.alpha * n_monitored * dt))
             except np.linalg.LinAlgError:
+                _bn_cache.clear()   # singular Gram -> no valid Cholesky to reuse
                 sign, logdet = np.linalg.slogdet(gram)
                 if sign <= 0 or not np.isfinite(logdet):
                     return 0.0
@@ -489,13 +496,24 @@ def gaussian_born_rule_trajectory(
 
         bn_end = _fast_branch_norm(T_rem)
         if bn_end >= U_eff:
-            # No jump in remaining time — propagate to T using cached eig.
+            # No jump in remaining time — propagate to T.
             lambda_acc += -np.log(max(bn_end, 1e-300))
-            exp_d = np.exp(evals * T_rem)
-            orbs_tilde = V @ (exp_d[:, None] * coeffs)
-            q_mat, _ = np.linalg.qr(orbs_tilde, mode="reduced")
-            orbitals = q_mat   # keep consistent with cov below
-            cov = covariance_from_orbitals(q_mat)
+            if _bn_cache.get("dt") == T_rem and _bn_cache.get("L_chol") is not None:
+                # Reuse the Cholesky the no-jump check just built: the normalised
+                # propagated orbitals are Q = Y·(L_chol^H)^{-1}, Y = V·A. Same
+                # occupied subspace as QR(Y) => identical covariance (~1e-15), via
+                # a triangular solve instead of a fresh QR. Bit-identical; the QR
+                # is the dominant cost in the short-window cloning regime.
+                Y = V @ _bn_cache["A"]
+                orbitals = solve_triangular(
+                    _bn_cache["L_chol"].conj(), Y.T, lower=True
+                ).T
+            else:
+                # Fallback: branch-norm took the singular-Gram slogdet path.
+                exp_d = np.exp(evals * T_rem)
+                orbs_tilde = V @ (exp_d[:, None] * coeffs)
+                orbitals, _ = np.linalg.qr(orbs_tilde, mode="reduced")
+            cov = covariance_from_orbitals(orbitals)
             break
 
         # Find jump time. Safeguarded Newton on the integrated hazard

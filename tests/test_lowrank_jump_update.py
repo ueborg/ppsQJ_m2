@@ -70,3 +70,21 @@ def test_lowrank_cloning_population_unbiased():
     assert abs(t_e - t_l) < 1e-10
     assert abs(s_e - s_l) < 1e-10
     assert (np.isnan(c_e) and np.isnan(c_l)) or abs(c_e - c_l) < 1e-10
+
+
+def test_nojump_branch_cholesky_reuse_orthonormal_and_deterministic():
+    """No-jump terminal branch reuses the branch-norm Cholesky (Q = Y*R^-1)
+    instead of a fresh QR. Guard that it still returns orthonormal orbitals and
+    is deterministic on the default (eigh+brentq) path."""
+    import numpy as np
+    from pps_qj.gaussian_backend import (
+        build_gaussian_chain_model,
+        gaussian_born_rule_trajectory,
+    )
+    m = build_gaussian_chain_model(96, 0.65, 0.35)
+    r1 = gaussian_born_rule_trajectory(m, 96.0, np.random.default_rng(5), proposal_c=0.5)
+    U = r1.final_orbitals
+    assert np.max(np.abs(U.conj().T @ U - np.eye(U.shape[1]))) < 1e-10
+    r2 = gaussian_born_rule_trajectory(m, 96.0, np.random.default_rng(5), proposal_c=0.5)
+    assert r1.n_jumps == r2.n_jumps
+    assert np.max(np.abs(r1.final_covariance - r2.final_covariance)) < 1e-13
