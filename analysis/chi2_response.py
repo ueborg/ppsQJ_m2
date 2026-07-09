@@ -101,3 +101,57 @@ if __name__ == "__main__":
         t0 = time.time(); r = chi2_deterministic(L, a.u, a.c, a.Nt, a.tau_min, a.jmin)
         print(f"  {L:4d} {r['chi2']:11.4f} {r['chi2']/L:9.4f} {r['chi2']/L**2:9.5f} | "
               f"{r['O0']:7.4f} {r['Zh1']:7.4f} {r['Zh2']:7.4f} {r['Ah1']:7.4f} {r['Ah2']:7.4f}  {time.time()-t0:5.1f}s", flush=True)
+
+
+# ---- independent checks + importance-sampled MC (memo Option B) ----
+
+def noclick_norm_check(L, u=0.75, c=1.0):
+    """log Z0 from QR-accumulation vs logdet(Y^H Y). Must match (weight bookkeeping)."""
+    ctx = make_ctx(L, u, c)
+    Y = ctx["V"] @ (np.exp(ctx["evals"] * ctx["T"])[:, None] * (ctx["Vi"] @ ctx["orb0"]))
+    _, logdet = np.linalg.slogdet(Y.conj().T @ Y)
+    _, logZ0_qr = prop_noclick(ctx, ctx["orb0"], ctx["T"])
+    return float(logZ0_qr), float(logdet)
+
+
+def chi2_mc(L, u=0.75, c=1.0, N1=5000, N2=80000, tau0_frac=0.04, seed=0):
+    """Importance-sampled chi2. Gap delta=t2-t1 drawn from a 50/50 mix of
+    Uniform[0,span] and truncated-Exp(tau0) -> resolves the contact peak."""
+    ctx = make_ctx(L, u, c); T = ctx["T"]; Nb = len(ctx["jp"]); la = np.log(ctx["alpha"])
+    rng = np.random.default_rng(seed); tau0 = tau0_frac * T
+    orbT, logZ0 = prop_noclick(ctx, ctx["orb0"], T); O0 = cmi(ctx, orbT)
+
+    Zh1 = Ah1 = 0.0                                   # 1-click: t~U[0,T], j~U
+    for _ in range(N1):
+        t = rng.uniform(0, T); j = int(rng.integers(Nb))
+        orb_t, ln0 = prop_noclick(ctx, ctx["orb0"], t)
+        pj, oc = click(ctx, orb_t, j)
+        if pj <= 1e-14: continue
+        o1T, lnT = prop_noclick(ctx, oc, T - t)
+        w = np.exp(ln0 + la + np.log(pj) + lnT - logZ0) * T * Nb   # / q,  q=1/(T*Nb)
+        Zh1 += w; Ah1 += w * cmi(ctx, o1T)
+    Zh1 /= N1; Ah1 /= N1
+
+    Zh2 = Ah2 = 0.0                                   # 2-click: diagonal-aware gap
+    for _ in range(N2):
+        t1 = rng.uniform(0, T); span = T - t1
+        if rng.random() < 0.5:
+            delta = rng.uniform(0, span)
+        else:
+            uu = rng.random(); delta = -tau0 * np.log(1 - uu * (1 - np.exp(-span / tau0)))
+        qmix = 0.5 / span + 0.5 * np.exp(-delta / tau0) / (tau0 * (1 - np.exp(-span / tau0)))
+        t2 = t1 + delta; j1 = int(rng.integers(Nb)); j2 = int(rng.integers(Nb))
+        orb_t1, ln0 = prop_noclick(ctx, ctx["orb0"], t1)
+        pj1, oc1 = click(ctx, orb_t1, j1)
+        if pj1 <= 1e-14: continue
+        omid, lnmid = prop_noclick(ctx, oc1, delta)
+        pj2, oc2 = click(ctx, omid, j2)
+        if pj2 <= 1e-14: continue
+        o2T, lnT = prop_noclick(ctx, oc2, T - t2)
+        w = np.exp(ln0 + 2 * la + np.log(pj1) + np.log(pj2) + lnmid + lnT - logZ0)
+        contrib = w * T * Nb * Nb / qmix             # / (q(t1)q(delta)q(j1)q(j2))
+        Zh2 += contrib; Ah2 += contrib * cmi(ctx, o2T)
+    Zh2 /= N2; Ah2 /= N2
+
+    chi2 = 2.0 * (Ah2 - Ah1 * Zh1 + O0 * Zh1**2 - O0 * Zh2)
+    return dict(L=L, O0=O0, Zh1=Zh1, Ah1=Ah1, Zh2=Zh2, Ah2=Ah2, chi2=chi2)
