@@ -31,7 +31,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("--outdir", required=True); a = ap.parse_args()
     groups = {}
     for f in glob.glob(os.path.join(a.outdir, "chi2_L*.json")):
-        s = json.load(open(f)); groups.setdefault((s["L"], s["u"], s["c"]), []).append(s)
+        s = json.load(open(f)); groups.setdefault((int(s["L"]), s["u"], s["c"]), []).append(s)
     print(f"# {'L':>4} {'u':>5} {'c':>4} {'nshard':>6} {'chi2':>10} {'+-err':>9} {'chi2/L':>9} {'chi2/L^2':>10}")
     for (L, u, c) in sorted(groups):
         sh = groups[(L, u, c)]; ch, er = pool(sh)
