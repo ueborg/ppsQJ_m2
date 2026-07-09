@@ -17,7 +17,7 @@
 set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/ppsQJ_m2}"; CONDA_ENV="${CONDA_ENV:-$WORKDIR/envs/pps_qj}"
 OUTDIR="${OUTDIR:?set OUTDIR}"; US="${US:-0.75}"; CS="${CS:-1.0}"
-NSEED="${NSEED:-40}"; N1="${N1:-5000}"; N2="${N2:-200000}"
+NSEED="${NSEED:-40}"; SEED0="${SEED0:-0}"; N1="${N1:-5000}"; N2="${N2:-200000}"
 LS_ARR=(${LS:-32 48 64 96 128}); L=${LS_ARR[${SLURM_ARRAY_TASK_ID:-0}]}
 mkdir -p logs "$OUTDIR"
 module purge; module load anaconda3/2023.09-0/none-none
@@ -25,7 +25,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"; conda activate "$CONDA_ENV
 export PYTHONPATH="$REPO_DIR"
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
 echo "L=$L US=$US CS=$CS NSEED=$NSEED N2=$N2 OUTDIR=$OUTDIR"
-seq 0 $((NSEED-1)) | xargs -P "${SLURM_CPUS_PER_TASK:-40}" -I{} \
+seq "$SEED0" $((SEED0+NSEED-1)) | xargs -P "${SLURM_CPUS_PER_TASK:-40}" -I{} \
   python "$REPO_DIR/analysis/chi2_worker.py" --L "$L" --u "$US" --c "$CS" \
     --seed {} --N1 "$N1" --N2 "$N2" --outdir "$OUTDIR"
 echo "L=$L done"
