@@ -1,0 +1,43 @@
+{
+  "task_id": "TASK-2026-08-10-AMP096",
+  "note": "Charter Stage 2 dependency graph, scoped to the Cut B amplitude question. Execution-plane artifact: NOT authoritative, never citable as support. Canonical relations live in research/state/**.",
+  "generated": "2026-08-10",
+  "nodes": [
+    {"id": "CB-AMP-096-001", "kind": "claim", "status": "withdrawn"},
+    {"id": "CB-AMP-001", "kind": "claim", "status": "provisional"},
+    {"id": "CB-PARAM-001", "kind": "claim", "status": "supported"},
+    {"id": "CB-WINDOW-001", "kind": "claim", "status": "provisional"},
+    {"id": "CB-PHI-HALF-001", "kind": "claim", "status": "provisional", "contested": true},
+    {"id": "OBS-BLPROD-001", "kind": "observable", "status": "active"},
+    {"id": "OBS-BLKMR-001", "kind": "observable", "status": "active_not_yet_computed"},
+    {"id": "OBS-BL-001", "kind": "observable", "status": "retired"},
+    {"id": "EV-EXEC-AUDITREPRO-001", "kind": "evidence", "reproducibility": "fully_reproducible"},
+    {"id": "EV-DATA-AGGCASEB-001", "kind": "evidence"},
+    {"id": "EV-DATA-BOUNDARYCSV-001", "kind": "evidence"},
+    {"id": "SRC-KMR-2023", "kind": "source"},
+    {"id": "SRC-FULGA-2012", "kind": "source"},
+    {"id": "DISP-PHI-001", "kind": "dispute", "status": "open"},
+    {"id": "DISP-WINDOW-001", "kind": "dispute", "status": "open"},
+    {"id": "X:analysis/lambda_c_phi_analysis.md", "kind": "provenance_document", "note": "the May-2026 generating document. On disk, tracked at 6c9c843. NOT state."},
+    {"id": "X:p_half_extrapolation", "kind": "assumption", "note": "crossing extrapolation exponent p = 1/2, justified by assuming nu = 2"}
+  ],
+  "edges": [
+    {"from": "CB-AMP-001", "rel": "supersedes", "to": "CB-AMP-096-001", "basis": "canonical"},
+    {"from": "CB-AMP-096-001", "rel": "generated_by", "to": "X:analysis/lambda_c_phi_analysis.md", "basis": "task finding; NOT yet in state"},
+    {"from": "X:analysis/lambda_c_phi_analysis.md", "rel": "assumes", "to": "X:p_half_extrapolation", "basis": "the document's own A-vs-p table and its stated justification"},
+    {"from": "X:p_half_extrapolation", "rel": "co_generates", "to": "CB-PHI-HALF-001", "basis": "task finding: the same choice produced phi = 0.502 and A = 0.96"},
+    {"from": "CB-PHI-HALF-001", "rel": "contests", "to": "CB-PHI-LINEAR-001", "basis": "canonical, DISP-PHI-001"},
+    {"from": "CB-AMP-001", "rel": "depends_on", "to": "OBS-BLPROD-001", "basis": "canonical"},
+    {"from": "CB-AMP-001", "rel": "empirically_validated_by", "to": "EV-EXEC-AUDITREPRO-001", "basis": "canonical, role discriminating"},
+    {"from": "OBS-BLPROD-001", "rel": "supersedes", "to": "OBS-BL-001", "basis": "canonical"},
+    {"from": "OBS-BLKMR-001", "rel": "supersedes", "to": "OBS-BL-001", "basis": "canonical"},
+    {"from": "OBS-BLKMR-001", "rel": "defined_by", "to": "SRC-KMR-2023", "basis": "body-verified this task, previously title-only"},
+    {"from": "CB-AMP-096-001", "rel": "contradicted_in_its_stated_reason_by", "to": "X:analysis/lambda_c_phi_analysis.md", "basis": "TASK FINDING, unmerged. The document fits lambda_c and never forms r_c."},
+    {"from": "SRC-KMR-2023", "rel": "does_NOT_support", "to": "X:diffusive_prefactor_comparator", "basis": "TASK FINDING: full-text inspection found no such statement; KMR's r_c is a detector threshold"}
+  ],
+  "unresolved": [
+    "Whether X:p_half_extrapolation is still load-bearing for CB-PHI-HALF-001, and hence for DISP-PHI-001. NOT investigated by this task, by design.",
+    "The zeta convention underlying the endpoint argument is unverified against SRC-LMR-2025.",
+    "OBS-BLKMR-001.recomputable_from asserts S_AB_mean is in every guided aggregate; it is absent from agg_caseB_combined.pkl."
+  ]
+}

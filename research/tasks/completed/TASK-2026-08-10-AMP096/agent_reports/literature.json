@@ -1,0 +1,176 @@
+{
+  "summary": "I inspected the primary literature behind the Cut B amplitude story and found that the load-bearing external anchor for the historical \"A \u2248 0.96 is twice the diffusive prefactor\" narrative does not exist in the cited source. I read the full text of Kells-Meidan-Romito (SciPost Phys. 14, 031) and it contains NO statement of the form \"lambda_c ~ A r_c^{1/2} with A of order one half\", contains no occurrence of the word \"diffusive\", and its symbol r_c is a detector-readout postselection THRESHOLD (Eq. 20, values -2 to -0.5), not lambda_c/(1-lambda_c). I newly inspected Fulga et al. (identified as arXiv:1205.1441, \"Thermal metal-insulator transition in a helical topological superconductor\"), which SRC-FULGA-2012 records as having no local copy and unknown arXiv id; its nu ~ 2.0 is a 2D disordered-network localization-length exponent. I confirmed from Jian et al. that they explicitly equate the forced-measurement (n->0) DIII transition with exactly that Fulga transition, so DEC-CITATION-001 item 3 is now source-verified from both sides \u2014 with the important nuance that Jian's own Born (2.1 +/- 0.1) and forced (1.9 +/- 0.1) nu values are nearly equal, and their class separation rests on x(1), x(2) and zeta_1, not on nu. I verified every LMR number previously marked UNVERIFIED. I found NO source, in the library or by web search, for lambda_c(1) = 1/2; that remains unsourced.",
+  "findings": [
+    {
+      "statement": "[E] The full text of Kells, Meidan, Romito, SciPost Phys. 14, 031 (2023) contains no statement of the form \"lambda_c ~ A r_c^{1/2}\" and no occurrence of the string \"diffusiv\" anywhere in the body, captions or references. The sentence in the M1 manuscript (Chapters/Chapter3.tex:236 region) \"They report $\\lambda_c \\sim A r_c^{1/2}$ in the diffusive setting with $A$ of order one half\" is not supported by the paper it attributes it to.",
+      "statement_class": "evidence",
+      "basis": "pdftotext -layout of /Users/catlover1337/Desktop/Internship /SciPostPhys_14_3_031.pdf (1758 lines); grep for sqrt|square root|diffusi|prefactor returned only an unrelated reference title. Manuscript text at /Users/catlover1337/Downloads/01_M1_Internship/Thesis/m1thesislatex/Chapters/Chapter3.tex lines 230-238.",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] In KMR, the symbol r_c denotes a detector-readout postselection threshold: Eq. (20) defines P_{r_c}(x) = 0 for x < r_c and P(x) for x > r_c, with r_c in R, and Fig. 5 uses r_c = -2, -1.5, -1, -0.5. It is not lambda_c/(1-lambda_c), which is how the project defines r_c in CB-PARAM-001.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt lines 726, 763-768; research/state/claims/CB-PARAM-001.yaml",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[I] Because KMR's r_c is a different object from the project's r_c, the audit's diagnosis in audit/2026-08-10/03_AMPLITUDE_TRACE.md that the manuscript's \"twice the diffusive one\" error is a cross-PARAMETERIZATION comparison (our lambda_c against KMR's r_c-type amplitude) is itself built on a KMR statement I cannot locate. The error is more likely that the comparator quantity does not exist in KMR at all.",
+      "statement_class": "inference",
+      "basis": "kmr.txt full text; audit/2026-08-10/03_AMPLITUDE_TRACE.md section 'The secondary error is worse than the number'",
+      "reproducibility": "n/a"
+    },
+    {
+      "statement": "[E] KMR's B_L is a product of trajectory-averaged quantities, confirmed from the BODY and not only the Appendix B.1 section title: main text reads \"we use combination B_L = S\u0304_L S\u0304_L^{top}\" and the appendix reads \"the product of both the half-cut entanglement entropy and the topological entanglement entropy\". This upgrades SRC-KMR-2023's LOAD_BEARING_DEFINITION from title-only to body-verified.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt lines 570-573 (main text, Sec. 3.2) and lines 1050-1060 (Appendix B); SRC-KMR-2023.yaml inspection_caveat",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] KMR's only quoted critical exponent is nu = 1.6(7) ~ 5/3, obtained for the MEASUREMENT-ONLY transition at w = 0 on the self-dual line alpha = gamma, from data collapse of the topological entanglement entropy S\u0304^{top}(alpha,L) = F((alpha-alpha_c) L^{1/nu}). It is not for the gamma = 0 cut.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt lines 505-520, Eq. (14)",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] KMR prove by duality (c_j <-> d_j, alpha <-> gamma) that the w = 0 transition sits exactly at alpha = gamma, numerically alpha_cr = 0.9(9) gamma. In an alpha/(alpha+gamma) parameterization this is exactly 1/2.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt lines 499-509, Eq. (13)",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] For the gamma = 0 limit KMR state only that \"the stochastic dynamics exhibits a transition from an area-law to a critical sub-volume-law scaling of the entanglement entropy at a finite critical value of alpha/w\". No numerical value for that critical alpha/w appears anywhere in the paper.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt lines 745-750 and 790-794",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The post-selected non-Hermitian limit of KMR gives area law for ANY alpha != 0 at gamma = 0, so no analytic boundary value can be read off Eq. (17)-(19) at that cut.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt lines 747-750, Eqs. (17)-(19)",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] SRC-FULGA-2012 is identifiable: arXiv:1205.1441, I. C. Fulga, A. R. Akhmerov, J. Tworzydlo, B. Beri, C. W. J. Beenakker, \"Thermal metal-insulator transition in a helical topological superconductor\", Phys. Rev. B 86, 054505 (2012). The state file records local_copy exists: false, arXiv id UNKNOWN, and title \"REMOVED because it was a guess\".",
+      "statement_class": "evidence",
+      "basis": "Retrieved https://export.arxiv.org/pdf/1205.1441 to /tmp/fulga.pdf (9 pages) and pdftotext; cross-checked against arxiv.org/abs/1205.1441 and against Jian et al. reference [53]. research/state/sources/SRC-FULGA-2012.yaml",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] Fulga et al. Table I gives nu = 2.06 [1.89, 2.20] (control parameter q) and nu = 1.93 [1.78, 2.24] (control parameter alpha), for the THERMAL METAL-INSULATOR transition of a disordered 2D class-DIII Chalker-Coddington network model, extracted from finite-size scaling of the thermal conductivity. Table II lists it as the class-DIII metal-insulator entry, nu ~ 2.0. There is no measurement, no monitoring, no replica and no Born rule anywhere in the paper.",
+      "statement_class": "evidence",
+      "basis": "/tmp/fulga.txt lines 348-398 (Sec. V D, Table I, Table II, Conclusion)",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] Jian et al. state explicitly that the forced-measurement entanglement transition \"is equivalent to the thermal-metal-insulator transition in a two-dimensional disordered non-interacting fermionic Hamiltonian system in symmetry class DIII\", numerically studied in their Ref. 53 (= Fulga et al.), where \"the critical exponent nu for this thermal metal-insulator transition was found to be nu ~ 2 which is consistent with our result\" (their forced value nu = 1.9 +/- 0.1). DEC-CITATION-001 item 3 (Fulga = the n->0 forced/Anderson exponent) is therefore source-verified from both sides.",
+      "statement_class": "evidence",
+      "basis": "/tmp/jian.txt lines 685-695 and reference [53] at line 1348, from /Users/catlover1337/Downloads/05_Papers_Library/2302.09094v1.pdf",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] Jian et al. Table I: nu = 2.1 +/- 0.1 (Born) versus 1.9 +/- 0.1 (forced); X1 = 1.00 +/- 0.02 versus 1.02 +/- 0.03; x(1) = 2.66 +/- 0.05 versus 3.53 +/- 0.04; -x(2) = 1.80 +/- 0.04 versus 5.7 +/- 0.2; zeta_1 = 0.39 +/- 0.02 versus 0.30 +/- 0.04. Their \"different universality class\" conclusion is argued from x(1), x(2), zeta_1 and the replica-limit field theory; the only place they call nu values \"significantly different\" is in the comparison against the LOOP MODEL (nu = 2.745, 2.87), not between Born and forced.",
+      "statement_class": "evidence",
+      "basis": "/tmp/jian.txt Table I at lines 744-757, intro at lines 176-187, Sec. IV C at lines 843-857",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[I] The practical severity of the Fulga replica-limit defect is smaller than the conceptual one: a project that imported nu ~ 2.0 from Fulga would have landed within one sigma of Jian's Born-rule value 2.1 +/- 0.1. The defect is real as an attribution and as a mechanism (Anderson class versus a class beyond Anderson localization), but nu alone does not discriminate.",
+      "statement_class": "inference",
+      "basis": "/tmp/jian.txt Table I; /tmp/fulga.txt Table I",
+      "reproducibility": "n/a"
+    },
+    {
+      "statement": "[E] All the LMR numbers that SRC-LMR-2025 marks UNVERIFIED are confirmed in the paper body: zeta* = 0.28 (Fig. 7 caption, \"breakdown of the bosonized theory at zeta ~ zeta* = 0.28\"); nu ~ 1 for strong PPS; \"close to the transition nu ~ 2.3 > 5/3, before dropping back to nu = 5/3 for larger zeta\"; the fully monitored value nu = 5/3 is cited to their Ref. [10] = KMR; the extraction method is finite-size scaling of the topological entanglement entropy detailed in Appendix H.",
+      "statement_class": "evidence",
+      "basis": "/tmp/lmr.txt lines 1008-1070 (Sec. VI A 3-4 and Fig. 7 caption) from /Users/catlover1337/Downloads/05_Papers_Library/PhysRevX.15.021020.pdf",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The LMR zeta convention matches the project's: \"a dimensionless parameter zeta in [0,1] which controls the degree of partial postselection, with no postselection for zeta = 1 and complete postselection for zeta = 0\".",
+      "statement_class": "evidence",
+      "basis": "/tmp/lmr.txt lines 93-107 and Fig. 1 caption",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] LMR's analytic value of zeta* comes from a Mobius-type combination identical in form to the project's r_c: their Eq. (47)-(48) give Luttinger parameters that diverge at J2/(1-zeta) = pi/8 and zeta/(1-zeta) = pi/8, so zeta* = pi/(8+pi) = 0.2817..., and the critical unitary strength scales as J_2c proportional to (1-zeta), i.e. LINEARLY, not as a square root.",
+      "statement_class": "evidence",
+      "basis": "/tmp/lmr.txt lines 810-840 (Eqs. 46-49 and the sentence 'K_rho and K_sigma diverge at J2/(1-zeta) = pi/8 and zeta/(1-zeta) = pi/8')",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The historical A = 0.96 +/- 0.05 originated as a 1/sqrt(L)-extrapolated small-zeta Binder-crossing fit reported alongside phi = 0.502 +/- 0.026 with chi2/dof = 10.7, explicitly presented as replacing a previously assumed A ~ 0.5.",
+      "statement_class": "evidence",
+      "basis": "theory/archive/SESSION_2026_05_20.md lines 15-32 (PROVENANCE ONLY, not support)",
+      "reproducibility": "artifact_only"
+    },
+    {
+      "statement": "[E] The superseding evidence EV-EXEC-AUDITREPRO-001 gives, in the r_c parameterization, A = 0.692 at fixed phi = 1/2 and A = 0.874 at free power. Neither reproduces 0.96 +/- 0.05. The stated reason for withdrawal in CB-AMP-096-001 (\"was an r_c-type prefactor mislabelled as lambda_c\") is therefore not quantitatively demonstrated by the cited evidence.",
+      "statement_class": "evidence",
+      "basis": "research/state/evidence/EV-EXEC-AUDITREPRO-001.yaml result_summary; research/state/claims/CB-AMP-096-001.yaml confidence_basis",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The 2026-05-20 fit was 1/sqrt(L)-EXTRAPOLATED; EV-EXEC-AUDITREPRO-001 is explicitly L_extrapolated: false. The withdrawal therefore compares two different estimators on two different datasets. CB-AMP-001's own scope and falsifiers acknowledge this (\"Not L-extrapolated\", falsifier: \"L-extrapolated crossings over the same window giving A outside 0.45-0.53\").",
+      "statement_class": "evidence",
+      "basis": "research/state/evidence/EV-EXEC-AUDITREPRO-001.yaml config; research/state/claims/CB-AMP-001.yaml scope and falsifiers; theory/archive/SESSION_2026_05_20.md",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] No source establishing lambda_c(zeta=1) = 1/2 was found. Carollo et al. PRA 98 010103 is confirmed unrelated (already in state). KMR gives no numeric value at gamma = 0. LMR gives no such value. Four web searches under alternative terminology returned nothing.",
+      "statement_class": "evidence",
+      "basis": "kmr.txt, lmr.txt; WebSearch queries logged below; research/state/sources/SRC-CAROLLO-2018.yaml",
+      "reproducibility": "procedure_only"
+    },
+    {
+      "statement": "[E] Le Gal, Turkeshi, Schiro, PRX Quantum 5, 030329 (2024) is in the library and directly addresses the jump-versus-QSD question the manuscript raises, reporting that for U(1) free fermions with density monitoring a log-to-area transition has been reported \"for both quantum jumps and the quantum state diffusion (QSD) type of density monitoring\", and that the sub-volume phase is essentially due to quantum jumps while the renormalized non-Hermitian contribution is essentially independent of the monitoring rate. It reports no phase-boundary amplitude.",
+      "statement_class": "evidence",
+      "basis": "/tmp/lgts.txt lines 660-700, from /Users/catlover1337/Downloads/05_Papers_Library/PRXQuantum.5.030329.pdf",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[C] The Carollo mis-attribution may be a surname collision: there are at least two distinct Carollos in this literature, Federico Carollo (quantum-Doob / rare events, PRA 98 010103) and Angelo Carollo (co-author of arXiv:2407.13837 on MIPT breakdown under partial trajectory averaging, which is topically much closer to partial postselection). I have not read the latter beyond its abstract and offer this only as a lead.",
+      "statement_class": "conjecture",
+      "basis": "WebFetch of https://arxiv.org/abs/2407.13837 (abstract only); research/state/sources/SRC-CAROLLO-2018.yaml",
+      "reproducibility": "n/a"
+    },
+    {
+      "statement": "[C] A candidate reconstruction for the unsourced lambda_c(1) = 1/2 is a cut-to-cut transfer of KMR's EXACT duality result alpha_c = gamma (Cut A / w = 0, where alpha/(alpha+gamma) = 1/2 identically) onto Cut B (gamma = 0, alpha + w = 1), where no such duality exists. theory/archive/SESSION_2026_05_20.md independently derives \"lambda_c^A = 1/2 for all zeta\" for Case A from exactly that self-duality. I found no document performing the transfer, so this is conjecture, not a reconstruction of the actual error.",
+      "statement_class": "conjecture",
+      "basis": "kmr.txt Eq. (13) and lines 499-509; theory/archive/SESSION_2026_05_20.md 'Case A' section (PROVENANCE ONLY)",
+      "reproducibility": "n/a"
+    },
+    {
+      "statement": "[J] Critical couplings such as alpha_c/w at a fixed lattice model are non-universal lattice-scale numbers. An exact analytic value of 1/2 for one would normally require a duality or an exactly solvable structure. In the absence of either at gamma = 0, my judgment is that no analytic source for lambda_c(1) = 1/2 is likely to exist and the value should be treated as numerically pinned, which is what theory/HANDOFF.md line 1075 already says.",
+      "statement_class": "judgment",
+      "basis": "kmr.txt Eqs. (17)-(19) analysis; theory/HANDOFF.md:1075 (PROVENANCE ONLY)",
+      "reproducibility": "n/a"
+    }
+  ],
+  "candidates": [
+    "The historical A = 0.96 arose from a 1/sqrt(L)-extrapolated small-zeta Binder-crossing fit on the May-2026 dataset and was displaced by a non-extrapolated fit on a different, rebuilt dataset, so the two numbers were never measured by the same estimator.",
+    "The specific explanation recorded for the withdrawal of CB-AMP-096-001, that 0.96 was an r_c-type prefactor mislabelled as lambda_c, is not reproduced by the cited evidence, whose r_c amplitudes are 0.692 and 0.874.",
+    "The external comparator that gave 0.96 its physical meaning in the manuscript, namely KMR's alleged diffusive amplitude of order one half, does not appear in KMR; KMR's r_c is a readout threshold, not lambda_c/(1-lambda_c).",
+    "The closest genuine prior art for a partial-postselection phase boundary is LMR's two-replica bosonization, whose critical unitary strength scales linearly in (1-zeta) and whose natural variable is the Mobius combination zeta/(1-zeta).",
+    "lambda_c(zeta=1) = 1/2 has no located source in the literature and is a numerically pinned value.",
+    "KMR's only exactly known critical value, alpha_c = gamma from duality, sits at 1/2 in an alpha/(alpha+gamma) parameterization but belongs to the w = 0 measurement-only cut, not to Cut B."
+  ],
+  "contradictions": [
+    "SRC-KMR-2023.yaml records under invoked_for: \"the reported diffusive-case boundary lambda_c ~ A*r_c^{1/2} with A of order one half\". I read the full KMR text and no such statement exists. The word \"diffusiv\" does not occur in the paper. KMR's r_c is the detector readout threshold of Eq. (20) with values -2 to -0.5 in Fig. 5, for which r_c^{1/2} is not even real. This contradicts a field in a canonical state file and removes the external anchor from the manuscript's \"prefactor is roughly twice the diffusive one\" claim.",
+    "audit/2026-08-10/03_AMPLITUDE_TRACE.md diagnoses the manuscript error as a cross-parameterization comparison against \"KMR in an r_c-type parameterization\". That diagnosis presupposes the KMR statement I could not find. The diagnosis is therefore not established, even though the audit's numerical verdict on 0.49 versus 0.96 is independent of it.",
+    "CB-AMP-096-001.confidence_basis says the 0.96 \"was an r_c-type prefactor mislabelled as lambda_c\". The evidence it is superseded by, EV-EXEC-AUDITREPRO-001, gives r_c amplitudes of 0.692 (fixed phi = 1/2) and 0.874 (free power). 0.96 +/- 0.05 excludes both. The withdrawal verdict may still be right, but the stated reason is not supported by the cited evidence.",
+    "The withdrawal compares unlike estimators: the 0.96 came from a 1/sqrt(L)-extrapolated fit, while EV-EXEC-AUDITREPRO-001 is explicitly not L-extrapolated. CB-AMP-001's own falsifier is an L-extrapolated fit, which has never been run.",
+    "Nuance against DEC-CITATION-001 item 3 as commonly read: Jian et al.'s Born-rule nu = 2.1 +/- 0.1 and forced nu = 1.9 +/- 0.1 are statistically compatible. Their distinct-class conclusion rests on x(1) (2.66 vs 3.53), -x(2) (1.80 vs 5.7), zeta_1 and field theory. So Fulga's nu ~ 2.0 is the wrong-limit quantity conceptually, but importing it would not have produced a numerically detectable error in nu."
+  ],
+  "gaps": [
+    "The true source of lambda_c(zeta=1) = 1/2 remains unfound. I searched the local library (182 PDFs, title-extracted and filtered), the Desktop internship directory, and four web queries under alternative terminology. Needed to close: either an analytic argument internal to the project, or a paper reporting a critical alpha/w = 1 for a monitored Majorana chain at gamma = 0. I recommend downgrading it to numerically pinned rather than continuing the search.",
+    "SRC-CAROLLO-2018 remains inspection_level: not_inspected. I did not open PhysRevA.98.010103.pdf; its exclusion as the lambda_c source rests on the title, which is sufficient for exclusion but not for what it does support.",
+    "SRC-FAVA-2023 (PhysRevX.13.041045.pdf, present locally) remains not_inspected. It is load-bearing for CB-NLSM-001 and the coset-versus-principal-chiral question and I did not read it in this pass.",
+    "SRC-POBOIKO-2023 has no local copy and I did not retrieve it.",
+    "arXiv:2407.13837, Paviglianiti, Di Fresco, Silva, Spagnolo, Valenti, Angelo Carollo, \"Breakdown of Measurement-Induced Phase Transitions Under Information Loss\": abstract_only. Its claim that partial trajectory averaging introduces an effective finite lengthscale suppressing long-range correlations is directly on-topic for the zeta -> 0 limit and for DISP-WINDOW-001's \"no window is asymptotic\" position. It must be read before it is used.",
+    "arXiv:2510.19459, \"Absence of measurement- and unraveling-induced entanglement transitions in continuously monitored one-dimensional free fermions\": seen in a search result only, not inspected. It is negative-result literature bearing on whether the transition exists at all and on unraveling dependence.",
+    "No L-extrapolated Cut B crossing fit exists on the current guided data. This is the decisive test named by both DISP-PHI-001 and DISP-WINDOW-001 and it is the only way to settle whether the 0.96/0.49 gap is estimator-driven.",
+    "The r_c-mislabel hypothesis could be tested directly by rerunning the 2026-05-20 estimator (1/sqrt(L) extrapolation, small-zeta window) in both parameterizations on the current aggregate. I did not run it. The task scratch directory contains probes suggesting free-power r_c amplitudes of 1.01-1.15 in some windows, which brackets 0.96, but that is execution plane and not support."
+  ],
+  "confidence_note": "The KMR negative result is the strongest thing here and rests on full-text extraction of the published SciPost PDF; it would be overturned only if the statement lives in a figure bitmap or in a different KMR paper (for example an earlier arXiv version or a companion). I checked the published version only. My reading of LMR Eqs. (47)-(49) as giving a linear-in-(1-zeta) boundary is from the equations as printed; I did not verify their derivation, and LMR themselves state the two-replica approximation is only qualitatively reliable and biased in favour of the area law. My statement that Jian's nu values do not discriminate is arithmetic on their quoted error bars, not their claim. Everything about the origin of 0.96 comes from theory/archive and audit/, which are provenance only; if those documents are wrong about the May-2026 estimator, the unlike-estimator finding weakens.",
+  "independence_note": "The framing \"what evidence superseded or weakened it\" invites confirming that 0.96 is dead. I want to flag that I found the supersession is less clean than the state records: the number is almost certainly not the right lambda_c amplitude, but the recorded REASON for its death (r_c mislabel) is not reproduced by the cited evidence, and the comparison is between unlike estimators. Separately, the standing task phrasing \"confirm the Fulga replica-limit issue\" presumes the issue is real; I confirmed the attribution but am reporting the countervailing nuance that Jian's own nu values do not separate Born from forced. I disregarded both pulls."
+}

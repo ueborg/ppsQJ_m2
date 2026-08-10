@@ -1,0 +1,147 @@
+{
+  "summary": "The historical A = 0.96 is fully reconstructed, and the canonical rationale for withdrawing it is contradicted by the primary document, which is on disk and tracked in git. analysis/lambda_c_phi_analysis.md (May 2026) fits lambda_c^inf = A*zeta^phi explicitly in the lambda_c parameterization, using a 1/sqrt(L) extrapolation of B_L pair crossings over L in {32,48,64,96,128} and a window zeta <= 0.3. An inverse-variance-weighted log-log fit of that document's own lambda_c^inf table over that window reproduces phi = 0.503, A = 0.965, chi2/dof = 10.5 against its quoted phi = 0.502 +/- 0.026, A = 0.96, chi2/dof = 10.7. The amplitude is an artifact of the extrapolation exponent (A = 0.53, 0.66, 0.79, 0.96 for p = 2, 1, 0.7, 0.5 in the document's own table; p = 0.5 was chosen by assuming nu = 2, i.e. by assuming phi = 1/2) and of one outlying point: dropping zeta = 0.30 from the six-point window collapses the fit to phi = 0.259, A = 0.406. I reproduced EV-EXEC-AUDITREPRO-001 exactly, showed the OBS-BLPROD-001 versus OBS-BLKMR-001 observable convention explains none of the 0.49-vs-0.96 gap, and found the unanalysed results/boundary_aggregate.csv gives A_lam = 0.543 +/- 0.010 over the same window, above CB-AMP-001's asserted 0.49-0.51 band. Canonical state currently permits only this: no Cut B boundary amplitude is estimator-stable on data we hold, in either parameterization.",
+  "findings": [
+    {
+      "statement": "[E] The primary source of A = 0.96 exists on disk and is tracked in git: /Users/catlover1337/Documents/ppsQJ_m2/analysis/lambda_c_phi_analysis.md, mtime 2026-05-19, clean in `git status --porcelain` at commit 6c9c843. It states its method verbatim: B_L crossings for L pairs from {32,48,64,96,128}, linear interpolation, 500-bootstrap errors, extrapolation of lambda_c(L_avg) in 1/L_avg^p, and a log-log fit of lambda_c^inf(zeta) = A*zeta^phi restricted to zeta <= 0.3.",
+      "statement_class": "evidence",
+      "basis": "/Users/catlover1337/Documents/ppsQJ_m2/analysis/lambda_c_phi_analysis.md; `git log -1 --format=%H` -> 6c9c843; `git status --porcelain analysis/lambda_c_phi_analysis.md` -> empty",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The historical number is quantitatively reconstructed. Inverse-variance-weighted log-log fit of the lambda_c^inf table printed in that document, over that document's own window zeta <= 0.3 (6 points), gives phi = 0.5030, A = 0.9647, chi2/dof = 10.47, against the document's quoted phi = 0.502 +/- 0.026, A = 0.96, chi2/dof = 10.7.",
+      "statement_class": "evidence",
+      "basis": "/Users/catlover1337/Documents/ppsQJ_m2/research/tasks/active/TASK-2026-08-10-AMP096/scratch/reconstruct_096.py and reconstruct_096_out.json",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The parameterization of the historical fit is lambda_c, not r_c. The document writes lambda_c^inf(zeta) = A*zeta^phi and tabulates lambda_c^inf values (0.149 at zeta=0.02 up to 0.443 at zeta=1.0). No r_c = lambda/(1-lambda) quantity appears in it.",
+      "statement_class": "evidence",
+      "basis": "/Users/catlover1337/Documents/ppsQJ_m2/analysis/lambda_c_phi_analysis.md sections 'Method' and 'Extrapolated lambda_c^inf(zeta) values'",
+      "reproducibility": "artifact_only"
+    },
+    {
+      "statement": "[E] The amplitude is an artifact of the extrapolation exponent. The document's own table gives A = 0.53 (p=2), 0.66 (p=1), 0.79 (p=0.7), 0.96 (p=0.5), with phi = 0.385, 0.428, 0.463, 0.502 respectively. p = 0.5 was selected on the stated ground that nu = 1/y_lambda = 2, i.e. on the assumption that phi = 1/2.",
+      "statement_class": "evidence",
+      "basis": "/Users/catlover1337/Documents/ppsQJ_m2/analysis/lambda_c_phi_analysis.md, 'Results' table and 'Why p = 1/2 is the right extrapolation'",
+      "reproducibility": "artifact_only"
+    },
+    {
+      "statement": "[E] The historical fit rests on two of six points. Leave-one-out on the documented zeta <= 0.3 window: dropping zeta = 0.30 gives phi = 0.259, A = 0.406; dropping zeta = 0.02 gives phi = 0.790, A = 1.476; dropping any of 0.05, 0.10, 0.15, 0.20 leaves A within 0.963-1.040.",
+      "statement_class": "evidence",
+      "basis": "reconstruct_096_out.json, key leave_one_out_on_documented_window",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The 0.96 was a single-window fit by the charter's numeric well-formedness rule. Widening the window on the document's own table: zeta <= 0.2 gives phi = 0.259, A = 0.406 (chi2/dof 1.4); zeta <= 0.3 gives 0.503 / 0.965 (10.5); zeta <= 0.5 gives 0.518 / 1.013 (8.7); zeta <= 1.0 gives 0.272 / 0.503 (28.6).",
+      "statement_class": "evidence",
+      "basis": "reconstruct_096_out.json",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] EV-EXEC-AUDITREPRO-001 reproduces exactly. Independently re-implemented wide-pair (L2 >= 2*L1) B_L crossings with median over pairs on agg_caseB_combined.pkl over zeta in [0.05,0.85]: A_lam(fixed phi=1/2) = 0.494, phi_lam = 0.495, A_rc(fixed 1/2) = 0.692, phi_rc = 0.681 -- matching the evidence item's result_summary to three decimals.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py against DATA_INTERNSHIP/Data/pps_aggregates/agg_caseB_combined.pkl",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] CB-AMP-001's recorded window_sensitivity scan reproduces exactly: phi_lam = 0.185, 0.390, 0.495, 0.670 over [0.05,0.125], [0.05,0.40], [0.05,0.85], [0.25,0.85]. My scan adds [0.05,0.2] -> 0.255 and [0.1,0.85] -> 0.589. Seven windows in total, all strongly drifting; this corroborates CB-WINDOW-001.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py, section BLPROD_widepair",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The observable convention explains none of the gap. Computing OBS-BLKMR-001 (B = <CMI>*<S_AB>, product of clone-averages per realization, then averaged over realizations, from CMI_means_all and S_AB_means_all) on agg_pps_clone_guided_prod.pkl and locating crossings the same way gives A_lam(1/2) = 0.4942, phi_lam = 0.4964, versus OBS-BLPROD-001's 0.4890 / 0.4942 on the identical records. Crossing positions agree to a median 0.31 percent and a maximum 7.48 percent over 15 zeta values.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe2.py section B",
+      "reproducibility": "partially_reproducible"
+    },
+    {
+      "statement": "[E] The stored observable definition matches OBS-BLPROD-001 exactly. pps_qj/parallel/worker_clone_pps.py:214 `_batched_compute_B_L` forms CMI = S_AB + S_BC - S_B - S_ABC and B_L = CMI * S_AB per clone (line 266), then worker line 529 takes mean over clones and line 555 `_nanstat` over realizations. Regions are Majorana A=[0,L/2), B=[L/2,L), C=[L,3L/2). Average-of-products, as OBS-BLPROD-001 states.",
+      "statement_class": "evidence",
+      "basis": "/Users/catlover1337/Documents/ppsQJ_m2/pps_qj/parallel/worker_clone_pps.py lines 214-285, 498-560",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] On the previously unanalysed results/boundary_aggregate.csv (EV-DATA-BOUNDARYCSV-001, 470 rows, 5634 realizations), wide-pair B_L crossings give lambda_c = 0.124, 0.125, 0.169, 0.193, 0.219, 0.275, 0.323, 0.366, 0.470, 0.459, 0.482, 0.716 at zeta = 0.05 ... 0.8. Window scan of A_lam(1/2): 0.485 +/- 0.011 over [0.05,0.4], 0.543 +/- 0.010 over [0.05,0.85], 0.587 +/- 0.014 over [0.25,0.85]; phi_lam = 0.546, 0.657, 0.866. Uncertainties are parametric bootstrap (300 draws, seed 777) on the stored B_L_se.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py and scratch/amp096_probe3.py against /Users/catlover1337/Documents/ppsQJ_m2/results/boundary_aggregate.csv",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] The r_c amplitude on the boundary CSV over [0.05,0.85] is A_rc(1/2) = 0.949 +/- 0.035; on agg_caseB_combined the r_c free-power amplitude over the same window is 0.874 +/- 0.025. Pointwise, r_c/sqrt(zeta) on agg_caseB_combined rises to 0.92-0.99 for zeta >= 0.6 while lambda_c/sqrt(zeta) never exceeds 0.60.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe3.py; pointwise table computed from amp096_probe_out.json",
+      "reproducibility": "partially_reproducible"
+    },
+    {
+      "statement": "[I] Because 0.96 is reachable BOTH as a lambda_c amplitude under the 1/sqrt(L)-extrapolating estimator (the documented route) AND as an r_c-scale amplitude under the plain median estimator, a numeric coincidence alone cannot distinguish the two accounts; the primary document is what distinguishes them, and it says lambda_c.",
+      "statement_class": "inference",
+      "basis": "analysis/lambda_c_phi_analysis.md plus scratch/amp096_probe3.py and amp096_probe4.py",
+      "reproducibility": "n/a"
+    },
+    {
+      "statement": "[E] A crude 1/sqrt(L_geom) extrapolation of all pair crossings on agg_caseB_combined raises A_lam(1/2) from 0.494 to 0.578 over [0.05,0.85] and to 0.658 over [0.25,0.85], and A_rc(1/2) from 0.692 to 1.021 and 1.405. Direction of the effect: L-extrapolation inflates the amplitude.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py, section 'L-extrapolation test'",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] That extrapolation is not trustworthy on current L ranges. Per-zeta intercepts on agg_caseB_combined are non-monotone (zeta=0.15 gives 0.119 against a median crossing of 0.179 while zeta=0.4 gives 0.486 against 0.305), and on the boundary CSV intercepts range 0.27 to 1.39 with one negative (zeta=0.9 -> -0.45). My re-run of the ORIGINAL May recipe on the May-era aggregate with L restricted to {32,48,64,96,128} returns nonsense intercepts (including negative lambda_c^inf), so the raw-data path to 0.96 is not reproducible.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py, amp096_probe2.py section C, amp096_probe5.py section 2",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[E] Estimator sensitivity of the amplitude on agg_caseB_combined over [0.05,0.85]: wide pairs 0.494, all pairs 0.507, narrow pairs only 0.542, single widest pair 0.487. Locator sensitivity: OBS-CMI-001 gives 0.425 +/- 0.004 where OBS-BLPROD-001 gives 0.494 +/- 0.003 -- a 14 percent shift far exceeding the statistical error.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py section 'estimator sensitivity'; scratch/amp096_probe3.py",
+      "reproducibility": "partially_reproducible"
+    },
+    {
+      "statement": "[E] Statistical uncertainty on CB-AMP-001's central value is small compared with its systematics. Parametric bootstrap on the stored B_L_err (300 draws, seed 777) gives A_lam(1/2) = 0.494 +/- 0.003 over [0.05,0.85], while the same quantity moves to 0.480 over [0.05,0.4] and 0.543 on a different dataset. The dominant uncertainty is not statistical.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe3.py",
+      "reproducibility": "partially_reproducible"
+    },
+    {
+      "statement": "[E] No crossing anywhere in this work was L-extrapolated in a defensible way. All headline amplitudes quoted above (0.494, 0.543, 0.425, 0.508) are NOT L-extrapolated; the extrapolated variants (0.578, 0.658, 1.13) are reported only as an instability demonstration.",
+      "statement_class": "evidence",
+      "basis": "scratch/amp096_probe.py, amp096_probe2.py, amp096_probe3.py",
+      "reproducibility": "fully_reproducible"
+    },
+    {
+      "statement": "[J] What canonical state currently permits us to conclude is narrow: CB-AMP-096-001 is correctly withdrawn, CB-AMP-001 stands as a provisional non-L-extrapolated locator amplitude on one dataset, CB-WINDOW-001's drift verdict is reproduced and extended to two further datasets and two further locators, and DISP-PHI-001 and DISP-WINDOW-001 remain open. Nothing here moves DISP-PHI-001 in either direction, because the amplitude question is separable from the exponent question and both remain window-dominated.",
+      "statement_class": "judgment",
+      "basis": "research/state/claims/CB-AMP-001.yaml, CB-AMP-096-001.yaml, CB-WINDOW-001.yaml; research/state/disputes/DISP-PHI-001.yaml, DISP-WINDOW-001.yaml",
+      "reproducibility": "n/a"
+    }
+  ],
+  "candidates": [
+    "A = 0.96 was a lambda_c-parameterization amplitude produced by a 1/sqrt(L) extrapolation of B_L pair crossings over the window zeta <= 0.3; its value is an artifact of the choice of extrapolation exponent p (A = 0.53, 0.66, 0.79, 0.96 for p = 2, 1, 0.7, 0.5 on the same data) combined with a single outlying point at zeta = 0.30.",
+    "The canonical rationale recorded in CB-AMP-096-001 -- that the 0.96 belongs to the r_c-type parameterization rather than lambda_c -- is not what the primary May-2026 document says; that document fits lambda_c^inf = A*zeta^phi explicitly and never forms r_c.",
+    "CB-AMP-001 (A ~ 0.494, not L-extrapolated) and CB-AMP-096-001 (A = 0.96, 1/sqrt(L)-extrapolated) differ by ESTIMATOR convention at least as much as by parameterization; canonical state records only the parameterization mismatch.",
+    "The observable convention OBS-BLPROD-001 versus OBS-BLKMR-001 explains none of the 0.49-versus-0.96 gap: the two locators give crossing positions agreeing to a median 0.31 percent and amplitudes agreeing to about 1 percent.",
+    "On the independent, previously unanalysed results/boundary_aggregate.csv, the same estimator over the same window gives A_lam = 0.543 +/- 0.010, above the 0.49-0.51 band asserted by CB-AMP-001.",
+    "No fitted Cut B amplitude on current data is estimator-stable: A_lam(fixed phi = 1/2) spans 0.42 to 0.66 across locators, pair-selection rules, datasets and extrapolation choices, so the amplitude is not currently a measured quantity in either parameterization.",
+    "The current L ranges do not support a 1/sqrt(L) extrapolation of crossings at all: per-zeta intercepts are non-monotone and on the boundary CSV one is negative, so CB-AMP-001's own falsifier cannot presently be evaluated.",
+    "The 0.96 episode and the phi = 1/2 headline share a single root: the extrapolation exponent p = 1/2 was chosen because nu = 2 was assumed, and that same choice produced both phi = 0.502 and A = 0.96 from data that give phi = 0.26 to 0.79 under neighbouring choices."
+  ],
+  "contradictions": [
+    "CONTRADICTS the provenance_note of CB-AMP-096-001 (\"Corrected 2026-06-07: the 0.96 belongs to the r_c-type parameterization, not lambda_c\") and the Verdict of audit/2026-08-10/03_AMPLITUDE_TRACE.md (\"A = 0.96 +/- 0.05 is not the amplitude of lambda_c = A sqrt(zeta) ... The ~0.7-0.9 figure belongs to the r_c parameterization\"). The primary document /Users/catlover1337/Documents/ppsQJ_m2/analysis/lambda_c_phi_analysis.md fits lambda_c^inf(zeta) = A*zeta^phi in the lambda_c parameterization explicitly, tabulates lambda_c^inf, and never forms r_c. Its numbers reproduce to phi = 0.503, A = 0.965, chi2/dof = 10.5. The withdrawal of CB-AMP-096-001 is unaffected and is if anything better justified, but the recorded REASON is wrong, and it is wrong in a way that matters: the real cause (an extrapolation-exponent choice made by assuming phi = 1/2) is an active methodological hazard, whereas a parameterization mislabel is a bookkeeping error already believed fixed.",
+    "CONTRADICTS the evidence_note of CB-AMP-096-001 (\"Original supporting analysis not located on disk. Historical record only.\") and MISSING_ARTIFACTS-style assumptions in the audit. The original analysis writeup IS on disk and IS tracked in git at commit 6c9c843: analysis/lambda_c_phi_analysis.md, mtime 2026-05-19. It carries the method, the extrapolation-exponent scan and the extrapolated lambda_c^inf table with errors. Only the generating script and the raw crossing points are missing.",
+    "CONTRADICTS OBS-BLKMR-001's field `recomputable_from: \"CMI_mean and S_AB_mean, both stored in every guided aggregate\"`. S_AB_mean is NOT stored in DATA_INTERNSHIP/Data/pps_aggregates/agg_caseB_combined.pkl -- the very dataset EV-DATA-AGGCASEB-001 and CB-AMP-001 rest on. Its keys are B_L_err, B_L_mean, CMI_err, CMI_mean, ESS_mean, L, N_c, S_err, S_mean, S_renyi_2_mean, S_renyi_3_mean, T, alpha, lam, n_T_mean, n_real, w, zeta. It is also absent from agg_A.pkl, agg_B_highL.pkl and agg_B_prod.pkl. It IS present in agg_pps_clone_guided_prod.pkl, agg_pps_clone_guided_highL.pkl and agg_pps_caseA_guided.pkl, which is where I did the recomputation. Note also that S_mean in these aggregates is OBS-SHALF-TAVG-001 (time-averaged post-burn-in, pps_qj/cloning.py:547), not the final-time S_AB, so it is not a substitute.",
+    "TENSION (not a formal falsification) with CB-AMP-001's value 0.494 and its confidence_basis \"Independently reproduced\". On results/boundary_aggregate.csv -- an independent July-2026 campaign, 5634 realizations, same locator OBS-BLPROD-001, same wide-pair median estimator, same window [0.05,0.85] -- A_lam(fixed phi=1/2) = 0.543 +/- 0.010 (parametric bootstrap on stored B_L_se), i.e. above the claim's stated 0.49-0.51 band and above the 0.45-0.53 band named in its falsifier, at roughly five statistical sigma. The falsifier as literally written requires L-extrapolation, which this is not, so I do not claim it has fired. Caveat: the boundary CSV admits only one wide pair per zeta (64,128), so this is a thin comparison.",
+    "TENSION with CB-AMP-001's falsifier \"L-extrapolated crossings over the same window giving A outside 0.45-0.53\". My 1/sqrt(L_geom) extrapolation on the claim's own dataset over the claim's own window gives A_lam(1/2) = 0.578, outside that band. I explicitly do NOT report the falsifier as fired, because the extrapolation is unstable (non-monotone per-zeta intercepts, one negative on the companion dataset). What this establishes is that the falsifier is live and cheap to test, and that it cannot be settled with the current L range."
+  ],
+  "gaps": [
+    "The raw crossing points and bootstrap machinery behind the May-2026 lambda_c^inf table are gone. Only the writeup and the resulting table survive. My re-run of the documented recipe on the May-era aggregates (clone_aggregate(2).pkl, L in {32,48,64,96,128}) is numerically unstable and does not reproduce the table, so I can reconstruct 0.96 from the DOCUMENTED table but not from raw data. Needed to close this: the original script, or the per-pair crossing list with its bootstrap errors. Probably unrecoverable.",
+    "Which raw aggregate the May analysis used is inferred, not established. clone_aggregate(2).pkl matches the L set {32,48,64,96,128} and the zeta grid of the contemporaneous 2026-05-22 HANDOFF backup table, but the document names no input file. Needed: an input path or hash in the writeup.",
+    "The B_L definition of the old aggregates (old_cloning_data/*.pkl) is NOT verified to be the same average-of-products quantity as OBS-BLPROD-001. I verified the CURRENT worker (worker_clone_pps.py:214) and OBS-BLPROD-001 records that worker_caseA and run_local_boundary import the same function, but the May-era generation predates all three. OBS-BL-001's own audit_action_required (\"confirm the stored definition per dataset generation\") is still open for the pre-June data. Needed: the generating worker at the May commit.",
+    "results/boundary_aggregate.csv carries no T, N_c, burn_in, seeds, generating script, date or git_commit, exactly as EV-DATA-BOUNDARYCSV-001 records. T and N_c are recoverable from research/runs/_catalogue/ruche_pull_catalogue.csv and the per-realisation JSONs under results/ruche_pull; burn_in, seeds and git_commit are not. This matters because I am comparing its amplitude against agg_caseB_combined, whose T/L falls below 1 at L >= 128 -- the two campaigns may not be at matched T/L, and METH-TREQ-001 exists precisely because that can matter. I did not resolve it.",
+    "No defensible L-extrapolation exists for either dataset. agg_caseB_combined has L in {32..160} but only 6 pairs at large zeta; boundary_aggregate.csv has L in {64..128}, too narrow. Needed to settle CB-AMP-001's falsifier and the first discriminating test named in DISP-WINDOW-001: either larger L, or a corrections-to-scaling fit with a free correction exponent and honest errors, which is T0 work but is a real analysis task, not a probe.",
+    "I did not recompute crossings with OBS-BLKMR-001 on the boundary CSV or on agg_caseB_combined, because neither stores S_AB_mean. The locator comparison rests on agg_pps_clone_guided_prod.pkl alone (877 records). OBS-BLKMR-001's open_task is therefore discharged on one dataset, not in general.",
+    "SRC-KMR-2023 remains inspection_level relevant_sections with Appendix B.1 read by TITLE ONLY. Any statement about how our amplitude compares with KMR's -- including the manuscript's \"roughly twice the diffusive one\" -- is still unsupported, and my finding that the two locators agree does not fix that, because the parameterization mismatch and the QSD-versus-quantum-jump mismatch remain."
+  ],
+  "confidence_note": "The reconstruction of 0.96 hinges on analysis/lambda_c_phi_analysis.md, which under the charter is PROVENANCE, not support. It is nonetheless strong provenance: it is tracked in git at commit 6c9c843 with a May-2026 mtime, its printed lambda_c^inf table reproduces the quoted phi, A and chi2/dof to three digits under the obvious weighting, and its extrapolation-exponent table independently explains the amplitude's magnitude. What would change my assessment: (1) evidence that the May-era B_L field was a different quantity from OBS-BLPROD-001, which would make the whole reconstruction a cross-observable comparison -- this is the single most load-bearing unverified assumption; (2) a surviving contemporaneous r_c fit that also lands on 0.96, which would restore the canonical account as a co-cause rather than an error; (3) a proper corrections-to-scaling extrapolation with errors, which would decide whether the CB-AMP-001 band survives. I would also revise the boundary-CSV tension downward if the two campaigns turn out to sit at materially different T/L, since only one wide pair (64,128) per zeta is available there.",
+  "independence_note": "The question's phrasing (\\\"identify what evidence superseded or weakened it\\\") invites confirming the canonical supersession story, and the canonical files I was pointed at state that story plainly and repeatedly. I initially ran the analysis expecting to corroborate the r_c-mislabel account, and my probes 1-3 are consistent with it (the r_c family does reach 0.95). The primary document then contradicted it. I am reporting the contradiction rather than the corroboration, and I note explicitly that the r_c numerical coincidence is real and is why the wrong account was believable. I detected no steer toward any particular answer from the lead, who stated no view; the steer, such as it was, came from the canonical files themselves being internally confident and, on this point, wrong."
+}
