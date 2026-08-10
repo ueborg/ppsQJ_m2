@@ -1,3 +1,14 @@
+---
+lifecycle: active
+superseded_by: null
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: ACTIVE.** Still the Cut A reference. Note that Cut A is IMPLEMENTED and RUN (CASEA-IMPL-001), contrary to statements elsewhere.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # Case A Implementation Specification
 
 **Audience.** This document is written for an autonomous coding agent (Claude Code or

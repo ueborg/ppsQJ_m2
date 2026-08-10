@@ -1,3 +1,14 @@
+---
+lifecycle: unreconciled
+superseded_by: research/state/disputes/
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: UNRECONCILED.** Large (45 KB) and not audited in detail. Mine for open claims before relying on any part of it.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # Open Analytic Problems — QJ-PPS Case B
 
 **Last update: 2026-06-06.** Companion to `CURRENT_THEORY_STATUS.md`.

@@ -1,3 +1,14 @@
+---
+lifecycle: superseded
+superseded_by: CB-THETA1-001, CB-YZETA-001, DISP-YZETA-001
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: SUPERSEDED.** The parity result survives. The y_zeta = 1 and K_eff ~ L^0 conclusions rest on Delta_zeta = 1, which CB-VERTEX-001 contradicts.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # theta_1 from no-click BdG: first-principles confirmation of y_zeta = 1
 
 > **CORRECTION (May 2026).** The quantity computed in this document is

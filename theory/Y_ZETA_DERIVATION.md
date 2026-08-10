@@ -1,3 +1,14 @@
+---
+lifecycle: historical
+superseded_by: CB-VERTEX-001, CB-YZETA-001
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: HISTORICAL.** Self-supersedes cleanly and is the exemplar of good superseding practice. Its section 7 amplitude correction landed 2026-06-10 and is registered as CB-AMP-001.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # Derivation of the y_zeta prediction (Delta_B at the MIPT), QJ Case B
 >> ★ SUPERSEDED IN PART (2026-06-10) — read HANDOFF.md top block first.
 >> The boundary derivation in Sec. 7 (and its "0.96 tell" / r_c-vs-λ_c wording flagged

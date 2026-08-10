@@ -1,3 +1,14 @@
+---
+lifecycle: unreconciled
+superseded_by: research/state/decisions/ + DISP-WINDOW-001
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: UNRECONCILED.** Section 1 (why r_c rather than lambda_c) and sections 5-7 (run design, uncertainty, pairwise vs global FSS) remain the best methodology text in the project and are NOT superseded. Its exponent numbers are.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # Numerics Status and Plan — QJ-PPS Case B
 
 > ★ PARTIALLY SUPERSEDED (2026-06-10) — dated 2026-06-03; read `HANDOFF.md` top block

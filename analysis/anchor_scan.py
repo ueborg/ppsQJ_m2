@@ -1,3 +1,18 @@
+"""
+DO NOT USE - THIS SCRIPT IS KNOWN WRONG (flagged 2026-08-10).
+
+Its hardcoded kernel E_analytic(q, w, kappa) DROPS the hopping w from the
+measured bond, and delta_B_hook() raises NotImplementedError. It produced the
+falsified Fermi-step, lambda* = 4/5 and nu_0 = 1 results, and the resulting
+"xi_ps ~ lambda^-2 refuted" conclusion. Falsified 2026-06-15 by a deterministic
+run against the real backend.
+
+It still runs and produces plausible-looking output. That is the hazard.
+
+See research/state/evidence/EV-CODE-ANCHORSCAN-001.yaml and DISP-XI-001.
+Retained for the historical record only.
+"""
+
 #!/usr/bin/env python3
 # WARNING (2026-06-15): the E_analytic kernel in this file is WRONG. It drops the
 # hopping w from the measured bond (it uses t1 = -i*kappa), so its Fermi-step /

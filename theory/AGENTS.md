@@ -1,3 +1,14 @@
+---
+lifecycle: superseded
+superseded_by: research/RESEARCH_CHARTER.md + Claude project instructions
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: SUPERSEDED.** Its "most common follow-on reads" point to three files that exist only under theory/archive/. Its end-of-chat protocol makes HANDOFF the sole sink for all information, which is the failure this migration removes.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # ppsQJ_m2 — Chat Agent Protocol
 
 This file tells any Claude chat working on the ppsQJ_m2 project how to

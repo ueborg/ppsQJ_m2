@@ -1,3 +1,14 @@
+---
+lifecycle: unreconciled
+superseded_by: research/state/claims/
+authoritative_for: nothing
+marked: 2026-08-10
+marked_by: phase4-migration
+---
+
+> **LIFECYCLE: UNRECONCILED.** Carries a 2026-06-10 banner deprecating the whole file, but its sections 6 and 7 contain VERIFIED computations (cross-vertex dimension, no-click spectrum) that the banner over-deprecates. Those are registered as CB-VERTEX-001 and CB-XI-LAMBDA1-001. Section 10 states that with corrected inputs the matching gives phi = 1, feeding DISP-PHI-001.
+> Canonical scientific state is `research/state/`. Cite claim IDs, not this file.
+
 # Current Theory Status — QJ-PPS Case B
 
 > ★ SUPERSEDED (2026-06-10) — this file is dated 2026-06-03 and is stale. Read
