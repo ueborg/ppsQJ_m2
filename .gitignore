@@ -69,3 +69,38 @@ outputs/
 
 results/
 
+
+# ---- added 2026-08-10 migration ----------------------------------------
+# Machine-local data-root mapping (see research/state/DATA_ROOTS.yaml).
+# The .example template IS tracked.
+research/data_roots.local.yaml
+
+# Regenerable catalogue (research/tools/catalogue_runs.py, ~2 min, 1.3 MB)
+research/runs/_catalogue/
+
+# Raw / pulled campaign data. Belongs in the data backup, not in git.
+results/ruche_pull/
+results/ruche_pull.zip
+results/local_boundary/
+results/L4/
+saturation_output/
+outputs/
+logs/
+
+# Generated figures with no provenance record
+analysis/*.png
+analysis/*.pdf
+scripts/*.png
+scripts/*.pdf
+
+# Caches and OS noise
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# results/ is ignored wholesale above. Re-include the one small aggregate that
+# canonical state cites (EV-DATA-BOUNDARYCSV-001, 48 KB, 470 rows).
+!results/
+results/*
+!results/boundary_aggregate.csv
