@@ -1,0 +1,31 @@
+id: EV-DATA-CASEA-001
+type: aggregated_dataset
+title: "Cut A guided-cloning production aggregate"
+reproducibility: partially_reproducible
+role: supporting
+location:
+  root: DATA_INTERNSHIP
+  relative: "Data/pps_aggregates/agg_pps_caseA_guided.pkl"
+  original_absolute_path: "/Users/catlover1337/Downloads/01_M1_Internship/Data/pps_aggregates/agg_pps_caseA_guided.pkl"
+  verified_at: 2026-08-10
+  exists: true
+n_records: 574
+parameters:
+  cut: A
+  L: [32, 48, 64, 96, 128]
+  zeta: [0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.7,0.85]
+  lambda: {values: "0.42..0.58, 13 points symmetric about 0.5"}
+  N_c: [300, 350, 400, 500]
+  T: [64.0, 96.0, 128.0]
+  n_real: 5
+  burn_in: unknown_recoverable
+  seeds: unknown_recoverable
+observable_fields: [B_L_mean, CMI_mean, S_mean, S_AB_mean, S_BC_mean, S_B_mean,
+                    S_ABC_mean, chi_k_mean, covar_Sk_mean, theta_mean, ESS_mean]
+metadata_gaps: [burn_in, seeds, git_commit]
+supports: [CASEA-IMPL-001]
+contradicts: [CASEA-NOTRUN-001]
+notes: >
+  Does NOT contain MI_ends fields (OBS-MIENDS-001), which were added later and
+  are uncommitted. Region assignment stored is the CMI tripartition.
+created: {date: 2026-08-10, by: audit-phase4}

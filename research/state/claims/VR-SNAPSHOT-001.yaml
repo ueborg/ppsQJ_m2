@@ -1,0 +1,30 @@
+id: VR-SNAPSHOT-001
+statement: "Snapshot averaging at fixed spacing 8 gives a large variance reduction that grows with L."
+type: methodology
+domain: production
+statement_class: evidence
+claim_kind: methodological_result
+epistemic_status: contradicted
+contested: false
+confidence: very_low
+confidence_basis: "L=48 breaks the claimed L-trend."
+architecture_status_legacy: refuted   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: refuted
+  to: contradicted
+  rule: "contradicted"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+evidence: [{id: EV-EPH-COUPSNAP48-001, role: discriminating}]
+depends_on: []
+contests: []
+superseded_by: VR-SNAPSHOT-PROD-001
+dispute_id: DISP-SNAPSHOT-001
+review_status: approved
+provenance_note: >
+  The L=48 point (1.22x) against 5.85x, 7.73x and 2.66x at L=32, 40, 64 makes the
+  sequence non-monotone by a factor of six, consistent with noise domination at
+  R = 14-16. The frozen HANDOFF labels this "the largest confirmed lever".
+created: {date: 2026-08-10, by: audit-phase4}

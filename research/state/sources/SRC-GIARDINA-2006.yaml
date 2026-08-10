@@ -1,0 +1,18 @@
+id: SRC-GIARDINA-2006
+citation: "Giardina, Kurchan, Peliti, Phys. Rev. Lett. 96, 120603 (2006)"
+short: Giardina2006
+type: journal_article
+local_copy: {root: PAPERS_LIBRARY, relative: "PhysRevLett.96.120603.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/PhysRevLett.96.120603.pdf"}
+also_at: /mnt/project/PhysRevLett_96_1206031.pdf
+doi_or_arxiv: "10.1103/PhysRevLett.96.120603"
+inspection_level: not_inspected
+identity_verified: partial
+identity_note: "Journal/volume/page match the known cloning paper. Title not cleanly extractable from this PDF."
+invoked_for_claims: [VR-CLOSE-001, VR-METRIC-001]
+invoked_for: "The cloning / population-dynamics algorithm for sampling tilted path measures."
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+does_not_establish:
+  - "The GUIDED variant used in production (proposal c = zeta with an exact compensator), which is this project's own construction."
+  - "Any statement about finite-population bias in nonlinear entanglement observables."
+search_terms: ["population dynamics algorithm", "cloning algorithm large deviations", "Giardina Kurchan Peliti", "sampling tilted path measure"]
+created: {date: 2026-08-10, by: charter-stage0}

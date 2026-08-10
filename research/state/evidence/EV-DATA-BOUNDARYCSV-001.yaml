@@ -1,0 +1,31 @@
+id: EV-DATA-BOUNDARYCSV-001
+type: aggregated_dataset
+title: "Boundary-map aggregate CSV, July 2026 campaign"
+reproducibility: partially_reproducible
+role: supporting
+location: {path: results/boundary_aggregate.csv, verified_at: 2026-08-10, exists: true}
+n_records: 470
+input_evidence: [EV-DATA-RUCHEPULL-001]
+aggregation_script: {path: unknown_recoverable, git_commit: unknown_recoverable}
+parameters:
+  cut: B
+  L: [64, 80, 96, 112, 128]
+  zeta: [0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+  lambda: {min: 0.0671, max: 0.8000}
+  n_real: [6, 12]
+  total_realizations: 5634
+  cells: 69
+  lambda_points_per_cell: [1, 3, 4, 7]
+  T: not_in_file
+  N_c: not_in_file
+  burn_in: not_in_file
+  seeds: not_in_file
+observable_fields: [CMI, CMI_se, B_L, B_L_se]
+metadata_gaps: [T, N_c, burn_in, seeds, generating_script, date, git_commit]
+recoverable_from: "the per-realisation JSONs under results/ruche_pull carry T and N_c"
+supports: []
+contradicts: []
+notes: >
+  Contains zeta = 1.0, which no ~/Downloads guided aggregate does. Many cells have
+  only 1-4 lambda points, too thin for a crossing. Unanalysed as of 2026-08-10.
+created: {date: 2026-08-10, by: audit-phase4}

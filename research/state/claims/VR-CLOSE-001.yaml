@@ -1,0 +1,31 @@
+id: VR-CLOSE-001
+statement: "Selection is not the bottleneck in guided cloning: N_eff is approximately N_c always, because sibling clones decorrelate in B_L within one time unit against a T = 32-64 horizon."
+type: methodology
+domain: methodology
+statement_class: evidence
+claim_kind: methodological_result
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "Single L and zeta cell, but the mechanism explains every prior negative."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+scope: "L = 32, zeta = 0.9. Single cell."
+evidence:
+  - {id: EV-EPH-TMP-001, role: discriminating}
+value_detail: "Var_pop/Var_indep = 1.19 (guided), 1.49 (control). Sibling rho(B_L) within +/-0.11 at all lags 1-16."
+depends_on: []
+contests: []
+assumptions: ["The L=32 decorrelation behaviour extends to production L."]
+falsifiers: ["A resampling scheme demonstrably reducing Var(B_L) at fixed N_c."]
+consequences: ["Explains every negative in the sampler-improvement programme with one mechanism."]
+review_status: approved
+review_record: {notes: "Held at plausible: the mechanism is well argued and the evidence is a single L and zeta cell, recovered from /tmp."}
+created: {date: 2026-08-10, by: audit-phase4}

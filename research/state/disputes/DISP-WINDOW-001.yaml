@@ -1,0 +1,14 @@
+id: DISP-WINDOW-001
+question: "Is any fitted Cut B boundary exponent asymptotic, or is the accessible window entirely preasymptotic?"
+status: open
+priority: highest
+competing_claims: [CB-WINDOW-001, CB-PHI-HALF-001]
+positions:
+  - position: "A mid-zeta window reflects asymptotics; small-zeta floor and Born saturation are excludable."
+  - position: "No window is asymptotic. Small zeta is finite-size floored (r_c flat at 0.13-0.18 for zeta <= 0.05) and large zeta saturates toward the Born endpoint, so the fitted exponent is an interpolation between two artifacts."
+discriminating_test_candidates:
+  - "L-extrapolate crossings per zeta, then refit. If the window drift survives extrapolation, the project's own decision rule (NUMERICS_STATUS_AND_PLAN section 6) says marginal/log-corrected, no clean power."
+  - "Map the small-zeta floor and confirm it scales with L, which is the artifact test."
+blocking_gaps: ["No L-extrapolation has been performed on the current guided data."]
+resolution_rule: "Closed by evidence only."
+created: {date: 2026-08-10, by: audit-phase4}

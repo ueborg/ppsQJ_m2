@@ -1,0 +1,15 @@
+id: SRC-POBOIKO-2023
+citation: "Poboiko, Popperl, Gornyi, Mirlin, Phys. Rev. X 13, 041046 (2023)"
+short: PoboikoMirlin2023
+type: journal_article
+local_copy: {path: null, verified_at: 2026-08-10, exists: false}
+local_copy_note: "NOT PRESENT. Note PhysRevX.13.041045 IS present but is Fava et al (SRC-FAVA-2023). Adjacent article number, different paper. Do not confuse them."
+doi_or_arxiv: "10.1103/PhysRevX.13.041046"
+inspection_level: not_inspected
+identity_verified: false
+invoked_for_claims: []
+invoked_for: "U(1) free fermions in 1d: no MIPT, the log phase is a crossover. Used as context for the Renyi washout question."
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+citation_problems: ["No local copy. Adjacent article number to SRC-FAVA-2023 creates a real confusion risk."]
+search_terms: ["monitored U(1) fermions no transition", "log phase crossover monitored", "Poboiko Mirlin measurement"]
+created: {date: 2026-08-10, by: charter-stage0}

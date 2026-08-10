@@ -1,0 +1,29 @@
+id: CASEA-DRIFT-001
+statement: "Cut A crossings drift away from 1/2 toward ~0.42 for zeta above roughly 0.25."
+type: scaling_law
+domain: cut_A
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: true
+confidence: low
+confidence_basis: "Chat-only observation, never checked against completed cells."
+architecture_status_legacy: contested   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: contested
+  to: provisional
+  rule: "(see epistemic_status; contestation now carried by contested: true)"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_A
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+evidence: []
+evidence_note: "INCOMPLETE. Chat-only observation, 2026-08-05. Attributed at the time to incomplete L=64/96 cells, untested."
+depends_on: []
+contests: [CASEA-DUAL-001]
+dispute_id: DISP-CASEA-UNIV-001
+falsifiers: ["Completed cells restoring lambda_c = 1/2 at large zeta."]
+review_status: approved
+review_record: {notes: "Preserved as a competing claim rather than dismissed as an artifact. Dismissing it was the pre-audit default and was never checked."}
+created: {date: 2026-08-10, by: audit-phase4}

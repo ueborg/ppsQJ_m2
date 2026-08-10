@@ -1,0 +1,32 @@
+id: CB-VERTEX-001
+statement: "The genuine normal-ordered cross-replica click vertex :B_+B_-: is exactly marginal with Delta = 2.02, so y_zeta = 0; the single-copy mass has Delta_B = 1.01."
+type: mechanism
+domain: shared_theory
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "Clean exponent separation (r^-2 vs r^-4); output artifacts not located; UV statement only."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: null
+scope: "Exact free-fermion ground state at L=600, UV/lattice anchor. NOT an IR statement at the class-DIII fixed point."
+evidence: [{id: EV-EXEC-VERTEXDIM-001, role: discriminating}]
+depends_on: []
+contests: []
+superseded_by: null
+assumptions: ["The lattice operator content maps onto the replica field theory as assumed."]
+falsifiers: ["A recomputation of the connected :B_+B_-: correlator giving an exponent materially different from -4."]
+open_issues:
+  - "Delta_zeta^IR at the NLSM fixed point is NOT computed. This claim is UV only."
+  - "Whether the vertex is purely chiral is DISPUTED. See DISP-VERTEX-CHIRAL-001."
+review_status: approved
+review_record: {notes: "Not verified: the output artifacts of cross_vertex_dimension.py were not located, so reproducibility is partial. The method and the numbers are recorded in CURRENT_THEORY_STATUS.md section 6."}
+provenance_note: "Supersedes Delta_zeta = 1, which measured either a single bilinear or the raw non-normal-ordered correlator, both ~ r^-2."
+created: {date: 2026-08-10, by: audit-phase4}

@@ -1,0 +1,50 @@
+id: SRC-JIAN-2023
+citation: "Jian, Shapourian, Bauer, Ludwig, arXiv:2302.09094"
+short: Jian2023
+type: preprint
+local_copy: {root: PAPERS_LIBRARY, relative: "2302.09094v1.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/2302.09094v1.pdf"}
+doi_or_arxiv: "arXiv:2302.09094"
+inspection_level: relevant_sections
+identity_verified: true
+title_verified: "Measurement-induced entanglement transitions in quantum circuits of non-interacting fermions: Born-rule versus forced measurements"
+authors: "Chao-Ming Jian, Hassan Shapourian, Bela Bauer, Andreas W. W. Ludwig"
+dated: "2023-02-17 (v1), 21 pages"
+inspected_on: 2026-08-10
+inspected_sections: "abstract, Sec. I Introduction (pp. 1-3), table of contents"
+supports_precisely:
+  - "Born-rule and forced measurements in monitored Gaussian circuits of non-interacting fermions are in DIFFERENT universality classes. Numerical evidence plus a field-theory argument. (abstract; Sec. I)"
+  - "The circuit considered, a 1D Majorana chain with no symmetry beyond fermion parity, is in AZ class DIII, and the AZ class is the SAME for Born and forced. (abstract)"
+  - "The statistical-mechanics model is the PRINCIPAL CHIRAL non-linear sigma model with field variable an SO(n) matrix, in replica limits n->0 (forced) and n->1 (Born). Symmetry SO(n) x SO(n). (abstract; Sec. I)"
+  - "Forced (n->0) is an Anderson-localization universality class; Born (n->1) is a NOVEL class beyond Anderson localization. (abstract)"
+  - "Both transitions are driven by proliferation of Z2 topological defects. (abstract)"
+  - "The loop-model-with-crossings circuit is a highly fine-tuned case in a universality class DIFFERENT from both, with SO(n) at n->1 rather than SO(n) x SO(n). (abstract; Sec. I)"
+attribution_check: >
+  The project invokes this source to establish that importing Fulga's class-DIII
+  exponent (the n->0 forced/Anderson value) as the Born-rule MIPT exponent is
+  unjustified. THAT ATTRIBUTION IS CORRECT and is now source-verified.
+regime_and_assumptions:
+  - "MONITORED RANDOM QUANTUM CIRCUITS, not continuous monitoring of a deterministic Hamiltonian. Our model is the latter."
+  - "Circuit preserves no symmetry other than global fermion parity."
+  - "Results are for the final-time Majorana correlation function and derived exponents."
+does_not_establish_verified:
+  - "A numerical value of nu for OUR model."
+  - "That our deterministic-Kitaev continuous-monitoring model lies in the same universality class as their random circuit. That is an INFERENCE the project has not recorded as checked."
+  - "Anything about partial post-selection. Jian et al. treat Born and forced as the two endpoints; the interpolating zeta ensemble is our own construction."
+corroborates: >
+  Independently confirms the frozen HANDOFF's note that the monitored-Majorana
+  literature uses a PRINCIPAL-CHIRAL SO(N) target rather than the SO(2n)/U(n)
+  coset the project's older derivations assumed.
+invoked_for_claims: [CB-NU-TWO-001, CB-NLSM-001]
+invoked_for: >
+  The proposition that in class DIII the FORCED (n->0) and BORN-RULE (n->1)
+  measurement transitions are DISTINCT universality classes. This is the load-bearing
+  citation that invalidates importing Fulga's exponent as an MIPT exponent.
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+does_not_establish:
+  - "A value for nu at n->1 in OUR model."
+  - "That our lattice model flows to the class they analyse."
+citation_problems:
+  - "RESOLVED 2026-08-10: inspected. The attribution is correct."
+  - "OPEN: the transfer from random circuits to our deterministic-Hamiltonian monitored model is unargued in project state."
+search_terms: ["Born versus forced measurement transition", "replica limit n to 1 versus n to 0", "class DIII monitored Majorana", "Z2 defect driven transition"]
+created: {date: 2026-08-10, by: charter-stage0}

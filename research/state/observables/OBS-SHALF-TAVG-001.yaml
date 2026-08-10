@@ -1,0 +1,21 @@
+id: OBS-SHALF-TAVG-001
+name: "Half-chain entanglement entropy, time-averaged after burn-in"
+status: active
+definition_verified: true
+definition: >
+  Half-chain entropy computed on the clone population at each recorded step and
+  TIME-AVERAGED over the recorded history AFTER burn-in. Not a final-time value.
+mathematical_definition: "S_mean = mean over recorded steps t > t_burnin of the population-mean half-chain entropy"
+cut: "A and B"
+implementation_source:
+  - {path: pps_qj/cloning.py, symbol: _batched_entanglement_entropy, line: 55, exists: true}
+  - {path: pps_qj/cloning.py, symbol: "S_mean = mean(S_arr[n_burnin_recorded:])", line: 547, exists: true}
+stored_field: S_mean
+distinct_from: [OBS-SHALF-FINAL-001]
+WARNING: >
+  S_mean and S_AB_mean are DIFFERENT QUANTITIES and must never be substituted for
+  one another. S_mean is time-averaged post-burn-in; S_AB_mean is final-time only.
+supports: [CB-MIPT-001]
+note: "The log-law to area-law entropy scaling result (CB-MIPT-001) has NOT been checked as to which of the two it used. Recorded as an open question, not assumed."
+supersedes: OBS-SHALF-001
+created: {date: 2026-08-10, by: proposal-2026-08-10-A}

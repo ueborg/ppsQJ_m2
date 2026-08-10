@@ -1,0 +1,32 @@
+id: CB-NLSM-001
+statement: "The matched-NLSM derivation gives lambda_c ~ sqrt(zeta) via the matching condition zeta*lambda^-2 ~ K*."
+type: mechanism
+domain: shared_theory
+statement_class: inference
+claim_kind: derivation
+epistemic_status: contradicted
+contested: false
+confidence: very_low
+confidence_basis: "Both required inputs failed."
+architecture_status_legacy: refuted   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: refuted
+  to: contradicted
+  rule: "contradicted"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "Derivation only, no executed evidence. Both required inputs (Delta_zeta = 1 and xi ~ lambda^-2 as the matching scale) are contradicted, so no evidence can support it as stated."
+depends_on: [CB-VERTEX-001]
+superseded_by: null
+review_status: approved
+provenance_note: >
+  Required BOTH Delta_zeta = 1 (relevant cross vertex) and xi ~ lambda^-2 as the
+  matching scale. Both inputs failed. What SURVIVES from the NLSM framework is
+  structural and is retained separately: zeta enters only the cross-replica
+  vertex, the Choi generator form, and the split into a single-copy mass
+  proportional to alpha(zeta-1)/4 and a cross vertex proportional to zeta*alpha/4.
+  What was REFORMULATED rather than refuted: the corner-matching replacement,
+  which remains CONDITIONAL on an area-phase gate that has never been run
+  (worker_areaphase_pps.py, written 2026-06-10).
+created: {date: 2026-08-10, by: audit-phase4}

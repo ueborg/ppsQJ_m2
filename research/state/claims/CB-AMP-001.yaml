@@ -1,0 +1,51 @@
+id: CB-AMP-001
+statement: "Over the fitted window, Cut B wide-pair Binder crossings are described by lambda_c = A*sqrt(zeta) with A ~ 0.49-0.51."
+type: amplitude
+domain: cut_B
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "Independently reproduced, but not L-extrapolated and OBS-BL-001 is unaudited."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_c
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+estimator: wide_pair_binder_crossing_median
+value: {central: 0.494, uncertainty: unknown, uncertainty_type: none, units: dimensionless}
+scope: "Guided-cloning generation. Not L-extrapolated, no corrections to scaling, no bootstrap."
+validity_range: {zeta: [0.05, 0.85], L: [32, 160], T_over_L: [0.80, 2.0]}
+fitting_window: {variable: zeta, range: [0.05, 0.85], n_points: 15}
+window_sensitivity:
+  note: "values are the free-power phi over each window, not A"
+  scan:
+    - {range: [0.05, 0.125], value: 0.185}
+    - {range: [0.05, 0.40], value: 0.390}
+    - {range: [0.05, 0.85], value: 0.495}
+    - {range: [0.25, 0.85], value: 0.670}
+  verdict: strongly_window_dependent
+evidence:
+  - {id: EV-EXEC-AUDITREPRO-001, role: discriminating}
+  - {id: EV-DATA-AGGCASEB-001, role: supporting}
+depends_on: [OBS-BLPROD-001]
+contests: []
+supersedes: [CB-AMP-096-001]
+superseded_by: null
+assumptions:
+  - "Binder crossings locate lambda_c without L-extrapolation."
+  - "Crossings were located with the TRAJECTORY-PRODUCT locator OBS-BLPROD-001, not KMR's product-of-averages OBS-BLKMR-001. Any comparison against KMR is therefore a CROSS-OBSERVABLE comparison as well as a cross-parameterization one (lambda_c vs r_c). Both mismatches must be reconciled before any 'twice the diffusive prefactor' style statement."
+  - "The stored definition is uniform across all guided campaigns. VERIFIED 2026-08-10: worker_clone_pps, worker_caseA and run_local_boundary all import _batched_compute_B_L. The LinAlgError fallback path in observables/topological.py has NOT been shown to agree numerically."
+falsifiers:
+  - "L-extrapolated crossings over the same window giving A outside 0.45-0.53."
+  - "A corrections-to-scaling fit shifting A beyond that band."
+review_status: approved
+review_record: {human_approval: {by: utku, date: 2026-08-10}, notes: "Bootstrap status: internally reproduced by the audit on an independent dataset from the 2026-06-07 conclusion. Deliberately NOT verified: no bootstrap, no L-extrapolation, and OBS-BL-001 is unaudited."}
+provenance_note: "Supersedes A = 0.96 +/- 0.05. See audit/2026-08-10/03_AMPLITUDE_TRACE.md."
+created: {date: 2026-08-10, by: audit-phase4}

@@ -1,0 +1,56 @@
+id: SRC-KMR-2023
+citation: "Kells, Meidan, Romito, SciPost Phys. 14, 031 (2023)"
+short: KMR2023
+type: journal_article
+local_copy: {path: "/Users/catlover1337/Desktop/Internship /SciPostPhys_14_3_031.pdf", verified_at: 2026-08-10, exists: true}
+also_at: /mnt/project/SciPostPhys_14_3_031.pdf
+doi_or_arxiv: "SciPost Phys. 14, 031"
+inspection_level: relevant_sections
+identity_verified: true
+title_verified: "Topological transitions in weakly monitored free fermions"
+authors: "Graham Kells, Dganit Meidan, Alessandro Romito"
+inspected_on: 2026-08-10
+inspected_sections:
+  - {part: "title page and abstract", page: 1, depth: read_in_full}
+  - {part: "Contents listing", pages: "1-2", depth: read_in_full,
+     note: "This is where the Appendix B.1 title, and hence KMR's definition of B_L, was obtained."}
+  - {part: "Sec. 1 Introduction", pages: "1-2", depth: read_in_full}
+  - {part: "Appendix B.1", page: 2, depth: TITLE_ONLY,
+     note: "ONLY the section title, as listed in the Contents, was read. The BODY of Appendix B.1 was NOT read. The definition B_L = S_top_L(bar) x S_L(bar) is taken verbatim from that title."}
+not_inspected:
+  - "Sec. 2 Model, Sec. 3 Results, Sec. 4 Discussion"
+  - "Appendices A, B (body), C"
+  - "the numerical values, including any amplitude A"
+inspection_caveat: >
+  The load-bearing finding of proposal 2026-08-10-A (that KMR's B_L is a product
+  of AVERAGES while ours is an average of PRODUCTS) rests on the Appendix B.1
+  SECTION TITLE alone. The overbar notation is unambiguous, but the appendix body
+  was not read and the finding should be confirmed against it before any
+  quantitative KMR comparison is published.
+supports_precisely:
+  - "Two sets of non-commuting NON-PROJECTIVE measurements stabilise area-law phases of distinct topological order, with a topological phase transition between them. (abstract)"
+  - "That transition is in a DIFFERENT universality class than in stroboscopic PROJECTIVE circuits. (abstract; Sec. 1)"
+  - "With unitary dynamics the two topological phases are separated by a region of sub-volume entanglement scaling. (abstract)"
+  - "The transition is well identified by a COMBINATION of the bipartite entanglement entropy and the topological entanglement entropy. (abstract)"
+  - "The phase diagram is qualitatively captured by an analytically tractable NON-HERMITIAN model obtained by post-selecting the measurement outcome. (abstract)"
+  - "They introduce a PARTIAL-POST-SELECTION continuous mapping associating topological indices of the non-Hermitian Hamiltonian to phases of the stochastic dynamics. (abstract)"
+LOAD_BEARING_DEFINITION: >
+  Contents p.2, Appendix B.1 is titled "Discussion of B_L = S_top_L(bar) x S_L(bar)
+  for the particle number conserving limit alpha = 0". The overbars are trajectory
+  averages, so KMR's B_L is a PRODUCT OF AVERAGES. Our stored B_L is an AVERAGE OF
+  PRODUCTS. These are different quantities. See proposal 2026-08-10-A.
+does_not_establish_verified:
+  - "Anything about the quantum-jump unraveling. KMR is QSD/weak-measurement."
+  - "The value A ~ 0.5 quoted in project prose. Not in the abstract; the body was NOT read."
+invoked_for_claims: [CB-AMP-001, CB-PHI-HALF-001]
+invoked_for: >
+  The QSD analogue of this model (gamma = 0 edge), and the reported diffusive-case
+  boundary lambda_c ~ A*r_c^{1/2} with A of order one half.
+does_not_establish:
+  - "Anything about the quantum-jump unraveling. KMR is QSD."
+  - "The lambda_c parameterization used here. The M1 report's 'prefactor roughly twice the diffusive one' compares OUR lambda_c amplitude against KMR's r_c-type amplitude. See audit/2026-08-10/03_AMPLITUDE_TRACE.md."
+citation_problems:
+  - "Cross-parameterization comparison in downstream prose (lambda_c vs r_c). Not a defect of the source."
+  - "NEW 2026-08-10: cross-OBSERVABLE comparison as well. Our B_L is not KMR's B_L."
+search_terms: ["monitored Kitaev chain", "quantum state diffusion", "measurement-induced transition class DIII", "Majorana bond parity monitoring"]
+created: {date: 2026-08-10, by: charter-stage0}

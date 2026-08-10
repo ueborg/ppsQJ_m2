@@ -1,0 +1,21 @@
+id: DISP-XI-001
+question: "What is the scaling of the no-click length with lambda, and is the lambda^-1 scale a state correlation length or a formation scale?"
+status: open
+priority: high
+competing_claims: [CB-XI-LAMBDA1-001, CB-XI-LAMBDA2-001, CB-XI-LAMBDA15-001]
+positions:
+  - claim: CB-XI-LAMBDA1-001
+    basis: "Spectrum probe, xi*lambda flat at 4-5 over lambda in [0.10, 0.40]. Identified as the ENTANGLEMENT-relevant length."
+  - claim: CB-XI-LAMBDA2-001
+    basis: "Band structure 2/ln(1 + kappa^2/w^2), plus fit-free area-law confirmation at L = 16..128."
+  - claim: CB-XI-LAMBDA15-001
+    basis: "Direct measurement over lambda in [0.2, 0.5]. Described as a crossover."
+complications:
+  - "Partly a NAMING COLLISION: band length versus steady-state length may be different objects with different exponents, which would make CB-XI-LAMBDA2-001 compatible with CB-XI-LAMBDA1-001."
+  - "The 2026-06-10 reframing of lambda^-1 as a SELECTION length rested on analysis/anchor_scan.py, which was falsified on 2026-06-15. The reframing was retained regardless and has never been rejustified."
+  - "Two measurements of the SAME steady-state quantity give -1 and -1.5 over overlapping lambda ranges."
+consequence: "If xi ~ lambda^-1 is the matching scale, CURRENT_THEORY_STATUS section 10 gives phi = 1, feeding DISP-PHI-001."
+discriminating_test_candidates:
+  - "Re-run noclick_spectrum_probe.py and the 2026-06-15 deterministic run on a COMMON lambda range with a common definition."
+resolution_rule: "First establish whether the three claims concern the same object. Do not resolve by picking the newest."
+created: {date: 2026-08-10, by: audit-phase4}

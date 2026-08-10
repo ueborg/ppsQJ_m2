@@ -1,0 +1,34 @@
+id: CB-NU-001
+statement: "The Cut B correlation-length exponent nu_B is NOT measured by current data; the 95 percent confidence set is approximately [1.5, 3] and does not shrink with added statistics."
+type: data_adequacy
+domain: cut_B
+statement_class: inference
+claim_kind: data_adequacy_assessment
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "Conclusion widely relied upon; generating script unrecoverable."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: OBS-CMI-001
+scope: "L <= 160. Simulation-based confidence construction marginalising over a correction-model family."
+evidence: []
+evidence_note: >
+  INCOMPLETE. The generating script /tmp/pps_lmr_robust.py NO LONGER EXISTS and
+  no output was preserved. Supported at present only by the frozen HANDOFF's
+  narrative record, which is non-authoritative.
+depends_on: []
+contests: []   # supersession, not a live dispute: see superseded_by
+assumptions: ["The correction-model family used was representative."]
+falsifiers: ["A reconstruction of the confidence construction yielding a materially tighter set."]
+consequences:
+  - "Every 'nu ~ 2' statement in the project is a consistency statement, not a measurement."
+  - "Pinning nu_B requires larger L, not more realisations."
+review_status: approved
+review_record: {notes: "Retained as plausible because the conclusion is load-bearing and widely relied upon, while its evidence is unrecoverable. Recovering it is a priority recovery target."}
+created: {date: 2026-08-10, by: audit-phase4}

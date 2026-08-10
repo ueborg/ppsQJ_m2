@@ -1,0 +1,42 @@
+id: SRC-FULGA-2012
+citation: "Fulga, Akhmerov, Tworzydlo, Beri, Beenakker, Phys. Rev. B 86, 054505 (2012)"
+short: Fulga2012
+type: journal_article
+local_copy: {path: null, verified_at: 2026-08-10, exists: false}
+local_copy_note: >
+  CONFIRMED ABSENT after a second exhaustive search on 2026-08-10: Spotlight on
+  "PhysRevB.86.054505" and "Fulga", a filename walk of the home tree, and a
+  full-text grep for "054505" across ~/Downloads/05_Papers_Library. No copy exists
+  on this machine. NOTHING about its contents has been recorded from project notes.
+acquisition_request:
+  what_to_obtain: "Fulga, Akhmerov, Tworzydlo, Beri, Beenakker, Phys. Rev. B 86, 054505 (2012). DOI 10.1103/PhysRevB.86.054505."
+  arxiv_id: UNKNOWN
+  arxiv_note: >
+    A guess of arXiv:1206.1278 was made and then CHECKED against the local file
+    of that id. It is Grebenkov and Nguyen, "Geometrical structure of Laplacian
+    eigenfunctions", an unrelated mathematics review. The guess was WRONG and is
+    recorded here so it is not repeated. Do not supply an arXiv id for this
+    source until one is verified.
+  title_note: "The title given above in earlier drafts was a guess and has been REMOVED. Only the journal reference and DOI are asserted, and both come from project notes rather than from the paper."
+  why_needed: >
+    It is the sole cited basis for the class-DIII nu ~ 2 value that CB-NU-TWO-001
+    asserts and that SRC-JIAN-2023 refutes as the wrong replica limit. The
+    refutation is now source-verified from the Jian side, but the value being
+    refuted has never been read. Charter sec 4.1 forbids recording its contents
+    from project notes, so this source stays uninspected until a copy is obtained.
+  note: "Title and arXiv id above are the bibliographic item to search for and are NOT verified. Verify on retrieval."
+doi_or_arxiv: "10.1103/PhysRevB.86.054505"
+inspection_level: not_inspected
+identity_verified: false
+invoked_for_claims: [CB-NU-TWO-001]
+invoked_for: "The class-DIII exponent nu ~ 2 that the project used as an input."
+genuinely_supports: >
+  Per project notes, the n->0 FORCED / Anderson-localization exponent, NOT the
+  Born-rule MIPT exponent. Recorded in DEC-CITATION-001.
+does_not_establish: ["The Born-rule (n->1) MIPT exponent, which is what the project needed."]
+citation_problems:
+  - "REPLICA-LIMIT MISUSE. Correct paper, wrong limit. See DEC-CITATION-001."
+  - "Originally attributed to a NON-EXISTENT paper, 'Koenig-Brouwer 2014'. That citation was hallucinated and must never be used."
+  - "No local copy. The correction rests entirely on project notes."
+search_terms: ["class DIII network model", "thermal metal Majorana", "Anderson localization symmetry class DIII", "topological superconductor critical exponent"]
+created: {date: 2026-08-10, by: charter-stage0}

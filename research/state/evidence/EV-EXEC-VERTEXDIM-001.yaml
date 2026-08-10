@@ -1,0 +1,19 @@
+id: EV-EXEC-VERTEXDIM-001
+type: executed_numerical_analysis
+title: "Cross-replica vertex scaling dimension from the exact free-fermion ground state"
+reproducibility: partially_reproducible
+role: discriminating
+script: {path: analysis/cross_vertex_dimension.py, git_commit: unknown_recoverable}
+method: "exact free-fermion ground state, L=600; pure-state gate max|MM^T - I| = 1.3e-14"
+output_artifacts: []
+result_summary: >
+  <B>_bulk = -0.637 (nonzero). Single-copy connected correlator C(r) ~ r^-2.018,
+  so Delta_B = 1.01. Genuine normal-ordered cross vertex :B_+B_-: has connected
+  correlator C(r)^2 ~ r^-4.036, so Delta = 2.02, MARGINAL, y_zeta = 0. The raw
+  non-normal-ordered correlator goes as r^-2.015, i.e. apparent Delta = 1 from the
+  dim-1 admixture. That is the most likely origin of the earlier Delta_zeta = 1 claim.
+supports: [CB-VERTEX-001]
+contradicts: [CB-YZETA-001]
+metadata_gaps: [output_artifacts, git_commit, exact_run_date]
+notes: "Output artifacts not located. Reproducibility limited by that, not by the method."
+created: {date: 2026-08-10, by: audit-phase4}

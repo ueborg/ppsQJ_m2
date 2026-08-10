@@ -1,0 +1,28 @@
+id: EV-DATA-GUIDEDHIGHL-001
+type: aggregated_dataset
+title: "Cut B guided-cloning high-L aggregate (L=160 only)"
+reproducibility: partially_reproducible
+role: supporting
+location:
+  root: DATA_INTERNSHIP
+  relative: "Data/pps_aggregates/agg_pps_clone_guided_highL.pkl"
+  original_absolute_path: "/Users/catlover1337/Downloads/01_M1_Internship/Data/pps_aggregates/agg_pps_clone_guided_highL.pkl"
+  verified_at: 2026-08-10
+  exists: true
+n_records: 103
+parameters:
+  cut: B
+  L: [160]
+  zeta: [0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.25,0.3,0.35]
+  lambda: {min: 0.034, max: 0.3593, n_unique: 103}
+  N_c: [250]
+  T: [128.0, 147.06]
+  T_over_L: {range: [0.80, 0.92], note: "T/L BELOW 1 at the largest size. Relevant to CB-NU-001."}
+  n_real: 5
+  burn_in: unknown_recoverable
+  seeds: unknown_recoverable
+per_realisation_arrays: true
+metadata_gaps: [burn_in, seeds, git_commit]
+supports: []
+contradicts: []
+created: {date: 2026-08-10, by: audit-phase4}

@@ -1,0 +1,25 @@
+id: METH-EXTRAP-001
+statement: "Finite-size extrapolation of crossings should use 1/sqrt(L) rather than 1/L, because nu = 2."
+type: methodology
+domain: methodology
+statement_class: inference
+claim_kind: interpretation
+epistemic_status: withdrawn
+contested: false
+confidence: very_low
+confidence_basis: "Circular on an unmeasured nu."
+architecture_status_legacy: superseded   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: superseded
+  to: withdrawn
+  rule: "withdrawn"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "The 2026-05-20 comparison table (1/L, 1/L^0.7, 1/sqrt(L), 1/L^2) was not located on disk. In any case it selected among four poor fits, chi2/dof 10.7 to 28.2."
+depends_on: [CB-NU-TWO-001]
+superseded_by: null
+review_status: stale
+review_record: {notes: "AUTO-FLAGGED by the dependency cascade: depends on CB-NU-TWO-001, which is refuted. The justification is circular on an unmeasured nu. Whether 1/sqrt(L) remains the best empirical choice is a separate, open question."}
+provenance_note: "Still asserted in project memory. Chose the lowest chi2/dof among four poor fits (10.7 vs 17.2, 13.4, 28.2), which is itself a signal that none of the four forms is right."
+created: {date: 2026-08-10, by: audit-phase4}

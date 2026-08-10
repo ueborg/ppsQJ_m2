@@ -1,0 +1,36 @@
+id: VR-SNAPSHOT-NULL-001
+statement: "At fixed snapshot spacing 8, the measured gain is not a monotone function of L and is consistent with noise domination at R = 14-16."
+type: negative_result
+domain: methodology
+statement_class: evidence
+claim_kind: negative_result
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "Four cells, R=14-16; noise reading is plausible but not proven."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+scope: "T = 64, spacing 8, K = 5, R = 14-16, zeta = 0.9."
+value_detail: "Gain 5.85x, 7.73x, 1.22x, 2.66x at L = 32, 40, 48, 64."
+evidence: [{id: EV-EPH-COUPSNAP48-001, role: discriminating}]
+depends_on: []
+contests: []
+dispute_id: DISP-SNAPSHOT-001
+assumptions: ["The four cells used comparable settings apart from L."]
+falsifiers:
+  - "Higher-R repetition restoring a monotone L-trend."
+  - "A demonstrated mechanism explaining a genuine non-monotonicity."
+revival_condition: >
+  Snapshot averaging is NOT closed as a technique. VR-SNAPSHOT-PROD-001 measures a
+  large gain at production settings. What is refuted is the fixed-spacing L-trend
+  reading. Revive the fixed-spacing analysis only with R >= 40 and bootstrapped ratios.
+review_status: approved
+review_record: {notes: "Registered as a first-class negative result so that the 1.22x point cannot be forgotten, per charter section 9."}
+created: {date: 2026-08-10, by: audit-phase4}

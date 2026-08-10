@@ -1,0 +1,32 @@
+id: CB-MIPT-001
+statement: "The Cut B transition is confirmed independently of any crossing estimator by half-chain entropy scaling: S(L/2) versus ln L shows a log-law to area-law transition."
+type: scaling_law
+parameterization: lambda_c
+domain: cut_B
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: false
+confidence: unassessed
+confidence_basis: "Sole evidence is chat_only; no basis to calibrate confidence."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: null   # UNRESOLVED: OBS-SHALF-FINAL-001 vs OBS-SHALF-TAVG-001
+observable_id_unresolved:
+  candidates: [OBS-SHALF-FINAL-001, OBS-SHALF-TAVG-001]
+  reason: "The log-law to area-law result is chat-only; which half-chain entropy it used was never recorded. Not guessed."
+scope: "Reported 2026-08-05 on the July campaign. Exact L and zeta coverage not recorded."
+evidence: [{id: EV-CHAT-ENTROPYSCALING-001, role: discriminating}]
+depends_on: []
+contests: []
+assumptions: ["The reported scaling was extracted over a clean L range."]
+falsifiers: ["Re-derivation showing no clean log-to-area crossover."]
+review_status: approved
+review_record: {notes: "CAPPED AT PLAUSIBLE by the charter: sole evidence is chat_only. If re-derived from existing data it would become the most robust single result in the project, because it is fit-free and estimator-independent."}
+recovery_priority: high
+created: {date: 2026-08-10, by: audit-phase4}

@@ -1,0 +1,22 @@
+id: SRC-LEGAL-SCHIRO-2025
+citation: "Le Gal, Schiro, arXiv:2511.22506"
+short: LeGalSchiro2025
+type: preprint
+title_verified: "Replica Field Theory of Quantum Jumps Monitoring: Application to the Ising Chain"
+local_copy: {root: PAPERS_LIBRARY, relative: "2511.22506v1.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/2511.22506v1.pdf"}
+doi_or_arxiv: "arXiv:2511.22506"
+inspection_level: not_inspected
+identity_verified: true
+identity_note: "Title extracted from the PDF on 2026-08-10."
+invoked_for_claims: [CB-NLSM-001, CB-VERTEX-001]
+invoked_for: >
+  The replica Keldysh construction in which zeta multiplies ONLY the cross-replica
+  vertex while the non-Hermitian replica-diagonal part is zeta-independent.
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+does_not_establish:
+  - "The scaling dimension of the cross vertex in OUR model. That is measured locally (EV-EXEC-VERTEXDIM-001)."
+  - "The NLSM target manifold for this model. The frozen HANDOFF records that the monitored-Majorana literature uses a principal-chiral SO(N) target rather than the coset the project's derivations assumed, and that the target must be REDERIVED from our Choi action. Not done."
+citation_problems:
+  - "NOTE THE TITLE: the application is to the ISING CHAIN. Whether the construction transfers to the Kitaev/Majorana setting used here is an inference the project has not recorded as checked."
+search_terms: ["replica Keldysh quantum jumps", "Choi doubled monitored dynamics", "cross-replica click vertex", "non-Hermitian replica field theory"]
+created: {date: 2026-08-10, by: charter-stage0}

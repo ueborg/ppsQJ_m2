@@ -1,0 +1,27 @@
+id: VR-METRIC-001
+statement: "The quantity to minimise for production efficiency is t_wall * sigma_lambda_c^2, with sigma_lambda_c = sigma_F / |F'(lambda_c)|."
+type: methodology
+domain: methodology
+statement_class: judgment
+claim_kind: methodological_result
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "A decision about what to optimise, grounded in three failed proxies."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+evidence: [{id: EV-EPH-TMP-001, role: supporting}]
+depends_on: []
+contests: []
+assumptions: ["lambda_c precision is the production deliverable."]
+consequences:
+  - "GESS, Var(log W), Var(B_L) and sum-D_2 are DIAGNOSTICS, not production metrics."
+  - "Three separate proxies each predicted a large production win that direct measurement then refused to deliver."
+review_status: approved
+review_record: {notes: "Absent from project memory entirely. Referenced by the charter's proxy rule and by the anti-slop metric_id mechanism."}
+created: {date: 2026-08-10, by: audit-phase4}

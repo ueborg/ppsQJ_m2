@@ -1,0 +1,30 @@
+id: CB-PARAM-001
+statement: "The difference between exponents fitted to lambda_c and to r_c = lambda_c/(1-lambda_c) over a finite window is entirely the Jacobian of the nonlinear map and carries no physical information."
+type: methodology
+domain: cut_B
+statement_class: inference
+claim_kind: theorem
+epistemic_status: supported
+contested: false
+confidence: high
+confidence_basis: "Mathematical identity check, verified numerically across six windows."
+architecture_status_legacy: verified   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: verified
+  to: supported
+  rule: "supported"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: both
+observable_id: OBS-BL-001
+scope: "Any finite zeta window over which lambda_c is not small. Exponents must agree only asymptotically as lambda_c -> 0."
+evidence: [{id: EV-EXEC-AUDITREPRO-001, role: discriminating}]
+depends_on: []
+contests: []
+superseded_by: null
+assumptions: ["d ln r / d ln lambda = 1/(1-lambda), exact."]
+falsifiers: ["A window where phi_r/phi_lam departs materially from <1/(1-lambda_c)>."]
+review_status: approved
+review_record: {human_approval: {by: utku, date: 2026-08-10}, notes: "Ratio tracks the Jacobian to three decimals in all six tested windows. This is a mathematical identity check, not a physics claim, which is why it can be verified on audit-grade numerics."}
+provenance_note: "Resolves what Stage 1 recorded as a genuine physical disagreement."
+created: {date: 2026-08-10, by: audit-phase4}

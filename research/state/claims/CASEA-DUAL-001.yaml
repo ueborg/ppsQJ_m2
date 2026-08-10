@@ -1,0 +1,35 @@
+id: CASEA-DUAL-001
+statement: "Cut A channel-exchange self-duality pins the transition at lambda_c = 1/2 for all zeta."
+type: scaling_law
+domain: cut_A
+statement_class: inference
+claim_kind: derivation
+epistemic_status: provisional
+contested: true
+confidence: moderate
+confidence_basis: "Duality argument is exact at the tilt level; numerics validate only at zeta<=0.25."
+architecture_status_legacy: contested   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: contested
+  to: provisional
+  rule: "(see epistemic_status; contestation now carried by contested: true)"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_A
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+value: {central: 0.5}
+scope: "Duality argument is exact at the level of the tilt, since zeta^{N_T} depends only on the TOTAL click count."
+evidence: []
+evidence_note: >
+  INCOMPLETE. Numerical validation reported only at zeta <= 0.25 (crossings
+  0.49-0.51), with drift to ~0.42 at higher zeta attributed to incomplete
+  L=64/96 cells. That attribution is untested. Chat-only.
+depends_on: []
+contests: [CASEA-DRIFT-001]
+dispute_id: DISP-CASEA-UNIV-001
+assumptions: ["The higher-zeta drift is a partial-data artifact."]
+falsifiers: ["Completed L=64/96 cells still showing lambda_c drifting from 1/2 at large zeta."]
+review_status: approved
+review_record: {notes: "Contested rather than plausible because the duality argument and the numerics disagree above zeta = 0.25 and the disagreement has not been closed. Cut A data to zeta = 0.85 EXISTS and can test this without new compute."}
+created: {date: 2026-08-10, by: audit-phase4}

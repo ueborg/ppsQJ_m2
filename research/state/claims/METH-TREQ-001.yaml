@@ -1,0 +1,38 @@
+id: METH-TREQ-001
+statement: "Reliable extraction of the Cut B correlation-length exponent requires evolution time T >= 2L, or a T set from a measured tau_int."
+type: methodology
+domain: methodology
+statement_class: conjecture
+claim_kind: conjecture
+epistemic_status: unsupported
+contested: false
+confidence: unassessed
+confidence_basis: >
+  The relaxation-time argument (tau ~ L^z near criticality, so T < L must bias
+  slopes) is sound in DIRECTION but supplies NO FACTOR. The specific threshold 2
+  has no derivation on record and is a heuristic margin. The tau_int pilot that
+  would fix T(L) has been owed since 2026-06-17 and has never been run.
+architecture_status_legacy: null
+status_migration: {from: null, to: unsupported, rule: "new claim", meaning_changed: false, human_confirmed: true}
+parameterization: null
+observable_id: null
+scope: "Cut B exponent extraction. Not a statement about lambda_c location, which crossings may locate adequately at shorter T."
+evidence: [{id: EV-EXEC-CATALOGUE-001, role: diagnostic}]
+evidence_note: >
+  The catalogue evidence establishes what T/L the data HAS, not that any
+  particular T/L is REQUIRED. No evidence supports the requirement itself.
+depends_on: []
+contests: []
+assumptions:
+  - "Relaxation time grows with L near criticality."
+  - "Observable stationarity in T is necessary for unbiased slope extraction."
+falsifiers:
+  - "A tau_int pilot showing observables and d_lambda I are T-stationary at T = L."
+  - "Cut A results at T/L = 2 and T/L = 1 agreeing within error at matched L."
+cheap_available_test: >
+  Cut A already spans T/L = 2.000 (L = 32, 48, 64), 1.333 (L = 96) and 1.000
+  (L = 128) in the SAME campaign. Comparing across those is a T0 read-only probe
+  of whether T/L = 1 biases anything, at zero compute cost.
+review_status: approved
+review_record: {human_approval: {by: utku, date: 2026-08-10}, notes: "Created explicitly as an UNSUPPORTED conjecture so that no future agent treats 'T >= 2L is required' as canonical. It is a hypothesis to be tested, not a gate."}
+created: {date: 2026-08-10, by: proposal-2026-08-10-C}

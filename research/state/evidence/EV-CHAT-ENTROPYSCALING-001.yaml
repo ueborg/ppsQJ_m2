@@ -1,0 +1,22 @@
+id: EV-CHAT-ENTROPYSCALING-001
+type: chat_only_evidence
+title: "MIPT confirmed independently of crossings via entropy scaling (log-law to area-law)"
+reproducibility: chat_only
+role: discriminating
+conversation_ref: "ca2b054c-6db9-4728-9751-0b821f694b89"
+date: 2026-08-05
+described_result: >
+  S_{L/2} versus ln L shows a log-law to area-law transition, confirming the MIPT
+  without relying on any crossing estimator.
+search_performed_for_artifact: true
+artifact_search_notes: "No script, figure or output located anywhere on disk."
+re_derivable_from: [EV-DATA-BOUNDARYCSV-001, EV-DATA-RUCHEPULL-001, EV-DATA-AGGCASEB-001]
+recovery_priority: high
+observable_id: OBS-SHALF-001
+supports: [CB-MIPT-001]
+contradicts: []
+notes: >
+  HIGHEST-VALUE RECOVERY TARGET. Fit-free and estimator-independent, so if
+  re-derived it would outrank most of the current ledger. Caps CB-MIPT-001 at
+  plausible until re-executed.
+created: {date: 2026-08-10, by: audit-stage2}

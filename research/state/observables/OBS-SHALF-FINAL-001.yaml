@@ -1,0 +1,13 @@
+id: OBS-SHALF-FINAL-001
+name: "Half-chain entanglement entropy at final time"
+status: active
+definition_verified: true
+definition: "S_AB, the von Neumann entropy of Majorana modes [0, L) (first half of the chain), evaluated at t = T on each clone, then averaged."
+mathematical_definition: "S = sum_k h((1+nu_k)/2) over symplectic eigenvalues of the restricted Majorana covariance; log base 2"
+cut: "A and B"
+implementation_source:
+  - {path: pps_qj/parallel/worker_clone_pps.py, symbol: "_batched_compute_B_L / _batch_entropy(sub_AB)", exists: true}
+stored_field: S_AB_mean
+distinct_from: [OBS-SHALF-TAVG-001]
+supersedes: OBS-SHALF-001
+created: {date: 2026-08-10, by: proposal-2026-08-10-A}

@@ -1,0 +1,19 @@
+id: DISP-PHI-001
+question: "What is the Cut B boundary exponent phi in lambda_c ~ zeta^phi?"
+status: open
+priority: highest
+competing_claims: [CB-PHI-HALF-001, CB-PHI-LINEAR-001]
+positions:
+  - claim: CB-PHI-HALF-001
+    basis: "Empirical crossings over the mid-zeta window. The historical project headline."
+    weakness: "Every first-principles derivation of sqrt(zeta) was invalidated (CB-NLSM-001) and each was replaced by a NEW derivation of the same answer. Supporting fit drifts 0.19 to 1.02 across windows."
+  - claim: CB-PHI-LINEAR-001
+    basis: "Click-insertion dimension x_J = 1.04 measured directly (r^-2.07) plus, independently, cutoff matching with corrected inputs (Delta=2 marginal, xi ~ lambda^-1)."
+    weakness: "Sole discriminating evidence is chat_only from an expired container; scripts and the three source memos are lost. The 2026-08-05 chi2 scan (p = 0.46-1.40) does not confirm x_J = 1 either."
+discriminating_test_candidates:
+  - "L-extrapolated crossings with a window-stability check. Has NEVER been done on current data and needs no new compute."
+  - "An independent measurement of a scaling dimension predicted to differ between the two, per the falsifiable-test suggestion in the Ashkin-Teller memo."
+  - "Re-derivation of x_J from scratch, since the original is unrecoverable."
+blocking_gaps: [CB-WINDOW-001, OBS-BL-001 definition unaudited]
+resolution_rule: "Closed only by discriminating evidence. NOT by recency, elegance, or the fact that one side is the project headline."
+created: {date: 2026-08-10, by: audit-phase4}

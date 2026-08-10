@@ -1,0 +1,32 @@
+id: EV-DATA-AGGCASEB-001
+type: aggregated_dataset
+title: "Cut B combined guided-cloning aggregate (rebuilt 2026-06-17)"
+reproducibility: partially_reproducible
+role: supporting
+location:
+  root: DATA_INTERNSHIP
+  relative: "Data/pps_aggregates/agg_caseB_combined.pkl"
+  original_absolute_path: "/Users/catlover1337/Downloads/01_M1_Internship/Data/pps_aggregates/agg_caseB_combined.pkl"
+  verified_at: 2026-08-10
+  exists: true
+n_records: 1046
+parameters:
+  cut: B
+  L: [32, 48, 64, 96, 128, 160]
+  zeta: [0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.7,0.85]
+  lambda: {min: 0.034, max: 0.5502, n_unique: 191}
+  N_c: [250, 300, 350, 400, 500]
+  T: [64.0,67.6,68.5,82.4,83.8,96.0,105.5,128.0,147.1]
+  T_over_L: {max: 2.0, at_L128: 1.0, at_L160: 0.80-0.92, note: "T/L NEVER exceeds 2 and falls below 1 at L>=128"}
+  n_real: 5
+  burn_in: unknown_recoverable
+  seeds: unknown_recoverable
+observable_fields: [B_L_mean, B_L_err, CMI_mean, CMI_err, S_mean, S_err,
+                    S_renyi_2_mean, S_renyi_3_mean, ESS_mean, n_T_mean]
+input_evidence: [EV-DATA-GUIDEDPROD-001, EV-DATA-GUIDEDHIGHL-001]
+aggregation_script: {path: analysis/aggregate_guided.py, git_commit: unknown_recoverable}
+metadata_gaps: [burn_in, seeds, git_commit_of_generating_worker, generation_date]
+supports: [CB-AMP-001]
+contradicts: []
+notes: "Contains NO zeta=1. Companion agg_caseB_perreal.pkl carries per-realisation arrays."
+created: {date: 2026-08-10, by: audit-phase4}

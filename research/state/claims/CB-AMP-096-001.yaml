@@ -1,0 +1,34 @@
+id: CB-AMP-096-001
+statement: "lambda_c(zeta) = A*sqrt(zeta) with A = 0.96 +/- 0.05."
+type: amplitude
+domain: cut_B
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: withdrawn
+contested: false
+confidence: very_low
+confidence_basis: "Superseded; was an r_c-type prefactor mislabelled as lambda_c."
+architecture_status_legacy: superseded   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: superseded
+  to: withdrawn
+  rule: "withdrawn"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_c
+observable_id: OBS-BL-001
+value: {central: 0.96, uncertainty: 0.05}
+scope: "1/sqrt(L) extrapolation of Binder crossings, small-zeta fit, May 2026."
+evidence: []
+evidence_note: "Original supporting analysis not located on disk. Historical record only."
+depends_on: []
+contests: []
+supersedes: []
+superseded_by: CB-AMP-001
+review_status: approved
+provenance_note: >
+  Originated in theory/archive/SESSION_2026_05_20.md. Corrected 2026-06-07: the
+  0.96 belongs to the r_c-type parameterization, not lambda_c. Correction written
+  into Y_ZETA_DERIVATION.md 2026-06-10. RETAINED BECAUSE PROJECT MEMORY
+  RE-ASSERTED IT IN AUGUST, and because it is present in the submitted M1 report.
+created: {date: 2026-08-10, by: audit-phase4}

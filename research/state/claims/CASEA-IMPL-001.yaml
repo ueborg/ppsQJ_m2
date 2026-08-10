@@ -1,0 +1,27 @@
+id: CASEA-IMPL-001
+statement: "Cut A is implemented, validated against an exact Fock-space backend, run in production, and aggregated."
+type: infrastructure
+domain: cut_A
+statement_class: evidence
+claim_kind: infrastructure_fact
+epistemic_status: supported
+contested: false
+confidence: high
+confidence_basis: "Artifact existence, checked directly."
+architecture_status_legacy: verified   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: verified
+  to: supported
+  rule: "supported"
+  meaning_changed: false
+  human_confirmed: false
+evidence:
+  - {id: EV-DATA-CASEA-001, role: discriminating}
+  - {id: EV-DATA-RUCHEPULL-001, role: supporting}
+depends_on: []
+contests: []   # resolved: CASEA-NOTRUN-001 is contradicted, see supersedes/superseded_by
+scope: "574 aggregated records, L 32-128, zeta 0.05-0.85, 13 lambda symmetric about 0.5, plus 1394 files of July guided Cut A output."
+falsifiers: ["Demonstration that the aggregate was produced by a different model."]
+review_status: approved
+review_record: {human_approval: {by: utku, date: 2026-08-10}, notes: "Verified because it is a statement about artifact existence, checked directly by the audit, not a physics claim."}
+created: {date: 2026-08-10, by: audit-phase4}

@@ -1,0 +1,27 @@
+id: OBS-MIENDS-001
+name: "Cut A end-to-end mutual information I(A_left : C_right)"
+status: active
+definition_verified: true
+definition: >
+  I(A:C) = S(A) + S(C) - S(A union C), with A the first quarter and C the last
+  quarter of the chain in spatial order. Stored as MI_ends_q4 and MI_ends_q8.
+cut: A
+region_convention: "SPATIAL placement is the defining feature: A and C at OPPOSITE ENDS"
+implementation_source:
+  - path: pps_qj/parallel/worker_caseA.py
+    note: "modified, UNCOMMITTED as of 2026-08-10. +16 lines adding _batched_compute_MI_ends."
+historical_aliases: ["MI(ends)", "end-to-end MI", "ABDC observable"]
+established_facts:
+  - >
+    The Cut A trajectory state is exactly pure (S_total = 0.0 measured). For a
+    pure state S_ABC = S_D exactly, so the CMI form, the ABDC form and
+    gaussian_backend.topological_entanglement_entropy return the SAME number
+    (all gave 0.0563 on a real covariance). Region LABELLING is therefore a
+    no-op. Spatial PLACEMENT is what changes the physics.
+  - >
+    Measured at one L: MI(ends) goes 0.000 -> 1.000 bit across lambda, while the
+    stored CMI is peaked and returns to zero on both sides.
+open_issues:
+  - "The L-dependence check (does the step sharpen toward lambda=1/2 with L?) TIMED OUT and was never completed. Order-parameter status rests on a single L."
+  - "Whether any production run has used this field is not established."
+created: {date: 2026-08-10, by: audit-phase4}

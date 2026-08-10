@@ -1,0 +1,21 @@
+id: EV-EXEC-THETA1-001
+type: executed_analytic_calculation
+title: "Exact Liouville-space theta_1 and the 2x2 parity-doublet effective generator"
+reproducibility: fully_reproducible
+role: discriminating
+script: {path: analysis/compute_theta1_exact.py, git_commit: committed_parity_resolved_correction}
+script_2: {path: analysis/parity_resolved_theta.py, git_commit: committed_parity_resolved_correction}
+method: "full Liouville space; parity-restricted Hilbert-space sub-blocks to avoid 4^L blowup at L=7"
+system_sizes: [4, 5, 6, 7]
+precision_achieved: "2x2 parity-doublet generator reproduces the full L_zeta leading eigenvalue at zeta=1e-3 to 1e-8"
+output_artifacts:
+  - {path: analysis/parity_resolved_data.pkl, verified_at: 2026-08-10}
+  - {path: analysis/parity_resolved.png, verified_at: 2026-08-10}
+supports: [CB-THETA1-001]
+contradicts: []
+notes: >
+  The parity result (theta_1^SCGF = 0 by fermion parity) is INDEPENDENT of the
+  cross-vertex dimension and survives. The downstream inferences drawn from it in
+  the same session (K_eff ~ L^0, y_zeta = 2 - Delta_zeta = 1) were conditioned on
+  Delta_zeta = 1 and do NOT survive. See CB-YZETA-001 and DISP-YZETA-001.
+created: {date: 2026-08-10, by: audit-phase4}

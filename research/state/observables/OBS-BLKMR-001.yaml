@@ -1,0 +1,27 @@
+id: OBS-BLKMR-001
+name: "KMR product-of-averages locator <CMI> x <S_half>"
+status: active_not_yet_computed
+definition_verified: true
+definition: >
+  Product of separately averaged quantities: (mean over clones of CMI) times
+  (mean over clones of S_AB). THE PRODUCT IS FORMED AFTER AVERAGING.
+mathematical_definition: "B_KMR = <CMI> * <S_AB>"
+source_of_definition:
+  source_id: SRC-KMR-2023
+  location: "Contents p.2, Appendix B.1, titled 'Discussion of B_L = S_top_L(bar) x S_L(bar) for the particle number conserving limit alpha = 0'"
+  note: "The overbars are trajectory averages. This is KMR's B_L."
+cut: "A and B"
+region_convention: "same regions as OBS-BLPROD-001"
+stored_field: null
+recomputable_from: "CMI_mean and S_AB_mean, both stored in every guided aggregate"
+distinct_from: [OBS-BLPROD-001]
+difference: >
+  OBS-BLPROD-001 minus OBS-BLKMR-001 = Cov(CMI, S_AB) over the clone population.
+  Not small: the project records the product-of-averages form as roughly 30 percent
+  tighter than the trajectory product.
+why_it_matters: >
+  Any comparison of our amplitude against KMR's is a CROSS-OBSERVABLE comparison
+  unless recomputed in this form. This is independent of, and additional to, the
+  lambda_c versus r_c parameterization mismatch already recorded in CB-AMP-001.
+open_task: "T0 read-only: recompute crossings with OBS-BLKMR-001 and compare against OBS-BLPROD-001 to test locator dependence of the amplitude."
+created: {date: 2026-08-10, by: proposal-2026-08-10-A}

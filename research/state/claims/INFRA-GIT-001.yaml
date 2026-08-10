@@ -1,0 +1,24 @@
+id: INFRA-GIT-001
+statement: "As of 2026-08-10 the working tree carries roughly 100 uncommitted paths, including the entire analysis/var_reduction programme and theory/VARIANCE_REDUCTION.md."
+type: infrastructure
+domain: infrastructure
+statement_class: evidence
+claim_kind: infrastructure_fact
+epistemic_status: supported
+contested: false
+confidence: high
+confidence_basis: "Directly checkable repository state."
+architecture_status_legacy: verified   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: verified
+  to: supported
+  rule: "supported"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "Directly checked by the audit; see audit/2026-08-10/preservation/WORKTREE_STATE.md. HEAD equals origin/main, so nothing COMMITTED is unpushed."
+depends_on: []
+falsifiers: ["git status showing a clean tree."]
+review_status: approved
+review_record: {human_approval: {by: utku, date: 2026-08-10}, notes: "Verified because it is a directly checkable statement about repository state. The human has since taken an external backup."}
+created: {date: 2026-08-10, by: audit-phase4}

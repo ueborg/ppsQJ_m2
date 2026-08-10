@@ -1,0 +1,9 @@
+id: DEC-CITATION-001
+decision: "Two citation defects are recorded as standing warnings."
+date: 2026-08-10
+status: active
+items:
+  - {citation: "Koenig-Brouwer 2014", defect: "DOES NOT EXIST. Hallucinated. Never cite.", action: "Real source for class-DIII nu is Fulga et al. PRB 86, 054505 (2012)."}
+  - {citation: "Carollo et al. PRA 98, 010103 (2018)", defect: "MIS-ATTRIBUTED as the source of lambda_c(1) = 1/2. It is a quantum-Doob / large-deviation paper.", action: "True source TBD. Literature task."}
+  - {citation: "Fulga et al. PRB 86, 054505 (2012)", defect: "Correct paper, WRONG REPLICA LIMIT. Gives the n->0 forced/Anderson exponent. Jian et al. arXiv:2302.09094 establish n->0 and n->1 are distinct classes in DIII.", action: "Do not import as the Born-rule MIPT exponent.", ref: CB-NU-TWO-001}
+created: {date: 2026-08-10, by: audit-phase4}

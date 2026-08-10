@@ -1,0 +1,44 @@
+id: EV-DATA-RUCHEPULL-001
+type: raw_simulation_dataset
+title: "Ruche July 2026 campaign, pulled to repo (boundary + refine_smallz + caseA_guided)"
+reproducibility: partially_reproducible
+role: supporting
+location: {path: results/ruche_pull, host: mac, verified_at: 2026-08-10, exists: true}
+format: "json-tree + npz"
+n_files: 16344
+subsets:
+  - {name: pps/boundary + pps/smoke, n_files: 6725, dates: "2026-07-08..07-23"}
+  - {name: refine_smallz, n_files: 3675, dates: "2026-07-27..07-29"}
+  - {name: caseA_guided, n_files: 1394, dates: "2026-07-26..07-27"}
+  - {name: logs, n_files: 500, dates: "2026-07-07..07-23"}
+parameters:
+  cut: "B (boundary, refine_smallz) and A (caseA_guided)"
+  L: [64, 80, 96, 112, 128]
+  note: "L=80 and L=112 appear ONLY here. L=80 supplies the (80,160) quotients pair."
+  T_over_L:
+    measured: "see EV-EXEC-CATALOGUE-001; full pass over 15139 files"
+    caseA_guided: {L_32_48_64: 2.000, L_96: 1.333, L_128: 1.000}
+    cut_B_all_campaigns: 1.000
+  L_full: [64, 80, 96, 112, 128, 160, 192]
+  L_note: "L=192 (refine_smallz, 903 records) discovered by the catalogue; absent from all prior documentation."
+generated_by:
+  script: unknown_recoverable
+  git_commit: unknown_recoverable
+  submit_script: "scripts/ruche/submit_pps_boundary.sh (probable, unverified)"
+  authorised_by: none_pre_dates_gate
+metadata_gaps:
+  unknown_recoverable: [seeds]
+  unrecoverable_from_data: [burn_in, git_commit, job_id, code_version]
+  unrecoverable_note: >
+    burn_in, git_commit and job_id are absent from EVERY one of the 15139 JSON
+    files. They are NOT inferred from worker defaults or run dates. Recovery
+    would require SLURM log archaeology and is not attempted. Future workers MUST
+    write these fields.
+recoverable_from: "per-realisation JSON carries L, lambda, zeta, real, alpha, w, T, N_c, dtau. Executed: EV-EXEC-CATALOGUE-001."
+supports: []
+contradicts: []
+notes: >
+  ABSENT FROM ALL PRE-AUDIT DOCUMENTATION. Discovered in Stage 2. Predates the
+  experiment-authorisation gate, hence authorised_by is recorded as
+  none_pre_dates_gate rather than left blank.
+created: {date: 2026-08-10, by: audit-phase4}

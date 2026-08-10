@@ -1,0 +1,32 @@
+id: CB-WINDOW-001
+statement: "Fitted Cut B boundary exponents drift strongly with the zeta fitting window in BOTH parameterizations, so no single fitted value is an asymptotic exponent on current data."
+type: data_adequacy
+domain: cut_B
+statement_class: evidence
+claim_kind: data_adequacy_assessment
+epistemic_status: provisional
+contested: false
+confidence: moderate
+confidence_basis: "Directly measured drift; decisive L-extrapolation not yet done."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: both
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+scope: "Wide-pair crossings, not L-extrapolated."
+evidence: [{id: EV-EXEC-AUDITREPRO-001, role: discriminating}]
+depends_on: [CB-PARAM-001]
+contests: []
+assumptions: ["Small-zeta floor and Born saturation are finite-size and endpoint effects respectively, not physics."]
+falsifiers: ["L-extrapolated crossings showing a window-stable exponent."]
+open_question: >
+  Small zeta is floored by finite size, large zeta saturates toward the Born
+  endpoint. There may be NO window in which the asymptotic exponent is visible.
+review_status: approved
+review_record: {notes: "Deliberately plausible, not verified: the decisive test is an L-extrapolation that has never been performed on current data."}
+created: {date: 2026-08-10, by: audit-phase4}

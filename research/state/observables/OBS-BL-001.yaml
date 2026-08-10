@@ -1,0 +1,31 @@
+id: OBS-BL-001
+name: "B_L, Cut B Binder-type locator"
+status: retired
+definition_verified: false
+definition: >
+  Stored as B_L_mean in all Cut B aggregates and per-realisation JSONs. The
+  audit established that at least one historical production definition was the
+  TRAJECTORY PRODUCT <CMI * S_{L/2}>, not a conventional Binder cumulant. Whether
+  every dataset used that same definition has NOT been verified.
+mathematical_definition: "UNVERIFIED. Candidate: <CMI * S_{L/2}> over clones."
+cut: B
+region_convention: "tripartition A|B|C with CMI = S_AB + S_BC - S_B - S_ABC"
+parameterization_of_control: lambda = alpha/(alpha+w), alpha+w=1
+implementation_source:
+  - path: pps_qj/parallel/worker_clone_pps.py
+    note: "modified, uncommitted as of 2026-08-10"
+  - path: pps_qj/cloning.py
+historical_aliases: ["Binder cumulant", "B_L", "Binder crossing observable"]
+known_issues:
+  - "Carries an explicit ln L factor via S_{L/2}, which biases fitted exponents LOW (DEC-OBS-001)."
+  - "Demoted for exponent extraction 2026-06-17. Retained as a lambda_c LOCATOR."
+audit_action_required: >
+  Read the worker source and confirm the stored definition per dataset generation.
+  Until done, no exponent claim may cite this observable as discriminating.
+created: {date: 2026-08-10, by: audit-phase4}
+
+superseded_by: [OBS-BLPROD-001, OBS-BLKMR-001]
+retirement_note: >
+  RETIRED. This single ID covered TWO distinct quantities: the stored trajectory product <CMI x S_half> (now OBS-BLPROD-001) and KMR's product of averages <CMI><S_half> (now OBS-BLKMR-001). Retained as a historical alias only.
+retired: {date: 2026-08-10, by: proposal-2026-08-10-A}
+citable_as: historical_alias_only

@@ -1,0 +1,28 @@
+id: CB-THETA1-001
+statement: "theta_1^SCGF = 0 identically by fermion parity, and a 2x2 parity-doublet effective generator on the slow modes reproduces the full tilted Liouvillian leading eigenvalue."
+type: mechanism
+domain: shared_theory
+statement_class: evidence
+claim_kind: theorem
+epistemic_status: provisional
+contested: false
+confidence: high
+confidence_basis: "Parity argument is exact and the 2x2 reduction agrees to 1e-8, but only at L<=7 and small zeta."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: OBS-ACTIVITY-001
+scope: "Exact Liouville space, L = 4 to 7, zeta = 1e-3. Agreement to 1e-8."
+evidence: [{id: EV-EXEC-THETA1-001, role: discriminating}]
+depends_on: []
+contests: []
+assumptions: ["H_eff commutes with total fermion parity P; d_j is parity-odd; |R_0> and |L_0> share parity."]
+falsifiers: ["A nonzero <L_0|d_j|R_0> at any L.", "Failure of the 2x2 reduction at larger L or larger zeta."]
+review_status: approved
+review_record: {notes: "The PARITY result is independent of the cross-vertex dimension and survives. Held at plausible rather than verified only because it is established at L <= 7 and small zeta. The downstream y_zeta inference from the same session is CB-YZETA-001 and is superseded."}
+provenance_note: "Also establishes that the BdG quantity alpha*sum_j <J_j^dag J_j> is the no-click ACTIVITY, not the SCGF derivative."
+created: {date: 2026-08-10, by: audit-phase4}

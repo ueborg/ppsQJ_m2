@@ -1,0 +1,25 @@
+id: CB-XI-LAMBDA2-001
+statement: "The no-click length scales as lambda^-2, from the band structure xi_nc = 2/ln(1 + kappa^2/w^2)."
+type: mechanism
+domain: shared_theory
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: true
+confidence: low
+confidence_basis: "Fit-free area-law confirmation is strong; identity with the steady-state length is not established."
+architecture_status_legacy: contested   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: contested
+  to: provisional
+  rule: "(see epistemic_status; contestation now carried by contested: true)"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "INCOMPLETE. Deterministic run 2026-06-15 against the real backend; area-law confirmed fit-free for all lambda > 0 at L = 16..128. Outputs not located."
+depends_on: []
+contests: [CB-XI-LAMBDA1-001, CB-XI-LAMBDA15-001]
+dispute_id: DISP-XI-001
+review_status: approved
+provenance_note: "Partly a naming collision: this is the BAND length, while CB-XI-LAMBDA1-001 concerns the STEADY-STATE length. Whether they are the same object is the dispute."
+created: {date: 2026-08-10, by: audit-phase4}

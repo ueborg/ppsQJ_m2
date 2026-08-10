@@ -1,0 +1,31 @@
+id: EV-EXEC-AUDITREPRO-001
+type: executed_numerical_analysis
+title: "Audit reproduction of the lambda_c amplitude and the lambda_c/r_c Jacobian test"
+reproducibility: fully_reproducible
+role: discriminating
+script: {path: audit/2026-08-10/scripts/reproduce_amplitude.py, git_commit: uncommitted, git_dirty: true}
+script_2: {path: audit/2026-08-10/scripts/lambda_vs_rc.py, git_commit: uncommitted}
+input_evidence: [EV-DATA-AGGCASEB-001]
+config:
+  estimator: "wide-pair (L2 >= 2*L1) Binder crossings, linear interpolation, median over pairs"
+  observable_id: OBS-BL-001
+  zeta_window: [0.05, 0.85]
+  L_extrapolated: false
+  corrections_to_scaling: none
+  bootstrap: none
+output_artifacts: []
+result_summary: >
+  lambda_c parameterization: A = 0.494 at fixed phi=1/2; free power phi = 0.495.
+  r_c parameterization: A = 0.692 at fixed phi=1/2; free power phi = 0.681.
+  Jacobian test across six zeta windows: the ratio phi_r/phi_lam tracks
+  <1/(1-lambda_c)> to three decimals in every window, so the parameterization gap
+  is entirely the Jacobian of a nonlinear map and carries no physical information.
+  Both exponents drift strongly with the fitting window: phi(lambda_c) spans
+  0.185 to 0.670 and phi(r_c) spans 0.217 to 1.021.
+supports: [CB-AMP-001, CB-PARAM-001, CB-WINDOW-001]
+contradicts: [CB-AMP-096-001]
+limitations:
+  - "Audit-grade. No bootstrap, no drift error bars, no N_c debiasing, not L-extrapolated."
+  - "Sufficient to adjudicate 0.49 versus 0.96. NOT sufficient to quote phi."
+metadata_gaps: []
+created: {date: 2026-08-10, by: audit-stage1and2}

@@ -1,0 +1,12 @@
+id: OBS-CEFF-001
+name: "c_eff threshold locator"
+status: deprecated
+definition_verified: true
+deprecated_reason: >
+  Crossings occur at c_eff ~ 6-8, not at any universal value, so the threshold
+  method does not locate lambda_c. Formally ruled out. Retained so that historical
+  results citing it can be identified.
+cut: B
+superseded_by: OBS-BL-001
+historical_aliases: ["c_eff", "effective central charge threshold"]
+created: {date: 2026-08-10, by: audit-phase4}

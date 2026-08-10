@@ -1,0 +1,26 @@
+id: SRC-CAROLLO-2018
+citation: "Carollo, Jack, Garrahan (and co-authors), Phys. Rev. A 98, 010103(R) (2018)"
+short: Carollo2018PRA
+type: journal_article
+title_verified: "Making rare events typical in Markovian open quantum systems"
+local_copy: {root: PAPERS_LIBRARY, relative: "PhysRevA.98.010103.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/PhysRevA.98.010103.pdf"}
+also_at: ["/Users/catlover1337/Downloads/05_Papers_Library/PhysRevA.98.010103-1.pdf", "/mnt/project/PhysRevA_98_010103.pdf"]
+doi_or_arxiv: "10.1103/PhysRevA.98.010103"
+inspection_level: not_inspected
+identity_verified: true
+identity_note: >
+  Title extracted from the PDF on 2026-08-10: "Making rare events typical in
+  Markovian open quantum systems". This DIRECTLY AND INDEPENDENTLY CONFIRMS the
+  mis-attribution recorded in DEC-CITATION-001: it is a quantum-Doob /
+  rare-event paper and cannot be the source of lambda_c(1) = 1/2.
+invoked_for_claims: [CB-BORN-ENDPOINT_historical]
+invoked_for: "Was cited as the analytic source of lambda_c(zeta=1) = 1/2."
+genuinely_supports: >
+  The finite-time and long-time quantum Doob transform, and the s-ensemble /
+  tilted-generator framing of rare trajectories. Legitimate for the PPS and
+  Doob-representation sections.
+does_not_establish: ["lambda_c(1) = 1/2 for this or any lattice model. TRUE SOURCE STILL UNKNOWN."]
+citation_problems:
+  - "CONFIRMED MIS-ATTRIBUTION for the Born endpoint. Open literature task: find the real source, or downgrade lambda_c(1)=1/2 to a numerically pinned value with no analytic citation."
+search_terms: ["quantum Doob transform", "s-ensemble open quantum systems", "tilted Lindbladian", "making rare events typical"]
+created: {date: 2026-08-10, by: charter-stage0}

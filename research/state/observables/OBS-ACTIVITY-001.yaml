@@ -1,0 +1,24 @@
+id: OBS-ACTIVITY-001
+name: "Click activity, integrated hazard, and SCGF-adjacent quantities"
+status: needs_audit
+definition_verified: false
+definition: >
+  Family of counting observables: N_T total clicks (n_T_mean), Lambda_T the
+  integrated physical hazard, theta_hat the estimated tilted generator
+  eigenvalue (theta_mean), and K = sum_j q_j the control feature used by the
+  Doob/Galerkin work.
+cut: "A and B"
+parameterization_of_control: "zeta, via the tilt zeta^{N_T}"
+implementation_source:
+  - path: pps_qj/gaussian_backend.py
+  - path: analysis/compute_theta1_exact.py
+  - path: analysis/parity_resolved_theta.py
+historical_aliases: ["activity", "theta", "SCGF", "n_T", "Lambda_T", "K_eff"]
+known_issues:
+  - >
+    LOAD-BEARING: the BdG quantity alpha * sum_j <J_j^dag J_j> was historically
+    identified as the SCGF derivative theta_1. It is NOT. It is the no-click
+    ACTIVITY. theta_1^SCGF = 0 identically by fermion parity. See CB-THETA1-001.
+  - "Rate convention pinned: r = 2 alpha sum_j q_j exactly. An earlier factor-of-2 error propagated into thinning-candidate estimates."
+audit_action_required: "Separate this into distinct observable IDs; the family is currently too coarse to reference precisely."
+created: {date: 2026-08-10, by: audit-phase4}

@@ -1,0 +1,24 @@
+id: OBS-SHALF-001
+name: "Half-chain von Neumann entanglement entropy S(L/2)"
+status: retired
+definition_verified: true
+definition: >
+  S_A = sum_k h((1+nu_k)/2) over the symplectic eigenvalues nu_k of the
+  restricted Majorana covariance on the half-chain, h the binary entropy.
+  Stored as S_mean.
+cut: "A and B"
+region_convention: "contiguous half chain"
+implementation_source:
+  - path: pps_qj/gaussian_backend.py
+    validated_against: "exact Fock-space backend, EV-CODE-EXACT-001"
+historical_aliases: ["S", "S_mean", "S_{L/2}"]
+notes: >
+  Supports the fit-free log-law to area-law confirmation of the transition
+  (CB-MIPT-001), which does not rely on any crossing estimator.
+created: {date: 2026-08-10, by: audit-phase4}
+
+superseded_by: [OBS-SHALF-FINAL-001, OBS-SHALF-TAVG-001]
+retirement_note: >
+  RETIRED. This single ID covered the final-time half-chain entropy (S_AB_mean) and the time-averaged post-burn-in half-chain entropy (S_mean), which are different quantities.
+retired: {date: 2026-08-10, by: proposal-2026-08-10-A}
+citable_as: historical_alias_only

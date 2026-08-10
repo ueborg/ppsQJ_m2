@@ -1,0 +1,43 @@
+id: OBS-BLPROD-001
+name: "Trajectory-product locator <CMI x S_half>"
+status: active
+definition_verified: true
+definition_verified_scope: primary_path_only
+definition: >
+  Per clone at final time T: B = CMI * S_AB, then averaged over the clone
+  population, then over realisations. THE PRODUCT IS FORMED BEFORE AVERAGING.
+mathematical_definition: |
+  Majorana index regions on the 2L-mode covariance Gamma:
+    A = [0, L/2)   B = [L/2, L)   C = [L, 3L/2)   D = [3L/2, 2L)
+    A u B = [0, L)      B u C = [L/2, 3L/2)     A u B u C = [0, 3L/2)
+  S_X   = sum_k h((1+nu_k)/2), nu_k symplectic eigenvalues, log base 2
+  CMI   = S_AB + S_BC - S_B - S_ABC          (= I(A:C|B))
+  B     = CMI * S_AB                          (per clone)
+  stored = mean_clones(B), then _nanstat over realisations
+cut: "A and B"
+region_convention: "four contiguous quarters of the chain; A u B is the first half, so S_AB is the half-chain entropy at final time"
+parameterization_of_control: "lambda = alpha/(alpha+w), alpha+w=1 (Cut B)"
+implementation_source:
+  - {path: pps_qj/parallel/worker_clone_pps.py, symbol: _batched_compute_B_L, line: 214, exists: true}
+  - {path: pps_qj/parallel/worker_caseA.py, note: "imports the same function verbatim", exists: true}
+  - {path: scripts/run_local_boundary.py, line: 69, note: "July/Ruche campaign imports the same function", exists: true}
+stored_field: B_L_mean
+guard: "can_compute_B_L = (L % 4 == 0); NaN otherwise"
+second_code_path:
+  location: {path: pps_qj/observables/topological.py, line: 151, exists: true}
+  formula: "B_L = S_top * S_half"
+  fires_when: "numpy.linalg.LinAlgError in the batched path only"
+  status: NOT_NUMERICALLY_VERIFIED_TO_AGREE
+  mitigation: "the code NaNs component entropies on this path so the two are not silently mixed"
+historical_aliases: ["B_L", "Binder cumulant (INCORRECT)", "Binder-like proxy", "OBS-BL-001"]
+NOT_A_BINDER_CUMULANT: >
+  No fourth moment and no cumulant ratio appears anywhere in the implementation.
+  The source docstring calls it a "Binder-like proxy". The CROSSING METHOD is
+  Binder-like; the QUANTITY is not. Documents calling this "the Binder cumulant"
+  are wrong.
+distinct_from: [OBS-BLKMR-001]
+known_issues:
+  - "Carries an explicit ln L factor via S_AB, which biases fitted exponents LOW (DEC-OBS-001)."
+  - "Noisier than the product-of-averages form; the frozen HANDOFF records ~30 percent."
+supersedes: OBS-BL-001
+created: {date: 2026-08-10, by: proposal-2026-08-10-A}

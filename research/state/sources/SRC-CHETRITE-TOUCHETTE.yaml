@@ -1,0 +1,17 @@
+id: SRC-CHETRITE-TOUCHETTE
+citation: "Chetrite, Touchette (conditioned Markov processes / driven process)"
+short: Chetrite2015
+type: journal_article
+local_copy: {path: null, verified_at: 2026-08-10, exists: false}
+container_copy: {path: /mnt/project/s0002301403758.pdf, filesystem: container, note: "Container project files are a SEPARATE filesystem from the Mac and are not durable. Not a local copy."}
+local_copy_note: "NOT located on the Mac. Only a container-side copy exists."
+doi_or_arxiv: unknown_recoverable
+inspection_level: not_inspected
+identity_verified: partial
+identity_note: "Container PDF text matches a paper on Markov processes conditioned on large deviations and the resulting driven process."
+invoked_for_claims: [CB-THETA1-001]
+invoked_for: "Trace preservation of the Doob-transformed generator; cited as \\cite{Chetrite2015} in the SciPost draft."
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+citation_problems: ["Cited in a manuscript draft by a bibliography key that was never resolved to a verified entry."]
+search_terms: ["conditioned Markov process", "driven process large deviations", "generalized Doob transform"]
+created: {date: 2026-08-10, by: charter-stage0}

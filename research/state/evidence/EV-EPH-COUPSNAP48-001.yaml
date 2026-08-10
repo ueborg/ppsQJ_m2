@@ -1,0 +1,19 @@
+id: EV-EPH-COUPSNAP48-001
+type: recovered_ephemeral_artifact
+title: "L=48 coupled-snapshot point"
+reproducibility: ephemeral_recovered
+role: discriminating
+original_path: /tmp/coupsnap_L48.json
+recovered_path: audit/2026-08-10/recovered_ephemeral/tmp_2026-08-09_10/coupsnap_L48.json
+original_mtime: "2026-08-10 10:44"
+reproducing_script: {path: analysis/var_reduction/coupled_snapshot_pilot.py, exists: true, tracked: false}
+config: {L: 48, zeta: 0.9, T: 64.0, N_c: 32, R: 14, K: 5, snap_spacing: 8.0, delta: 0.04}
+result_summary: >
+  Snapshot gain 1.22x at L=48, against 5.85x (L=32), 7.73x (L=40), 2.66x (L=64) at
+  the same fixed spacing. Non-monotone by a factor of six. GLS weights again
+  wildly non-uniform (0.039..0.514), reproducing the rejected-GLS overfitting
+  signature. sd(lambda_c) per realisation 0.0090, F' = 14.65.
+supports: [VR-SNAPSHOT-NULL-001]
+contradicts: [VR-SNAPSHOT-001]
+notes: "Materially weakens the 'largest confirmed lever' reading. Recorded nowhere pre-audit."
+created: {date: 2026-08-10, by: audit-stage1}

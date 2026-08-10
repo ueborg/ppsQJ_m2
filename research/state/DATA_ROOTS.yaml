@@ -1,0 +1,34 @@
+# Canonical LOGICAL storage roots. Machine-independent. Tracked in git.
+# Machine-local absolute paths live in research/data_roots.local.yaml,
+# which is gitignored and per-machine.
+#
+# Evidence entries reference {root: <id>, relative: <path>} instead of an
+# absolute path. This keeps canonical state portable while leaving the large
+# datasets outside version control.
+schema_version: "1.0"
+roots:
+  REPO:
+    description: "The ppsQJ_m2 git repository itself."
+    resolves_to: "the repository root; no local mapping needed"
+    in_git: true
+  DATA_INTERNSHIP:
+    description: "Internship data tree: aggregates, raw campaign output, papers, thesis."
+    expected_children: [Data, Data/pps_aggregates, Data/old_cloning_data, Code, Figures, Papers, Thesis]
+    in_git: false
+    note: "Large. Never tracked. Back up separately."
+  PAPERS_LIBRARY:
+    description: "Local PDF library of literature sources."
+    in_git: false
+  DESKTOP_INTERNSHIP:
+    description: "Loose internship working folder holding a few source PDFs."
+    in_git: false
+    note: "Trailing space in the directory name on this machine. Quote when resolving." 
+  AUDIT_EPHEMERAL:
+    description: "Recovered /tmp artifacts from the 2026-08-09/10 programme."
+    resolves_to: "REPO/audit/2026-08-10/recovered_ephemeral"
+    in_git: true
+    note: "Small (440 KB) and tracked, because it is the sole surviving evidence for those runs."
+resolution_rule: >
+  Resolve {root, relative} by looking up `root` in research/data_roots.local.yaml
+  on this machine. If the root is unmapped, the evidence item is UNRESOLVABLE on
+  this machine, which is a reportable condition and not an error in the state.

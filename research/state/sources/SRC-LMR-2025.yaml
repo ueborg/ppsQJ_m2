@@ -1,0 +1,33 @@
+id: SRC-LMR-2025
+citation: "Leung, Meidan, Romito, Phys. Rev. X 15, 021020 (2025)"
+short: LMR2025
+type: journal_article
+title_verified: "Theory of Free Fermions Dynamics under Partial Postselected Monitoring"
+local_copy: {root: PAPERS_LIBRARY, relative: "PhysRevX.15.021020.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/PhysRevX.15.021020.pdf"}
+also_at: ["/Users/catlover1337/Desktop/Internship /PhysRevX.15.021020.pdf", "/mnt/project/PhysRevX_15_021020.pdf"]
+doi_or_arxiv: "10.1103/PhysRevX.15.021020"
+inspection_level: abstract_only
+identity_verified: true
+identity_note: "Title extracted from the PDF on 2026-08-10 and matches."
+inspected_on: 2026-08-10
+inspected_sections: "title and abstract text only, via raw text extraction"
+supports_precisely:
+  - "Title confirms the subject: free-fermion dynamics under PARTIAL POSTSELECTED monitoring."
+does_not_establish_verified:
+  - "The specific numbers attributed to LMR in project prose (zeta* ~ 0.28, nu ~ 2.3 overshoot, nu = 5/3 near zeta = 1, App. H, Figs. 7 and 14) remain UNVERIFIED. The body was not read."
+  - "That the zeta convention matches ours. Taken from project notes, not checked against the paper."
+invoked_for_claims: [CB-PHI-HALF-001, CASEA-DUAL-001, CB-NU-001]
+invoked_for: >
+  The PPS framework in the QSD setting; the zeta convention (zeta=1 monitored,
+  zeta=0 postselected), stated in project notes as IDENTICAL to ours; a
+  non-constant nu(zeta) with an abrupt deviation near a finite zeta* and an
+  overshoot; and the interpolation-collapse estimator used for nu.
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+does_not_establish:
+  - "Anything directly about quantum jumps. LMR is QSD."
+  - "That our Cut A must show the same crossover. The mapping from LMR's measurement-only case to our w=0 cut is an INFERENCE recorded in DISP-CASEA-UNIV-001, not a result of theirs."
+citation_problems:
+  - "The claim that the zeta convention is identical was taken from project notes, not re-verified against the paper here."
+  - "The specific figures and numbers attributed to LMR in the frozen HANDOFF (zeta*~0.28, nu~2.3 overshoot, nu=5/3 by zeta~1, App. H, Fig. 7, Fig. 14) are UNVERIFIED in this audit."
+search_terms: ["partial postselection", "postselected monitoring", "biased trajectory ensemble free fermions", "Luttinger parameter divergence monitored"]
+created: {date: 2026-08-10, by: charter-stage0}

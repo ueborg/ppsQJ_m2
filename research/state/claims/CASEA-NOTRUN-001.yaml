@@ -1,0 +1,29 @@
+id: CASEA-NOTRUN-001
+statement: "Cut A code is not implemented and the production Binder scan has not been run."
+type: infrastructure
+domain: cut_A
+statement_class: evidence
+claim_kind: infrastructure_fact
+epistemic_status: contradicted
+contested: false
+confidence: very_low
+confidence_basis: "Directly falsified by the aggregate."
+architecture_status_legacy: refuted   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: refuted
+  to: contradicted
+  rule: "contradicted"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "None. This claim never had supporting evidence; it was an unchecked assertion carried in project memory and in the frozen HANDOFF TL;DR."
+depends_on: []
+contests: []   # resolved: CASEA-NOTRUN-001 is contradicted, see supersedes/superseded_by
+superseded_by: CASEA-IMPL-001
+review_status: approved
+provenance_note: >
+  Asserted simultaneously by project memory (pending action "Implement Cut A code")
+  and by the frozen HANDOFF's TL;DR, while the same HANDOFF's 2026-06-17 banner
+  lists the aggregate. Retained as a worked example of a document contradicting
+  itself across its own layers.
+created: {date: 2026-08-10, by: audit-phase4}

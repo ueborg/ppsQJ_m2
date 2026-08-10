@@ -1,0 +1,34 @@
+id: CB-NU-TWO-001
+statement: "nu_B = 2, the class-DIII value."
+type: exponent
+domain: cut_B
+statement_class: inference
+claim_kind: interpretation
+epistemic_status: contradicted
+contested: false
+confidence: very_low
+confidence_basis: "Imported from the wrong replica limit."
+architecture_status_legacy: refuted   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: refuted
+  to: contradicted
+  rule: "contradicted"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_c
+observable_id: OBS-CMI-001
+value: {central: 2.0}
+evidence: []
+evidence_note: "Imported from Fulga et al. PRB 86 054505, which is the n->0 forced/Anderson exponent, not the Born-rule (n->1) MIPT exponent."
+depends_on: []
+contests: []   # supersession, not a live dispute: see superseded_by
+superseded_by: CB-NU-001
+review_status: approved
+provenance_note: >
+  Originally attributed to a NON-EXISTENT paper ("Koenig-Brouwer 2014"). Real
+  source Fulga et al., but Jian et al. arXiv:2302.09094 establish that forced
+  (n->0) and Born (n->1) measurement transitions are DISTINCT universality classes
+  in class DIII, so the import is not justified. Also underpins the 1/sqrt(L)
+  extrapolation choice, which is therefore circular. Still asserted in project
+  memory as of 2026-08-10.
+created: {date: 2026-08-10, by: audit-phase4}

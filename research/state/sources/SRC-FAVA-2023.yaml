@@ -1,0 +1,17 @@
+id: SRC-FAVA-2023
+citation: "Fava, Piroli, Swann, Bernard, Nahum, Phys. Rev. X 13, 041045 (2023)"
+short: FavaNahum2023
+type: journal_article
+title_verified: "Nonlinear Sigma Models for Monitored Dynamics of Free Fermions"
+local_copy: {root: PAPERS_LIBRARY, relative: "PhysRevX.13.041045.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/PhysRevX.13.041045.pdf"}
+doi_or_arxiv: "10.1103/PhysRevX.13.041045"
+inspection_level: not_inspected
+identity_verified: true
+identity_note: "Title extracted from the PDF on 2026-08-10."
+invoked_for_claims: [CB-NLSM-001]
+invoked_for: "The principal-chiral SO(N) NLSM target for monitored Majorana fermions."
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+does_not_establish: ["The target manifold for THIS model's Choi action, which the frozen HANDOFF says must be rederived and has not been."]
+citation_problems: ["Load-bearing for the open question of which coset applies, and never inspected."]
+search_terms: ["principal chiral model monitored fermions", "SO(N) sigma model measurement", "monitored free fermion field theory"]
+created: {date: 2026-08-10, by: charter-stage0}

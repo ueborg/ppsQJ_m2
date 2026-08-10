@@ -1,0 +1,22 @@
+id: OBS-CMI-001
+name: "Conditional mutual information locator, Cut B"
+status: active
+definition_verified: true
+definition: >
+  CMI = S_AB + S_BC - S_B - S_ABC on the contiguous tripartition of the chain.
+  Stored as CMI_mean. Preferred over OBS-BL-001 for exponent extraction because
+  it does not carry the explicit ln L factor.
+cut: B
+region_convention: "VERIFIED 2026-08-10 against worker_clone_pps.py:214. Majorana regions A=[0,L/2), B=[L/2,L), C=[L,3L/2), i.e. the first three contiguous quarters of the chain. D=[3L/2,2L) is the complement; the trajectory state is pure so S_ABC = S_D."
+parameterization_of_control: lambda = alpha/(alpha+w)
+implementation_source:
+  - path: pps_qj/parallel/worker_clone_pps.py
+  - path: pps_qj/observables/
+historical_aliases: ["<CMI>", "CMI_mean", "I(A:C|B)"]
+known_issues:
+  - "Roughly 30 percent tighter than OBS-BL-001 at fixed N_c."
+  - "Peaked in lambda; returns to zero on both sides. NOT a 0->1 order parameter (contrast OBS-MIENDS-001)."
+audit_action_required: "DISCHARGED 2026-08-10. CMI is a correctly implemented I(A:C|B)."
+stored_field: CMI_mean
+guard: "L % 4 == 0"
+created: {date: 2026-08-10, by: audit-phase4}

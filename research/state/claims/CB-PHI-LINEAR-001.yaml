@@ -1,0 +1,38 @@
+id: CB-PHI-LINEAR-001
+statement: "The Cut B boundary exponent is phi = 1 (linear in zeta)."
+type: exponent
+domain: cut_B
+statement_class: inference
+claim_kind: derivation
+epistemic_status: provisional
+contested: true
+confidence: low
+confidence_basis: "Two independent routes agree, but the only discriminating evidence is chat_only and unrecoverable."
+architecture_status_legacy: contested   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: contested
+  to: provisional
+  rule: "(see epistemic_status; contestation now carried by contested: true)"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_c
+observable_id: OBS-CMI-001
+value: {central: 1.0, uncertainty: unknown}
+scope: "Derived from the click-insertion dimension at the no-click corner, and independently from cutoff matching with corrected inputs."
+evidence:
+  - {id: EV-CHAT-XJ-001, role: discriminating}
+depends_on: [CB-VERTEX-001]
+contests: [CB-PHI-HALF-001]
+dispute_id: DISP-PHI-001
+assumptions:
+  - "The dictionary phi = 1/(3 - 2 x_J) holds."
+  - "x_J measured at the no-click endpoint controls the boundary exponent."
+falsifiers: ["An independent measurement of x_J materially different from 1.", "A window-stable L-extrapolated exponent consistent with 1/2."]
+review_status: approved
+review_record: {notes: "CAPPED AT CONTESTED by the charter: its only discriminating evidence is chat_only (expired container, scripts and source memos lost). The 2026-08-05 chi2 scan gave p = 0.46-1.40, which does not confirm x_J = 1 either."}
+provenance_note: >
+  Two independent routes reach linear: the x_J measurement (r^-2.07, x_J = 1.04),
+  and CURRENT_THEORY_STATUS.md section 10, which states that with the corrected
+  inputs (Delta = 2 marginal, xi ~ lambda^-1) the same matching machinery gives
+  phi = 1. Absent from all pre-audit documentation and from the manuscript.
+created: {date: 2026-08-10, by: audit-phase4}

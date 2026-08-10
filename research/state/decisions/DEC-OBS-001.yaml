@@ -1,0 +1,7 @@
+id: DEC-OBS-001
+decision: "Use OBS-CMI-001 rather than OBS-BL-001 for exponent extraction. OBS-BL-001 remains acceptable as a lambda_c locator."
+date: 2026-06-17
+status: active
+rationale: "OBS-BL-001 carries an explicit ln L factor via S_{L/2}, which biases fitted exponents LOW. Synthetic calibration at nu_true = 2 recovered 1.66 from B_L versus 1.92 from CMI."
+caveat: "The audit's own amplitude reproduction used OBS-BL-001, because that is what the aggregates carry as a crossing locator. Any EXPONENT claim should be redone on OBS-CMI-001."
+created: {date: 2026-08-10, by: audit-phase4}

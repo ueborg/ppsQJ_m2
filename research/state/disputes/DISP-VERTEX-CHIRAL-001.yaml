@@ -1,0 +1,19 @@
+id: DISP-VERTEX-CHIRAL-001
+question: "Is the cross-replica vertex purely chiral, and does K (hence nu) run with zeta?"
+status: open
+priority: medium
+competing_claims: []
+positions:
+  - position: "PURELY CHIRAL. theory/history archive result: the vertex renormalizes the velocity u_L, not K, so K = 1 to all orders and c_eff and nu are CONSTANT in zeta."
+    source: research/history/legacy/theory_archive/qj_chiral_vertex_result.md
+  - position: "NON-CHIRAL at the Ising corner. The Ashkin-Teller/Thirring mapping requires a marginal current-current coupling with continuously varying thermal dimensions, giving nu_B(zeta) = 1/(2 - K)."
+    source: "summarised in the frozen HANDOFF, 2026-06-17. The source memo is NOT on disk."
+proposed_reconciliation: >
+  They may expand around DIFFERENT gapless points: the archive around the zeta=1
+  Born/Luttinger (Dirac) theory, the memo around the zeta=0 free-Majorana (Ising)
+  point. If so they are complementary corners rather than contradictory, and
+  together they would give a crossover. UNTESTED.
+key_question: "Is the cross vertex chiral at the ISING corner too? If yes, the Ashkin-Teller mechanism is undercut."
+open_gaps: ["K(zeta) is not computed.", "Non-Hermiticity is not reconciled with the Hermitian AT relation nu = 1/(2-K).", "The source memo is unrecovered."]
+resolution_rule: "Theory task. Flagged in the frozen HANDOFF as 'the next THEORY task' and never done."
+created: {date: 2026-08-10, by: audit-phase4}

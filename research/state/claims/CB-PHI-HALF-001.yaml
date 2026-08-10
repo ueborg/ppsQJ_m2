@@ -1,0 +1,37 @@
+id: CB-PHI-HALF-001
+statement: "The Cut B boundary exponent is phi = 1/2 (lambda_c ~ sqrt(zeta))."
+type: exponent
+domain: cut_B
+statement_class: inference
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: true
+confidence: low
+confidence_basis: "Empirical support drifts 0.19-1.02 across windows; all derivations invalidated."
+architecture_status_legacy: contested   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: contested
+  to: provisional
+  rule: "(see epistemic_status; contestation now carried by contested: true)"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: lambda_c
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+value: {central: 0.5, uncertainty: unknown}
+scope: "Mid-zeta window. Empirical."
+validity_range: {zeta: [0.05, 0.85], L: [32, 160]}
+fitting_window: {variable: zeta, range: [0.05, 0.85]}
+window_sensitivity: {verdict: strongly_window_dependent, ref: CB-WINDOW-001}
+evidence:
+  - {id: EV-EXEC-AUDITREPRO-001, role: supporting}
+  - {id: EV-DATA-AGGCASEB-001, role: supporting}
+depends_on: [OBS-BL-001, CB-WINDOW-001]
+contests: [CB-PHI-LINEAR-001]
+dispute_id: DISP-PHI-001
+assumptions: ["The fitted mid-zeta window reflects asymptotic behaviour."]
+falsifiers: ["A window-stable L-extrapolated exponent inconsistent with 1/2.", "An independent measurement of a scaling dimension implying a different phi."]
+review_status: approved
+review_record: {notes: "CONTESTED, not plausible. Every first-principles derivation of sqrt(zeta) has been invalidated (CB-NLSM-001) and the surviving support is empirical over a window where the fit drifts."}
+provenance_note: "The historical project headline. Its derivations failed three times and were each replaced by a new derivation of the same answer."
+created: {date: 2026-08-10, by: audit-phase4}

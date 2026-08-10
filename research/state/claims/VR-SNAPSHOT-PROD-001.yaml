@@ -1,0 +1,31 @@
+id: VR-SNAPSHOT-PROD-001
+statement: "At production settings (T = L, mult 4, production burn-in), snapshot averaging reduces sigma_lambda_c substantially at the (32,64) pair."
+type: methodology
+domain: production
+statement_class: evidence
+claim_kind: methodological_result
+epistemic_status: provisional
+contested: false
+confidence: low
+confidence_basis: "One L-pair, one cell; gain exceeds the naive ceiling K."
+architecture_status_legacy: plausible   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: plausible
+  to: provisional
+  rule: "provisional"
+  meaning_changed: false
+  human_confirmed: false
+observable_id: OBS-BLPROD-001
+observable_id_previous: OBS-BL-001   # retired; relabel only, no numerical change
+scope: "ONE L-pair, ONE zeta cell. L1=32, L2=64, zeta=0.9, N_c=32, R=18."
+evidence: [{id: EV-EPH-CROSSINGPROD-001, role: discriminating}]
+value_detail: "G_snap on lambda_c = 15.79x (K=8), 14.23x (K=4). All three estimators agree on lambda_c within ~0.9 sigma."
+depends_on: [VR-METRIC-001]
+contests: []
+dispute_id: DISP-SNAPSHOT-001
+assumptions: ["The terminal-arm variance estimate at R=18 is not badly biased."]
+falsifiers: ["A second L-pair giving a gain near 1x.", "A properly bootstrapped terminal arm shrinking the ratio toward K."]
+review_status: approved
+review_record: {notes: "Held at plausible. G_snap = 15.8x at K=8 is roughly double the naive ceiling. Possible with a negative weighted autocorrelation sum, but driven by the terminal arm's sd at R=18. Do not budget a specific gain from one cell."}
+provenance_note: "Closes what the frozen HANDOFF calls THE OPEN GAP. Executed after the final pre-audit HANDOFF edit and recorded nowhere."
+created: {date: 2026-08-10, by: audit-phase4}

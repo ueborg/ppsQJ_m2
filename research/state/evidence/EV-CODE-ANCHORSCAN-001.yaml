@@ -1,0 +1,21 @@
+id: EV-CODE-ANCHORSCAN-001
+type: code_implementation
+title: "analysis/anchor_scan.py - KNOWN WRONG, hazardous"
+reproducibility: fully_reproducible
+role: diagnostic
+path: analysis/anchor_scan.py
+tracked: true
+behaviour_verified: true
+defect: >
+  Its hardcoded kernel E_analytic(q,w,kappa) = sqrt(w^2 - kappa^2 - 2j kappa w cos q)
+  DROPS the hopping w from the measured bond. Its delta_B_hook() raises
+  NotImplementedError. It produced the falsified Fermi-step, lambda* = 4/5 and
+  nu_0 = 1 results, and the resulting "xi_ps ~ lambda^-2 refuted" conclusion.
+  Falsified 2026-06-15 by a deterministic run against the real backend.
+status: do_not_use
+supports: []
+contradicts: [CB-XI-LAMBDA1-001]
+notes: >
+  THE FILE CARRIES NO WARNING HEADER IN THE REPOSITORY. It produces
+  plausible-looking output. Flagged in research/HANDOFF.md section 6.
+created: {date: 2026-08-10, by: audit-phase4}

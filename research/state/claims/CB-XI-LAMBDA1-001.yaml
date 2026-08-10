@@ -1,0 +1,31 @@
+id: CB-XI-LAMBDA1-001
+statement: "The no-click STEADY-STATE correlation length scales as xi_nc ~ lambda^-1, distinct from the band/dimerization length lambda^-2."
+type: mechanism
+domain: shared_theory
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: provisional
+contested: true
+confidence: low
+confidence_basis: "Spectrum probe result; reframing as a selection length rests on a falsified script."
+architecture_status_legacy: contested   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: contested
+  to: provisional
+  rule: "(see epistemic_status; contestation now carried by contested: true)"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "INCOMPLETE. Recorded in CURRENT_THEORY_STATUS.md section 7 from analysis/noclick_spectrum_probe.py: xi*lambda flat at 4-5 over lambda in [0.10, 0.40]. Output artifacts not located."
+depends_on: []
+contests: [CB-XI-LAMBDA2-001, CB-XI-LAMBDA15-001]
+dispute_id: DISP-XI-001
+review_status: approved
+provenance_note: >
+  Reframed on 2026-06-10 as a SELECTION length (a formation scale, not a state
+  xi) on the strength of analysis/anchor_scan.py, which was FALSIFIED five days
+  later. The reframing was retained anyway. Section 7's evidence is a
+  steady-state correlation length from the actual spectrum probe, not a formation
+  scale. This reformulation has never been justified by a surviving calculation.
+consequence_if_true: "CURRENT_THEORY_STATUS.md section 10 states that with Delta = 2 and xi ~ lambda^-1 the same matching machinery gives phi = 1. See CB-PHI-LINEAR-001."
+created: {date: 2026-08-10, by: audit-phase4}

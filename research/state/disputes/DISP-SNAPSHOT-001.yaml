@@ -1,0 +1,14 @@
+id: DISP-SNAPSHOT-001
+question: "What production value, if any, does snapshot averaging deliver on the master metric?"
+status: open
+priority: medium
+competing_claims: [VR-SNAPSHOT-001, VR-SNAPSHOT-PROD-001]
+positions:
+  - position: "Large and real: production-matched T=L certification gives 15.8x on sigma_lambda_c at the (32,64) pair."
+  - position: "Noise: at fixed spacing the L sequence is 5.85, 7.73, 1.22, 2.66 at L = 32, 40, 48, 64, non-monotone by six, at R = 14-16."
+open_technical_point: "G_snap = 15.8x at K = 8 exceeds the naive ceiling K. Structurally possible with a negative weighted autocorrelation sum, but here it is driven by the terminal arm's sd at R = 18."
+discriminating_test_candidates:
+  - "Repeat the T=L certification at a second L-pair."
+  - "Bootstrap the terminal arm properly rather than taking a ratio of two noisy variance estimates."
+resolution_rule: "Do not budget a production gain until a second cell agrees."
+created: {date: 2026-08-10, by: audit-phase4}

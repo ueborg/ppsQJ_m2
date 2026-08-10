@@ -1,0 +1,18 @@
+id: DISP-YZETA-001
+question: "What are the consequences of Delta = 2.02 (marginal cross vertex) for y_zeta and for the theta_1 / K_eff chain?"
+status: open
+priority: high
+competing_claims: [CB-VERTEX-001, CB-YZETA-001]
+established: "CB-VERTEX-001 (Delta = 2.02, marginal) supersedes CB-YZETA-001 (y_zeta = 1 from Delta_zeta = 1)."
+what_remains_open:
+  - "K_eff ~ L^(1-Delta) predicts L^0 at Delta = 1 and L^-1 at Delta = 2. The observed kappa ~ 0.35-0.5 at L = 5,7 was read as consistent with the L^0 floor plus edge corrections and has NEVER been re-read against Delta = 2."
+  - "If y_zeta = 0 (exactly marginal), what sets the boundary at all? The single-copy mass has Delta_B = 1.01 and is the remaining relevant zeta-bearing operator, but the consequences were never worked through after the correction."
+  - "Delta_zeta^IR at the class-DIII fixed point is NOT computed. CB-VERTEX-001 is a UV statement."
+  - "Whether the vertex is purely chiral is separately disputed and bears on whether K, hence nu, runs."
+depends_on_claims: [CB-VERTEX-001, CB-THETA1-001, CB-YZETA-001]
+note: >
+  THE CANONICAL CASCADE EXAMPLE. y_zeta = 1 was written the same day Delta = 2.02
+  was established elsewhere in the project and survived in project memory for ten
+  weeks. This dispute exists so the unfinished consequences are visible.
+resolution_rule: "Requires theory work, not more data."
+created: {date: 2026-08-10, by: audit-phase4}

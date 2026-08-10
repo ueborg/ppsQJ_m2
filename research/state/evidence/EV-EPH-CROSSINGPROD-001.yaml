@@ -1,0 +1,32 @@
+id: EV-EPH-CROSSINGPROD-001
+type: recovered_ephemeral_artifact
+title: "Production-matched T=L snapshot certification with bootstrapped crossing"
+reproducibility: ephemeral_recovered
+role: discriminating
+original_path: /tmp/crossing_prod_result.json
+recovered_path: audit/2026-08-10/recovered_ephemeral/tmp_2026-08-09_10/crossing_prod_result.json
+original_mtime: "2026-08-10 12:13"
+reproducing_script: {path: analysis/var_reduction/crossing_prod.py, exists: true, tracked: false}
+config:
+  L_pair: [32, 64]
+  zeta: 0.9
+  lambda: [0.440, 0.474, 0.508]
+  T: "T = L"
+  N_c: 32
+  R: 18
+  chunk_mult: 4
+  burn_in: 0.25
+  bootstrap_resamples: 4000
+result_summary: >
+  terminal lambda_c = 0.5053 +/- 0.0127; dense K=8 lambda_c = 0.4942 +/- 0.0032;
+  sparse K=4 lambda_c = 0.4936 +/- 0.0034. G_snap on lambda_c = 15.79x (K=8),
+  14.23x (K=4). All three estimators agree within ~0.9 sigma.
+supports: [VR-SNAPSHOT-PROD-001]
+contradicts: []
+limitations:
+  - "One L-pair, one zeta cell."
+  - "G_snap = 15.8x at K=8 is roughly double the naive ceiling K. Possible when the weighted autocorrelation sum is negative, but the ratio is driven by the terminal arm's sd at R=18 where a variance estimate carries ~35 percent error."
+notes: >
+  POSTDATES the final pre-audit HANDOFF edit (10:28) and was recorded nowhere.
+  It closes what that HANDOFF explicitly calls THE OPEN GAP.
+created: {date: 2026-08-10, by: audit-stage1}

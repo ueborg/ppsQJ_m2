@@ -1,0 +1,32 @@
+id: EV-EXEC-CATALOGUE-001
+type: executed_numerical_analysis
+title: "Read-only metadata catalogue of the July/Ruche campaign"
+reproducibility: fully_reproducible
+role: diagnostic
+script: {path: research/tools/catalogue_runs.py, git_commit: uncommitted, git_dirty: true, exists: true}
+input_evidence: [EV-DATA-RUCHEPULL-001]
+config: {root: results/ruche_pull, mode: read_only, tier: T0}
+output_artifacts:
+  - {path: research/runs/_catalogue/ruche_pull_catalogue.csv, exists: true, rows: 15139,
+     note: "1.3 MB, regenerable in minutes; gitignored"}
+runtime_seconds: ~120
+result_summary: |
+  15139 per-realisation JSON parsed. Field recoverability:
+    L 100.0% | T, zeta, N_c 94.7% | lambda, dtau, alpha, w, real 90.1%
+    seed 5.3% | n_real, task_id 4.6% | burn_in, git_commit, job_id 0.0%
+  Directory-name vs JSON L mismatches: 0 / 15139.
+  T/L by campaign:
+    caseA_guided  L=32,48,64 -> T/L = 2.000  (T >= 2L SATISFIED)
+    caseA_guided  L=96       -> T/L = 1.333
+    caseA_guided  L=128      -> T/L = 1.000
+    pps, refine, refine_smallz (all Cut B) -> T/L = 1.000 at every L
+  New size discovered: L = 192 in refine_smallz (903 records), present in no
+  project document prior to this catalogue.
+supports: [METH-TREQ-001]
+contradicts: []
+corrects: >
+  Audit Stage 1 gap G2 asserted "no data anywhere satisfies T >= 2L". That is
+  WRONG as an absolute statement: Cut A at L <= 64 sits exactly at T/L = 2. It
+  remains true that NO Cut B campaign reaches T >= 2L.
+metadata_gaps: []
+created: {date: 2026-08-10, by: proposal-2026-08-10-C}

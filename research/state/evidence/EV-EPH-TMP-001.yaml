@@ -1,0 +1,24 @@
+id: EV-EPH-TMP-001
+type: recovered_ephemeral_artifact
+title: "Recovered /tmp variance-reduction artifacts, 2026-08-09/10 generation"
+reproducibility: ephemeral_recovered
+role: supporting
+original_path: /tmp
+recovered_path: audit/2026-08-10/recovered_ephemeral/tmp_2026-08-09_10/
+manifest: {path: audit/2026-08-10/recovered_ephemeral/MANIFEST_TABLE.md, verified_at: 2026-08-10}
+n_files: 93
+size_bytes: 438272
+checksum: {method: sha256, of: per_file_in_manifest}
+groups:
+  - {files: "ascan_*, galerkin_*, doob_*, gate_*, probe_dk", supports: VR-DOOB-001}
+  - {files: "bottleneck_*", supports: VR-CLOSE-001}
+  - {files: "chunkcert_*", supports: VR-CHUNK-001}
+  - {files: "snapgain_*, snapscan, coupsnap_*", supports: VR-SNAPSHOT-001}
+  - {files: "crossing_prod*", supports: VR-SNAPSHOT-PROD-001}
+  - {files: "d2scaling, xo_lagged, ncladder*, ladder_L64*, mcmc_*", supports: VR-CLOSE-001}
+reproducing_script: {path: analysis/var_reduction/, exists: true, tracked: false}
+provenance_warning: >
+  Origin is a non-canonical scratch location. Copying is preservation, NOT
+  verification. No claim status changes because these files were rescued.
+metadata_gaps: [seeds_for_several_runs, environment_capture]
+created: {date: 2026-08-10, by: audit-phase4}

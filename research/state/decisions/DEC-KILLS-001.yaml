@@ -1,0 +1,16 @@
+id: DEC-KILLS-001
+decision: "Register the following lines of investigation as CLOSED. Negative results are canonical state."
+date: 2026-08-10
+status: active
+killed:
+  - {item: "c_eff threshold locator", reason: "Crossings occur at c_eff ~ 6-8, no universal value.", ref: OBS-CEFF-001}
+  - {item: "Adaptive ESS-triggered resampling", reason: "Total degeneracy is conserved; rescheduling moves it between weight and genealogy channels."}
+  - {item: "Full-path importance sampling", reason: "Requires zeta > 0.986 at L=64 for usable ESS; only zeta=1 qualifies, where it is trivial."}
+  - {item: "Multi-zeta trajectory-bank reuse", reason: "ESS flat across targets; degeneracy is the compensator, not target mismatch."}
+  - {item: "GLS snapshot weights", reason: "Overfitting; a NEGATIVE weight appeared at L=64. Use equal weights.", ref: EV-EPH-COUPSNAP48-001}
+  - {item: "Trajectory MCMC", reason: "Acceptance ~0.8 percent projected at L=128. Retained only as Plan B."}
+  - {item: "Selection-side sampler improvement (general)", reason: "N_eff ~ N_c always.", ref: VR-CLOSE-001}
+  - {item: "Doob-Gaussian closure at intermediate zeta", reason: "Gaussian closure errors. Cloning (SMC) is the production algorithm."}
+  - {item: "Controlled/Doob sampler in production", reason: "Methods result only; no estimator benefit at L=64."}
+note: "Sourced from the frozen HANDOFF. Provenance is narrative, so each entry should be re-linked to evidence before being relied upon to refuse a future proposal."
+created: {date: 2026-08-10, by: audit-phase4}

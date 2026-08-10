@@ -1,0 +1,16 @@
+id: SRC-GARRAHAN-2010
+citation: "Garrahan, Lesanovsky, Phys. Rev. Lett. 104, 160601 (2010)"
+short: GarrahanLesanovsky2010
+type: journal_article
+local_copy: {root: PAPERS_LIBRARY, relative: "PhysRevLett.104.160601.pdf", verified_at: 2026-08-10, exists: true, original_absolute_path: "/Users/catlover1337/Downloads/05_Papers_Library/PhysRevLett.104.160601.pdf"}
+also_at: /mnt/project/PhysRevLett_104_160601.pdf
+doi_or_arxiv: "10.1103/PhysRevLett.104.160601"
+inspection_level: not_inspected
+identity_verified: partial
+identity_note: "First-page text shows a Lindblad-generator setup consistent with the known quantum-jump-trajectory thermodynamics paper. Title not cleanly extracted."
+invoked_for_claims: [CB-THETA1-001]
+invoked_for: "Dynamical phase transitions in quantum-jump trajectory ensembles; the long-time Doob transform and the SCGF as the dominant eigenvalue of the tilted generator."
+genuinely_supports: UNVERIFIED_IN_THIS_AUDIT
+does_not_establish: ["Anything about theta_1 vanishing by fermion parity, which is this project's own exact computation (EV-EXEC-THETA1-001)."]
+search_terms: ["thermodynamics of quantum jump trajectories", "dynamical phase transition trajectory ensemble", "scaled cumulant generating function open quantum"]
+created: {date: 2026-08-10, by: charter-stage0}

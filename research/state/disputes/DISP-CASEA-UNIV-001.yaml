@@ -1,0 +1,19 @@
+id: DISP-CASEA-UNIV-001
+question: "Does Cut A self-duality pin lambda_c = 1/2 for all zeta, and what is the Cut A universality class along the Born line?"
+status: open
+priority: high
+competing_claims: [CASEA-DUAL-001, CASEA-DRIFT-001]
+positions:
+  - position: "Duality is exact at the level of the tilt (zeta^{N_T} depends only on TOTAL click count), so lambda_c = 1/2 for all zeta and the observed higher-zeta drift is a partial-data artifact."
+  - position: "Crossings drift to ~0.42 above zeta ~ 0.25. The artifact attribution was assumed, never tested."
+secondary_question: >
+  Universality: Ising (c=1/2, nu=1) is DERIVED only at the zeta=0 endpoint. On the
+  Born line the R=2 anchor suggests SU(2)_1 (c=1, nu=2/3), and the n->1 values are
+  open. The project NLSM predicts Ising for ALL zeta, while LMR's measurement-only
+  analogue shows a crossover to 5/3. These conflict.
+discriminating_test_candidates:
+  - "Complete the L=64/96 cells and re-extract crossings at zeta > 0.25. Data to zeta = 0.85 ALREADY EXISTS (EV-DATA-CASEA-001), so this needs no new compute."
+  - "Cut A curvature nu_A at LARGE zeta, framed as H0 (constant Ising nu=1) versus H2 (crossover 1 -> 5/3), not as 'confirm nu=1'."
+note: "Existing Cut A analysis confirmed nu_A ~ 1 only at SMALL zeta, i.e. the regime where no crossover is expected. The interesting regime is untested."
+resolution_rule: "Closed by evidence only."
+created: {date: 2026-08-10, by: audit-phase4}

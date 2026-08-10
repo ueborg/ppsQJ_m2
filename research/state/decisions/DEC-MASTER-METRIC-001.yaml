@@ -1,0 +1,10 @@
+id: DEC-MASTER-METRIC-001
+decision: "The production efficiency metric is t_wall * sigma_lambda_c^2. Proxies are diagnostics only."
+date: 2026-08-10
+status: active
+claim_ref: VR-METRIC-001
+accepted_metrics_for_production: [t_wall_times_var_lambda_c]
+diagnostic_only: [GESS, Var_log_W, Var_B_L, sum_D2, ESS, coalescence_budget]
+rationale: "Three separate proxies each predicted a large production win that direct measurement refused to deliver."
+enforcement: "Evidence carries metric_id. Only accepted metrics may support a claim with domain: production."
+created: {date: 2026-08-10, by: audit-phase4}

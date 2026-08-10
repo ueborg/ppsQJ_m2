@@ -1,0 +1,34 @@
+id: CB-YZETA-001
+statement: "y_zeta = 2 - Delta_zeta = 1, obtained from Delta_zeta = 1 via a CFT level-spacing argument."
+type: exponent
+domain: shared_theory
+statement_class: inference
+claim_kind: derivation
+epistemic_status: withdrawn
+contested: false
+confidence: very_low
+confidence_basis: "Rests on Delta_zeta=1, contradicted by CB-VERTEX-001."
+architecture_status_legacy: superseded   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: superseded
+  to: withdrawn
+  rule: "withdrawn"
+  meaning_changed: false
+  human_confirmed: false
+parameterization: zeta
+observable_id: OBS-ACTIVITY-001
+value: {central: 1.0}
+evidence: []
+evidence_note: "Rested on Delta_zeta = 1, which EV-EXEC-VERTEXDIM-001 contradicts."
+depends_on: [CB-VERTEX-001]
+contests: []
+superseded_by: CB-VERTEX-001
+dispute_id: DISP-YZETA-001
+review_status: approved
+provenance_note: >
+  Written 2026-06-03, the same day Delta = 2.02 was established elsewhere in the
+  project. Survived in project memory until 2026-08-10. THE CANONICAL EXAMPLE of
+  why depends_on and the staleness cascade exist. Its downstream consequence
+  K_eff ~ L^(1-Delta) = L^0 also does not survive: at Delta = 2 it predicts L^-1,
+  and the observed kappa ~ 0.35-0.5 has never been re-read against that.
+created: {date: 2026-08-10, by: audit-phase4}

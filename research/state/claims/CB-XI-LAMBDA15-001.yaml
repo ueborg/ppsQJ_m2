@@ -1,0 +1,25 @@
+id: CB-XI-LAMBDA15-001
+statement: "The MEASURED steady-state no-click exponent over lambda in [0.2, 0.5] is approximately lambda^-1.5, flatter than the band value."
+type: mechanism
+domain: shared_theory
+statement_class: evidence
+claim_kind: empirical_result
+epistemic_status: unsupported
+contested: true
+confidence: unassessed
+confidence_basis: "Recorded as a crossover; no preserved analysis located."
+architecture_status_legacy: open   # pre-2026-08-10 vocabulary, retained for lossless mapping
+status_migration:
+  from: open
+  to: unsupported
+  rule: "unsupported"
+  meaning_changed: false
+  human_confirmed: false
+evidence: []
+evidence_note: "INCOMPLETE. Recorded 2026-06-15, described at the time as a crossover requiring L >> xi_nc > 256."
+depends_on: []
+contests: [CB-XI-LAMBDA1-001, CB-XI-LAMBDA2-001]
+dispute_id: DISP-XI-001
+review_status: approved
+provenance_note: "Two independent measurements of the same steady-state quantity give lambda^-1 over [0.10,0.40] and lambda^-1.5 over [0.2,0.5]. Neither has been reconciled."
+created: {date: 2026-08-10, by: audit-phase4}
