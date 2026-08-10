@@ -1,0 +1,627 @@
+"""Population-dynamics (cloning) algorithm for the tilted path measure.
+
+Implements P_zeta(Traj) propto zeta^{N_T} P_Born(Traj) by evolving a population
+of N_c Gaussian (covariance-matrix) clones in parallel, tilting trajectory
+weights by zeta^{n_jumps} per resampling window, and performing systematic
+resampling between windows.  Estimates the scaled-cumulant generating function
+theta(zeta) = lim_{T->inf} (1/T) log <zeta^{N_T}>_Born together with the
+ensemble-averaged half-chain entanglement S_zeta.
+
+Parallelism
+-----------
+This module is intentionally single-threaded.  Parallelism is applied at the
+*realisation* level by the worker (worker_clone_pps.py), which runs N_REAL
+independent calls to run_cloning in a multiprocessing.Pool.  This granularity
+has negligible IPC overhead (one result dict per realisation) and near-ideal
+parallel efficiency.  Intra-clone parallelism was attempted and abandoned:
+pool creation and IPC overhead dominated at every tested worker count.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Optional
+
+import numpy as np
+
+from .gaussian_backend import (
+    GaussianChainModel,
+    entanglement_entropy,
+    gaussian_born_rule_trajectory,
+    gaussian_born_rule_trajectory_batched,
+)
+from .overlaps import log_gaussian_overlap_from_orbitals
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _batched_entanglement_entropy(
+    covs: list[np.ndarray],
+    ell: int,
+    base: float = 2.0,
+) -> np.ndarray:
+    """Vectorised half-chain entanglement entropy for a population of clones.
+
+    Uses eigvalsh(iC) rather than eigvals(C): iC is complex Hermitian for a
+    real antisymmetric C, so eigvalsh is both correct and ~2x faster.
+    Falls back to serial on LinAlgError (can occur at L>=32 with drift).
+    """
+    two_ell = 2 * ell
+    log_fn  = np.log2 if base == 2.0 else np.log
+    try:
+        subs = np.stack([c[:two_ell, :two_ell] for c in covs], axis=0)
+        eigs = np.linalg.eigvalsh((1j * subs).astype(np.complex128))
+        nus  = np.abs(eigs[:, ell:])
+        nus  = np.clip(nus, 0.0, 1.0)
+        p_plus  = np.clip(0.5 * (1.0 + nus), 1e-15, 1.0 - 1e-15)
+        p_minus = np.clip(0.5 * (1.0 - nus), 1e-15, 1.0 - 1e-15)
+        S = -np.sum(p_plus * log_fn(p_plus) + p_minus * log_fn(p_minus), axis=-1)
+        return S.astype(np.float64)
+    except np.linalg.LinAlgError:
+        return np.array([entanglement_entropy(c, ell) for c in covs], dtype=np.float64)
+
+
+def _batched_log_u(
+    backward_orbitals: np.ndarray,
+    forward_orbitals_batch: np.ndarray,
+    log_z: float,
+    L: int,
+) -> np.ndarray:
+    """Vectorised log Tr(G_t rho_i) for all N_c clones.
+
+    Uses the identity det(I - C Gamma_i) = 4^L |det(W† V_i)|^2, so the
+    2L x 2L slogdet reduces to an L x L slogdet — 8x cheaper at L=64.
+    W†V is complex, so slogdet returns sign=exp(i*phi); validity gate is
+    isfinite(logdet), not sign>0.
+    """
+    WdV_batch = backward_orbitals.conj().T @ forward_orbitals_batch
+    _, logdet = np.linalg.slogdet(WdV_batch)
+    logdet_real = np.asarray(logdet, dtype=np.float64).real
+    return np.where(
+        np.isfinite(logdet_real),
+        log_z + L * np.log(4.0) + 2.0 * logdet_real,
+        -np.inf,
+    ).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+__all__ = [
+    "CloningCollapse",
+    "CloningResult",
+    "run_cloning",
+    "sweep_zeta",
+    "_systematic_resample",
+    "_systematic_resample_idxs",
+    "_batched_entanglement_entropy",
+    "_batched_log_u",
+]
+
+
+class CloningCollapse(RuntimeError):
+    """Raised when the entire clone population collapses to zero weight."""
+
+
+@dataclass
+class CloningResult:
+    theta_hat: float
+    S_mean: float
+    S_std: float
+    S_history: np.ndarray
+    log_Z_history: np.ndarray
+    W_history: np.ndarray
+    n_collapses: int
+    n_burnin_steps: int
+    eff_sample_size: float
+    zeta: float
+    L: int
+    alpha: float
+    w: float
+    N_c: int
+    T_total: float
+    delta_tau: float
+    final_covs: list
+    n_js_fallbacks: int = 0
+    # Activity and covariance summary statistics (computed post-burnin)
+    n_T_mean: float = float("nan")   # mean activity density k̄ = <n_jumps>/(L·δτ)
+    chi_k: float = float("nan")      # activity susceptibility χ_k = Var(n_jumps)/(L·δτ)
+    S_var: float = float("nan")      # variance Var_ζ(S_L/2) under tilted measure
+    covar_Sk: float = float("nan")   # activity-entropy covariance C_{S,k}/(L·δτ)
+    # Per-step history arrays for the new diagnostics (empty if record_entropy=False)
+    n_T_mean_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    n_T_sq_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    S_sq_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    covar_Sn_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    # Per-step pre-resampling effective sample size, ESS_k = (sum w)^2 / sum(w^2).
+    # Length = n_steps if recorded, else 0.
+    ess_history: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    # Minimum of ess_history / N_c over the post-burnin window.  A value <~0.1
+    # indicates population near collapse at some point during the run; values
+    # >~0.5 are healthy.  NaN if no post-burnin data available.
+    min_ess_frac_postburnin: float = float("nan")
+    # Number of distinct original-clone ancestors with surviving descendants
+    # at t = T.  In a healthy run this is ≳ 0.5·N_c; collapse to ~10–20 even
+    # at large N_c indicates genealogical degeneracy and unreliable estimators.
+    n_distinct_ancestors: int = -1
+    # --- Renyi entropy diagnostics (snapshot at t = T, averaged over clones) ---
+    # Populated only when run_cloning(...) is called with record_renyi=True.
+    # S_renyi_dict[n] is the ensemble-averaged half-cut Renyi entropy of index n.
+    # NaN-valued when record_renyi=False (default).
+    S_renyi_2_mean: float = float("nan")
+    S_renyi_3_mean: float = float("nan")
+    S_renyi_2_std: float = float("nan")
+    S_renyi_3_std: float = float("nan")
+    # Translation-averaged correlation function C(r) = mean |⟨c_0† c_r⟩|,
+    # averaged over the final clone population. Used for free-Dirac CFT
+    # power-law decay test. Empty if record_renyi=False.
+    corr_decay_r: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    corr_decay_mean: np.ndarray = field(default_factory=lambda: np.asarray([]))
+    # Intermediate-time observable snapshots: list of (time, snapshot_fn(covs))
+    # recorded when run_cloning is called with snapshot_times + snapshot_fn.
+    # Empty otherwise. Lets one trajectory yield a full B_L(t)/CMI(t) saturation
+    # curve instead of a multi-run horizon ladder.
+    snapshots: list = field(default_factory=list)
+
+
+def _systematic_resample(
+    covs: list[np.ndarray],
+    weights: np.ndarray,
+    rng: np.random.Generator,
+) -> list[np.ndarray]:
+    weights = np.asarray(weights, dtype=np.float64)
+    total = float(weights.sum())
+    if total <= 0.0:
+        raise CloningCollapse("Cannot resample: all weights zero.")
+    N_c = len(covs)
+    F = np.cumsum(weights / total); F[-1] = 1.0
+    U = float(rng.uniform(0.0, 1.0 / N_c))
+    idxs = np.clip(np.searchsorted(F, U + np.arange(N_c) / N_c, side="left"), 0, N_c - 1)
+    return [covs[int(i)].copy() for i in idxs]
+
+
+def _systematic_resample_pairs(
+    covs: list[np.ndarray],
+    orbs: list[np.ndarray],
+    weights: np.ndarray,
+    rng: np.random.Generator,
+) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Resample (covariance, orbital) pairs with the same index sequence."""
+    weights = np.asarray(weights, dtype=np.float64)
+    total = float(weights.sum())
+    if total <= 0.0:
+        raise CloningCollapse("Cannot resample: all weights zero.")
+    N_c = len(covs)
+    F = np.cumsum(weights / total); F[-1] = 1.0
+    U = float(rng.uniform(0.0, 1.0 / N_c))
+    idxs = np.clip(np.searchsorted(F, U + np.arange(N_c) / N_c, side="left"), 0, N_c - 1)
+    return [(covs[int(i)].copy(), orbs[int(i)].copy()) for i in idxs]
+
+
+def _systematic_resample_idxs(
+    weights: np.ndarray,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Index-only systematic-resampling draw.
+
+    Returns the integer index array of length N_c such that the resampled
+    population is given by [orig[i] for i in idxs].  Exposed separately so
+    callers (e.g. run_cloning) can apply the same idxs to multiple parallel
+    arrays — covs, orbs, ancestor_ids — without re-randomising.
+    """
+    weights = np.asarray(weights, dtype=np.float64)
+    total = float(weights.sum())
+    if total <= 0.0:
+        raise CloningCollapse("Cannot resample: all weights zero.")
+    N_c = weights.size
+    F = np.cumsum(weights / total); F[-1] = 1.0
+    U = float(rng.uniform(0.0, 1.0 / N_c))
+    return np.clip(
+        np.searchsorted(F, U + np.arange(N_c) / N_c, side="left"),
+        0, N_c - 1,
+    ).astype(np.intp)
+
+
+def run_cloning(
+    model: GaussianChainModel,
+    zeta: float,
+    T_total: float,
+    N_c: int,
+    rng: np.random.Generator,
+    delta_tau: Optional[float] = None,
+    n_burnin_frac: float = 0.25,
+    record_entropy: bool = True,
+    entropy_stride: int = 1,
+    show_progress: bool = False,
+    progress_desc: str = "",
+    backward_data: Any = None,
+    backend: str = "scalar",
+    record_renyi: bool = False,
+    snapshot_times: Optional[list] = None,
+    snapshot_fn: Any = None,
+) -> CloningResult:
+    """Population-dynamics estimator of theta(zeta) and S_zeta.
+
+    Runs the standard cloning algorithm serially.  For parallelism across
+    independent realisations, use the realisation-level pool in the worker.
+
+    Parameters
+    ----------
+    backward_data : optional GaussianBackwardData or LoadedBackwardPass
+        If supplied, enables Jack-Sollich feedback control: per-window weights
+        become zeta^{n_i} * u(Gamma(t))/u(Gamma(t-dt)).  The Gaussian G_t
+        approximation reduces weight variance where it is accurate.  It was
+        found to be ineffective near the MIPT critical point (variance ratio
+        ~300x worse than standard cloning at the test point), so production
+        runs use backward_data=None.
+    backend : {'scalar', 'batched'}
+        Trajectory advance strategy for the inner clone loop.
+        - 'scalar' (default): N_c serial calls to gaussian_born_rule_trajectory
+          per cloning interval.  Bit-exact reproducibility against historical
+          runs.  Recommended until the batched backend has been validated on
+          your scientific configuration.
+        - 'batched': single call to gaussian_born_rule_trajectory_batched per
+          cloning interval, which fuses the no-jump branch across all clones
+          into batched LAPACK calls (matmul, slogdet, QR).  Statistically
+          equivalent to 'scalar' but not bit-exact (different floating-point
+          accumulation order).  Speedup is parameter-dependent: ~2x at low
+          jump rate (small λ or small ζ), ~1.1–1.4x near the MIPT, negligible
+          at large λ or ζ→1.  Incompatible with backward_data (Jack-Sollich)
+          for now.
+    """
+    if zeta < 0.0:
+        raise ValueError("zeta must be non-negative")
+    if T_total <= 0.0:
+        raise ValueError("T_total must be positive")
+    if N_c < 1:
+        raise ValueError("N_c must be >= 1")
+    if backend not in ("scalar", "batched"):
+        raise ValueError(f"backend must be 'scalar' or 'batched', got {backend!r}")
+
+    L, alpha, w = model.L, model.alpha, model.w
+
+    if delta_tau is None:
+        delta_tau = 1.0 / max(2.0 * alpha * (L - 1), 1e-6)
+    n_steps = max(1, int(np.ceil(T_total / delta_tau)))
+    delta_tau_eff = T_total / n_steps
+
+    use_js = backward_data is not None
+    if use_js:
+        bwd_T = float(getattr(backward_data, 'T', T_total))
+        if abs(bwd_T - T_total) > 1e-6 * T_total:
+            raise ValueError(
+                f"backward_data.T={bwd_T:.6g} != T_total={T_total:.6g}"
+            )
+        if backend == "batched":
+            raise NotImplementedError(
+                "Jack-Sollich feedback (backward_data is not None) is not yet "
+                "supported by backend='batched'. Use backend='scalar' or run "
+                "without feedback control."
+            )
+
+    covs: list[np.ndarray] = [model.gamma0.copy() for _ in range(N_c)]
+    orbs: list[np.ndarray] = [model.orbitals0.copy() for _ in range(N_c)]
+
+    # Precompute jump-pair index arrays once — used in every trajectory call.
+    # Avoids building these from model.jump_pairs N_c × n_steps times.
+    _jp = model.jump_pairs
+    _ja_cache = np.array([p[0] for p in _jp], dtype=np.intp)
+    _jb_cache = np.array([p[1] for p in _jp], dtype=np.intp)
+
+    # Pre-spawn one independent RNG stream per clone, shared across all steps.
+    # Each clone advances its own state; equivalent to per-step spawning but
+    # eliminates N_c Generator allocations × n_steps.
+    sub_rngs = rng.spawn(N_c)
+
+    log_Z_acc = 0.0
+    log_Z_history: list[float] = []
+    W_history: list[float] = []
+    S_history: list[float] = []
+    # New diagnostic histories — accumulated in the entropy block each step
+    S_sq_history: list[float] = []
+    n_T_mean_history: list[float] = []
+    n_T_sq_history: list[float] = []
+    covar_Sn_history: list[float] = []
+    ess_history: list[float] = []
+    # Genealogy: ancestor_ids[i] = original-clone index of the lineage now
+    # carried by slot i.  Updated each resampling step by ancestor_ids =
+    # ancestor_ids[idxs].  At t=T, len(unique(ancestor_ids)) is the number
+    # of original clones with surviving descendants.
+    ancestor_ids = np.arange(N_c, dtype=np.intp)
+    n_collapses = 0
+    n_js_fallbacks = 0
+    final_weights = np.ones(N_c, dtype=np.float64)
+    n_burnin_steps = int(n_steps * n_burnin_frac)
+
+    # Map requested snapshot times -> step indices (recorded at end-of-step,
+    # post-resampling, so the snapshot population matches final_covs semantics).
+    snap_steps: set = set()
+    if snapshot_times is not None and snapshot_fn is not None:
+        for _t in snapshot_times:
+            k = int(round(float(_t) / delta_tau_eff)) - 1
+            snap_steps.add(min(n_steps - 1, max(0, k)))
+    snapshots: list = []
+    if show_progress:
+        from tqdm import tqdm
+        step_iter = tqdm(
+            range(n_steps),
+            desc=progress_desc or f"L={L} ζ={zeta:.2f}",
+            unit="step", leave=False,
+        )
+    else:
+        step_iter = range(n_steps)
+
+    for _k in step_iter:
+        # JS needs states before trajectory evolution
+        if use_js:
+            orbs_pre = list(orbs)
+
+        # --- Evolve all clones ---
+        if backend == "scalar":
+            n_jumps = np.zeros(N_c, dtype=np.int64)
+            for i in range(N_c):
+                r = gaussian_born_rule_trajectory(
+                    model, T=delta_tau_eff, rng=sub_rngs[i],
+                    gamma0_override=covs[i],
+                    orbitals0_override=orbs[i],
+                    ja_cached=_ja_cache,
+                    jb_cached=_jb_cache,
+                )
+                covs[i]    = r.final_covariance
+                orbs[i]    = r.final_orbitals
+                n_jumps[i] = r.n_jumps
+        else:  # backend == "batched"
+            cov_stack_in  = np.stack(covs, axis=0)
+            orbs_stack_in = np.stack(orbs, axis=0)
+            cov_stack_out, orbs_stack_out, n_jumps = (
+                gaussian_born_rule_trajectory_batched(
+                    model,
+                    T=delta_tau_eff,
+                    rngs=sub_rngs,
+                    cov_stack=cov_stack_in,
+                    orbs_stack=orbs_stack_in,
+                    ja_cached=_ja_cache,
+                    jb_cached=_jb_cache,
+                )
+            )
+            covs = [cov_stack_out[i] for i in range(N_c)]
+            orbs = [orbs_stack_out[i] for i in range(N_c)]
+
+        # --- Compute per-step weight W_k = mean_i(w_i) ---
+        if zeta == 0.0:
+            weights = (n_jumps == 0).astype(np.float64)
+            log_W_k = float(np.log(weights.mean())) if weights.any() else -np.inf
+        elif zeta == 1.0:
+            weights = np.ones(N_c, dtype=np.float64)
+            log_W_k = 0.0
+        else:
+            log_w = n_jumps * np.log(zeta)
+
+            if use_js:
+                t_s = _k * delta_tau_eff
+                t_e = (_k + 1) * delta_tau_eff
+                W_prev, lz_prev = backward_data.orbitals_at(t_s)
+                W_now,  lz_now  = backward_data.orbitals_at(t_e)
+                orbs_pre_batch = np.stack(orbs_pre, axis=0).astype(np.complex128)
+                orbs_now_batch = np.stack(orbs,     axis=0).astype(np.complex128)
+                log_u_prev = _batched_log_u(W_prev, orbs_pre_batch, lz_prev, L)
+                log_u_now  = _batched_log_u(W_now,  orbs_now_batch, lz_now,  L)
+                log_js = log_u_now - log_u_prev
+                valid = np.isfinite(log_js)
+                n_js_fallbacks += int((~valid).sum())
+                log_w = log_w + np.where(valid, log_js, 0.0)
+
+            lw_max = float(log_w.max())
+            if not np.isfinite(lw_max):
+                weights = np.zeros(N_c, dtype=np.float64)
+                log_W_k = -np.inf
+            else:
+                w_rel    = np.exp(log_w - lw_max)
+                mean_rel = float(w_rel.mean())
+                log_W_k  = (np.log(mean_rel) + lw_max) if mean_rel > 0.0 else -np.inf
+                weights  = w_rel
+
+        W_k = float(np.exp(log_W_k)) if np.isfinite(log_W_k) else 0.0
+        W_history.append(W_k)
+        if W_k <= 0.0:
+            n_collapses += 1
+            raise CloningCollapse(
+                f"Population collapsed at step {_k+1}/{n_steps} "
+                f"(zeta={zeta}, min_jumps={int(n_jumps.min())})."
+            )
+
+        log_Z_acc += log_W_k
+        log_Z_history.append(log_Z_acc)
+
+        if record_entropy and (_k % max(1, entropy_stride) == 0):
+            S_vals = _batched_entanglement_entropy(covs, L // 2)
+            w_sum  = float(weights.sum())
+            if w_sum > 0.0:
+                w_norm = weights / w_sum
+                S_zeta_k  = float(np.dot(w_norm, S_vals))
+                S_sq_k    = float(np.dot(w_norm, S_vals ** 2))
+                n_mean_k  = float(np.dot(w_norm, n_jumps))
+                n_sq_k    = float(np.dot(w_norm, n_jumps ** 2))
+                covar_k   = float(np.dot(w_norm, S_vals * n_jumps))
+            else:
+                S_zeta_k  = float(np.mean(S_vals))
+                S_sq_k    = float(np.mean(S_vals ** 2))
+                n_mean_k  = float(np.mean(n_jumps))
+                n_sq_k    = float(np.mean(n_jumps ** 2))
+                covar_k   = float(np.mean(S_vals * n_jumps))
+            S_history.append(S_zeta_k)
+            S_sq_history.append(S_sq_k)
+            n_T_mean_history.append(n_mean_k)
+            n_T_sq_history.append(n_sq_k)
+            covar_Sn_history.append(covar_k)
+            if show_progress:
+                step_iter.set_postfix({"S": f"{S_zeta_k:.3f}", "W": f"{W_k:.3e}"})
+
+        final_weights = weights.copy()
+
+        # --- Per-step ESS (pre-resampling) ---
+        w_sum_step = float(weights.sum())
+        w_sq_step  = float(np.sum(weights ** 2))
+        ess_step   = (w_sum_step ** 2) / w_sq_step if w_sq_step > 0.0 else 0.0
+        ess_history.append(ess_step)
+
+        if zeta != 1.0:
+            idxs = _systematic_resample_idxs(weights, rng)
+            covs = [covs[int(i)].copy() for i in idxs]
+            orbs = [orbs[int(i)].copy() for i in idxs]
+            ancestor_ids = ancestor_ids[idxs]
+
+        if _k in snap_steps:
+            snapshots.append(
+                (float((_k + 1) * delta_tau_eff), snapshot_fn(covs))
+            )
+
+    log_Z_arr = np.asarray(log_Z_history, dtype=np.float64)
+    W_arr     = np.asarray(W_history,     dtype=np.float64)
+    S_arr     = np.asarray(S_history,     dtype=np.float64) if record_entropy else np.asarray([])
+
+    theta_hat = log_Z_acc / T_total
+
+    # --- Summary statistics (post-burnin) ---
+    n_T_mean_val = chi_k_val = S_var_val = covar_Sk_val = float("nan")
+    S_sq_arr = n_T_mean_arr = n_T_sq_arr = covar_Sn_arr = np.asarray([])
+
+    # Entropy/activity histories are recorded only every `entropy_stride`
+    # steps, so their length is ~n_steps/stride, NOT n_steps.  The burn-in cut
+    # n_burnin_steps is defined in FULL-step units and must be converted to
+    # recorded-sample units before slicing these arrays: the j-th recorded
+    # sample corresponds to step j*stride, so it is post-burn-in iff
+    # j >= ceil(n_burnin_steps / stride).  Slicing with the raw n_burnin_steps
+    # (the pre-fix behaviour) over-burns by a factor of `stride` and, for
+    # stride >= 1/n_burnin_frac (e.g. stride=4 with frac=0.25), discards the
+    # entire recorded history -> S_mean/S_var/chi_k/covar_Sk all become NaN.
+    # NB: ess_history is recorded EVERY step (full length) and keeps the
+    # original n_burnin_steps cut further below.
+    _stride_eff = max(1, int(entropy_stride))
+    n_burnin_recorded = int(np.ceil(n_burnin_steps / _stride_eff))
+
+    if record_entropy and len(S_arr) > n_burnin_recorded:
+        S_mean = float(np.mean(S_arr[n_burnin_recorded:]))
+        S_std  = float(np.std(S_arr[n_burnin_recorded:]))
+
+        S_sq_arr      = np.asarray(S_sq_history,      dtype=np.float64)
+        n_T_mean_arr  = np.asarray(n_T_mean_history,  dtype=np.float64)
+        n_T_sq_arr    = np.asarray(n_T_sq_history,    dtype=np.float64)
+        covar_Sn_arr  = np.asarray(covar_Sn_history,  dtype=np.float64)
+
+        S_pb   = S_arr[n_burnin_recorded:]
+        Ssq_pb = S_sq_arr[n_burnin_recorded:]
+        nm_pb  = n_T_mean_arr[n_burnin_recorded:]
+        nsq_pb = n_T_sq_arr[n_burnin_recorded:]
+        cov_pb = covar_Sn_arr[n_burnin_recorded:]
+
+        norm = float(L * delta_tau_eff)   # L · δτ : converts counts to density
+        n_T_mean_val  = float(np.mean(nm_pb)) / norm
+        chi_k_val     = float(np.mean(nsq_pb - nm_pb ** 2)) / norm
+        S_var_val     = float(np.mean(Ssq_pb - S_pb ** 2))
+        covar_Sk_val  = float(np.mean(cov_pb - S_pb * nm_pb)) / norm
+    else:
+        S_mean = float("nan")
+        S_std  = float("nan")
+
+    fw_sum = float(final_weights.sum())
+    fw_sq  = float(np.sum(final_weights ** 2))
+    eff_sample_size = (fw_sum ** 2) / fw_sq if fw_sq > 0 else 0.0
+
+    # --- New diagnostics: per-step ESS history, post-burnin min, ancestors ---
+    ess_arr = np.asarray(ess_history, dtype=np.float64)
+    if ess_arr.size > n_burnin_steps:
+        min_ess_frac_pb = float(ess_arr[n_burnin_steps:].min()) / float(N_c)
+    else:
+        min_ess_frac_pb = float("nan")
+    n_distinct_ancestors = int(np.unique(ancestor_ids).size)
+
+    # --- Renyi entropies and correlation function from final population ---
+    S2_mean_val = S3_mean_val = float("nan")
+    S2_std_val = S3_std_val = float("nan")
+    corr_r_arr = np.asarray([])
+    corr_mean_arr = np.asarray([])
+    if record_renyi and len(covs) > 0:
+        try:
+            from .observables.spectrum import (
+                renyi_entropies_batched,
+                single_particle_correlation,
+                translation_averaged_correlation_decay,
+            )
+            ell = int(L) // 2
+            # Renyi: returns (N_c, len(ns))
+            S_nq = renyi_entropies_batched(covs, ell, ns=(1, 2, 3), base=2.0)
+            S2_mean_val = float(np.mean(S_nq[:, 1]))
+            S3_mean_val = float(np.mean(S_nq[:, 2]))
+            S2_std_val  = float(np.std (S_nq[:, 1]))
+            S3_std_val  = float(np.std (S_nq[:, 2]))
+            # Correlation: average across clones, then translation-average
+            r_max = int(L) - 1
+            corr_per_clone = np.zeros((len(covs), r_max), dtype=np.float64)
+            for ci, cv in enumerate(covs):
+                C = single_particle_correlation(cv)
+                _, c_r = translation_averaged_correlation_decay(C, r_max=r_max)
+                corr_per_clone[ci, :] = c_r
+            corr_r_arr = np.arange(1, r_max + 1, dtype=np.float64)
+            corr_mean_arr = np.mean(corr_per_clone, axis=0)
+        except Exception as e:
+            # Don't fail the run; just log and proceed with NaN-valued fields.
+            import warnings
+            warnings.warn(f"record_renyi failed: {e}", RuntimeWarning)
+
+    return CloningResult(
+        theta_hat=theta_hat,
+        S_mean=S_mean, S_std=S_std,
+        S_history=S_arr,
+        log_Z_history=log_Z_arr,
+        W_history=W_arr,
+        n_collapses=n_collapses,
+        n_burnin_steps=n_burnin_steps,
+        eff_sample_size=eff_sample_size,
+        zeta=float(zeta), L=int(L), alpha=float(alpha), w=float(w),
+        N_c=int(N_c), T_total=float(T_total), delta_tau=float(delta_tau_eff),
+        final_covs=covs,
+        n_js_fallbacks=int(n_js_fallbacks),
+        n_T_mean=n_T_mean_val,
+        chi_k=chi_k_val,
+        S_var=S_var_val,
+        covar_Sk=covar_Sk_val,
+        n_T_mean_history=n_T_mean_arr,
+        n_T_sq_history=n_T_sq_arr,
+        S_sq_history=S_sq_arr,
+        covar_Sn_history=covar_Sn_arr,
+        ess_history=ess_arr,
+        min_ess_frac_postburnin=min_ess_frac_pb,
+        n_distinct_ancestors=n_distinct_ancestors,
+        S_renyi_2_mean=S2_mean_val,
+        S_renyi_3_mean=S3_mean_val,
+        S_renyi_2_std=S2_std_val,
+        S_renyi_3_std=S3_std_val,
+        corr_decay_r=corr_r_arr,
+        corr_decay_mean=corr_mean_arr,
+        snapshots=snapshots,
+    )
+
+
+def sweep_zeta(
+    model: GaussianChainModel,
+    zeta_vals,
+    T_total: float,
+    N_c: int,
+    rng: np.random.Generator,
+    **kwargs,
+) -> list[CloningResult]:
+    """Run run_cloning over an array of zeta values, one sub-rng each."""
+    sub_rngs = rng.spawn(len(zeta_vals))
+    out: list[CloningResult] = []
+    for idx, z in enumerate(zeta_vals):
+        try:
+            out.append(run_cloning(model, float(z), T_total, N_c, sub_rngs[idx], **kwargs))
+        except CloningCollapse as exc:
+            raise CloningCollapse(
+                f"sweep_zeta collapsed at zeta={float(z):.4f} (index {idx}): {exc}"
+            ) from exc
+    return out
