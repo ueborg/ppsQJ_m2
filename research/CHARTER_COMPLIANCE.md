@@ -23,21 +23,38 @@ Enforcement legend:
 > **Updated 2026-08-10 (hardening pass).** Changes: Stage 8 moved from
 > OBEDIENCE to MECHANICAL; Stage 0 partially discharged (3 sources inspected);
 > §10 item 1 strengthened by the observable audit.
+>
+> **Updated 2026-08-10 (`/research` v1 build).** The workflow the deferred
+> requirements were assigned to now exists. §5 (A–H), §6 (twelve slop
+> warnings), Stages 1, 2, 3 and 9 move from *not implemented* to **WORKFLOW +
+> STRUCTURAL**: each is a required task artifact whose presence and completeness
+> `research/tools/validate_task.py` checks. **Their quality is still
+> unchecked.** Two invariants that were pure prose became MECHANICAL: no write
+> to `research/state/**`, and no HPC or remote execution during a research run,
+> both enforced by `.claude/hooks/guard_research.py` plus deny rules in
+> `.claude/settings.json`. Charter Appendix B B.1–B.4 were confirmed resolved by
+> the researcher on the same date.
 
 | | count |
 |---|---|
-| Implemented and MECHANICALLY enforced | 11 |
+| Implemented and MECHANICALLY enforced | 13 |
+| Implemented, WORKFLOW-enforced (presence and completeness, not quality) | 6 |
 | Implemented, STRUCTURAL enforcement only | 7 |
-| Implemented, OBEDIENCE only | 11 |
-| Partially implemented | 5 |
-| Not implemented | 8 |
+| Implemented, OBEDIENCE only | 9 |
+| Partially implemented | 4 |
+| Not implemented | 2 |
 | Intentionally deferred | 3 |
 
-**The honest headline: most of the charter is currently obedience-only.** What is
-mechanised is the claim-and-evidence bookkeeping, which is precisely the layer
-where this project's documented failures occurred. What is not mechanised is
-research judgment: the Meaningful-Contribution Test, the Slop Warnings, and the
-mandatory cycle. Those depend on agents actually doing them.
+**The honest headline: the bookkeeping layer is mechanised, the process layer is
+now at least checked for completeness, and research judgment remains
+unmechanisable.** A validator can confirm that an A–H assessment exists with a
+verdict on every dimension and no aggregate score. It cannot confirm that the
+verdicts are any good. Assume that asymmetry when delegating.
+
+A third enforcement level is therefore used below:
+
+- **WORKFLOW** — `validate_task.py` fails the task if the record is missing or
+  incomplete. Nothing evaluates whether the content is correct.
 
 ---
 
@@ -79,10 +96,12 @@ mandatory cycle. Those depend on agents actually doing them.
 
 ## §5 Meaningful-contribution test (A–H)
 
-**Status: not implemented. DEFERRED TO THE `/research` WORKFLOW.** No dimension
-A–H is represented in any schema, and by decision this will NOT be built as
-static registry machinery. It belongs to the Claude Code `/research`
-orchestration, which must require an A–H assessment before a task opens.
+**Status: IMPLEMENTED in the `/research` workflow. WORKFLOW enforcement.**
+Deliberately not built as static registry machinery. `ASSESSMENT_AH.md` is a
+required task artifact; `validate_task.py` check `T6` fails the task if any of
+the eight dimensions lacks a filled-in verdict, and check `T6b` fails it if an
+aggregate score appears — the charter's prohibition on collapsing A–H into one
+number is therefore mechanical. The *content* of each verdict is unchecked.
 
 Partial coverage: **C (discriminability)** is the exception and is strongly
 mechanised — `falsifiers` is a required field, `discriminating_evidence` is
@@ -95,9 +114,11 @@ not for quality.
 
 ## §6 Automatic slop warnings
 
-**Status: not implemented. DEFERRED TO THE `/research` WORKFLOW.** None of the
-twelve is checked by static tooling and none will be. The workflow must require
-an explicit verdict against all twelve.
+**Status: IMPLEMENTED in the `/research` workflow. WORKFLOW enforcement.** None
+of the twelve is checked by static tooling and none will be. `SLOP_WARNINGS.md`
+is a required task artifact carrying all twelve as rows; `validate_task.py`
+check `T5` fails the task if fewer than twelve carry a verdict. Whether a
+verdict is honest is unchecked.
 Two have indirect coverage: "a simulation regime constructed because it makes the
 method outperform" is partly caught by mandatory `window_sensitivity`, and
 "treating computational scale as scientific depth" is partly caught by
@@ -110,16 +131,16 @@ against all twelve, recorded rather than assumed.
 
 | stage | artifact | status | enforcement |
 |---|---|---|---|
-| 0 Repository and source reconstruction | `SOURCE_REGISTER` → `state/sources/` | **partial** | MECHANICAL for structure + E20. **11 registered; 2 inspected at `relevant_sections` (Jian, KMR), 1 at `abstract_only` (LMR), 8 not inspected.** Stage 0 is partially discharged for the load-bearing sources but NOT complete. |
-| 1 Problem reconstruction | `PROBLEM_MEMO.md` | not implemented | OBEDIENCE |
-| 2 Field and dependency mapping | `FIELD_MAP.md`, `dependency_graph.json`, `NOVELTY_MATRIX.md` | not implemented | OBEDIENCE |
-| 3 Candidate generation and refutation | (11-field record) | not implemented | OBEDIENCE |
-| 4 Falsification before scaling | `FALSIFICATION_PLAN.md` | partial | STRUCTURAL — the T3/T4 gate requires a pilot and a kill criterion, which is Stage 4's operational core |
+| 0 Repository and source reconstruction | `SOURCE_REGISTER` → `state/sources/` + per-task `SOURCE_REGISTER.md` | **partial** | MECHANICAL for structure + E20; **WORKFLOW per task.** 11 registered; 2 at `relevant_sections` (Jian, KMR), 1 `abstract_only` (LMR), 8 not inspected. **Stage 0 is discharged PER QUESTION, not globally:** a task inspects its own load-bearing sources or returns `Infrastructure first`. |
+| 1 Problem reconstruction | `PROBLEM_MEMO.md` | **implemented** | WORKFLOW — required artifact; `T1`, `T2`, and `T8` (statement classes present) |
+| 2 Field and dependency mapping | `FIELD_MAP.md`, `dependency_graph.json`, `NOVELTY_MATRIX.md` | **implemented** | WORKFLOW — required artifacts; `T1`, `T2` |
+| 3 Candidate generation and refutation | `CANDIDATES.md` (11-field record) | **implemented** | WORKFLOW — `T7` fails outside 3–8 candidates or on a missing required field |
+| 4 Falsification before scaling | `FALSIFICATION_PLAN.md` | partial | STRUCTURAL + **MECHANICAL** — required artifact (`T1`); and scaling is now physically blocked rather than discouraged: `/research` may run no simulation, a local pilot needs human approval, and **no agent may submit an HPC job at any stage** (`research/RESOURCE_POLICY.md`, guard rule G4). "Falsification before scaling" is enforced by making agent-initiated scaling impossible. |
 | 5 Executable research plan | `EXECPLAN.md` → `tasks/active/<ID>/` | partial | STRUCTURAL |
 | 6 Experiment discipline | `EXPERIMENT_SPEC.md` → `experiments/<EXP-ID>.yaml` | partial | STRUCTURAL. Spec fields defined; **`register_run.py` not written**, so "preserve raw data, store configs with outputs, record versions" is unenforced. |
 | 7 Claim ledger | `CLAIM_LEDGER.md` → `state/claims/` | **implemented** | **MECHANICAL** — all Stage 7 fields required and validated |
 | 8 Independent adversarial review | `RED_TEAM_REPORT.md` → `proposals/<TASK-ID>-redteam/REDTEAM.yaml` | **implemented** | **MECHANICAL** — `research/templates/REDTEAM_TEMPLATE.yaml` requires all nine attacks; `research/tools/validate_redteam.py` fails hard (R4) on any missing attack, and also on incomplete fields (R5), unexplained skips (R6), invalid severity/effect (R7/R8), fatal-without-kill (R9), and reviewer contamination by the lead summary (R3). |
-| 9 Synthesis | `RESEARCH_MEMO.md` | not implemented | OBEDIENCE |
+| 9 Synthesis | `RESEARCH_MEMO.md` | **implemented** | WORKFLOW — required artifact; `T1`, `T2`, `T8`. `RECOMMENDATION.md` adds `T3`: exactly one of Pursue / Reformulate / Infrastructure first / Stop |
 
 ## §8 Silo-breaking protocol
 
@@ -218,7 +239,13 @@ NON-substitutive: they cannot satisfy A1–A9.
 
 ## What an agent can and cannot get away with today
 
-**Cannot** (mechanically blocked): invent a file path; cite a non-existent claim,
+**Cannot** (mechanically blocked): submit an HPC, scheduler or remote job at any
+stage, gate or approval level, including via `bash -c`, `xargs`, `nohup` or an
+`env` prefix; write `research/state/**` by any route; run `git push` or a
+destructive git command; modify a manuscript; invoke the known-wrong scan
+script; **silently inherit the lead's model** (`validate_resource_policy.py` P3
+rejects `model: inherit`); **substitute a generic agent** for a missing project
+agent (P5); invent a file path; cite a non-existent claim,
 evidence item, observable or source; mark a claim `supported` on chat-only
 evidence; mark a judgment or conjecture `supported`; omit statement class, claim
 kind, status, or confidence; omit `confidence_basis`; leave a claim depending on
@@ -232,7 +259,15 @@ Meaningful-Contribution Test; ignore the twelve slop warnings; skip Stages 1, 2,
 consequential bottleneck.
 
 **No longer possible:** submitting a red-team pass that omits any of the nine
-mandated attacks.
+mandated attacks; an agent submitting an HPC job; a worker running on an
+unrouted model.
+
+**Still obedience-only on the resource axis** (`research/RESOURCE_POLICY.md`):
+report length, search breadth, early stopping, the lead's role-economy
+judgement, and whether a worker's context was actually kept compact. These are
+*measured after the fact* in each task's `RESOURCE_USAGE.md`, not prevented.
+See `research/tasks/completed/TASK-2026-08-10-AMP096/RESOURCE_USAGE.md` for what
+that measurement looks like when the discipline was absent.
 
 ## Requirements the future `/research` workflow MUST implement
 

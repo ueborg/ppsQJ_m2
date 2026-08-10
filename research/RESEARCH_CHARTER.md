@@ -558,43 +558,123 @@ Reported under §12, and honestly.
 
 ---
 
-# Appendix B — Known conflicts between the charter and the implementation
+# Appendix B — Conflicts between the charter and the implementation
 
 Recorded rather than silently reconciled, per §4.4 and §12.
 
-**B.1 Claim status vocabulary.** Charter §7 Stage 7 specifies `unsupported,
-provisional, supported, contradicted, withdrawn`. The implemented schema uses
-`verified, plausible, open, contested, superseded, refuted`. Working mapping:
+> **RESOLVED 2026-08-10.** The human researcher confirmed that the present
+> architecture discharges all four conflicts: the authoritative epistemic-status
+> vocabulary is implemented, `confidence` is restored, `statement_class` and
+> `claim_kind` are implemented, and the full Stage 8 red-team checklist is
+> implemented. **No substantive charter requirement changed** — §§1–13 are
+> untouched, and each item below is closed by the implementation moving to meet
+> the charter, never the reverse. The original text of each conflict is kept
+> under `~~strikethrough~~` because §4.4 forbids erasing the record of a problem
+> that was once real.
 
-| charter | implementation |
-|---|---|
-| unsupported | `open` |
-| provisional | `plausible` |
-| supported | `verified` |
-| contradicted | `refuted` |
-| withdrawn | `superseded` |
-| (no charter equivalent) | `contested` — both sides live, see A.5 |
+## B.1 Claim status vocabulary — **RESOLVED**
 
-The charter vocabulary is the authoritative intent. **Outstanding action:** the
-human decides whether to rename the schema enum to match, or to record the
-mapping permanently.
+~~Charter §7 Stage 7 specifies `unsupported, provisional, supported,
+contradicted, withdrawn`. The implemented schema uses `verified, plausible,
+open, contested, superseded, refuted`. Outstanding action: the human decides
+whether to rename the schema enum to match, or to record the mapping
+permanently.~~
 
-**B.2 The `confidence` field was deleted.** Charter §7 Stage 7 requires
-`confidence` on every claim. The Stage 3 architecture removed it, arguing it
-duplicated `status`. **The charter has authority and that removal was not the
-agent's to make.** Outstanding action: restore `confidence` to
-`CLAIM_SCHEMA.yaml` and backfill the 27 existing claims. Not performed in this
-task, which was scoped to the charter file only.
+**Resolved by renaming the implementation to the charter's vocabulary.**
+`CLAIM_SCHEMA.yaml` declares `epistemic_status: unsupported | provisional |
+supported | contradicted | withdrawn` as authoritative, and `validate_state.py`
+check `E15` rejects anything else. The pre-migration value is retained per claim
+in `architecture_status_legacy` with a `status_migration` block recording
+`meaning_changed: false`, so the rename is lossless and auditable rather than a
+silent reinterpretation.
 
-**B.3 Statement-type taxonomy is missing from the schema.** Charter §2 requires
-distinguishing Evidence, Inference, Conjecture, and Judgment. Charter §7 Stage 7
-requires a `claim type` of theorem, empirical result, interpretation, conjecture,
-or judgment. The implemented schema's `type` field records subject matter
-(`amplitude`, `exponent`, `mechanism`, `methodology`, and so on) instead, so the
-charter's distinction is **not currently representable**. Outstanding action: add
-a `claim_type` field alongside the existing `type`.
+`contested` was **not** folded into the status enum. It is an orthogonal boolean
+(A.5), because forcing contestation into a support level would require
+reinterpreting every disputed claim, which §4.4 forbids. Bookkeeping is enforced
+by `E9` and `E12`.
 
-**B.4 Red-team checklist divergence.** Charter §7 Stage 8 lists nine specific
-attacks. The implementation's checklist (`COWORK_AGENT_SPEC.md`) is
-project-specific and omits several. Outstanding action: make the charter's nine
-the mandatory base and the project-specific items an extension.
+| charter | implementation | mapping |
+|---|---|---|
+| unsupported | `unsupported` | identity |
+| provisional | `provisional` | identity |
+| supported | `supported` | identity |
+| contradicted | `contradicted` | identity |
+| withdrawn | `withdrawn` | identity |
+| (no charter equivalent) | `contested: true` | orthogonal boolean, not a status |
+
+## B.2 The `confidence` field — **RESOLVED**
+
+~~Charter §7 Stage 7 requires `confidence` on every claim. The Stage 3
+architecture removed it, arguing it duplicated `status`. The charter has
+authority and that removal was not the agent's to make.~~
+
+**Restored.** `confidence` is a required field on every claim with the enum
+`unassessed | very_low | low | moderate | high | very_high`, and
+`confidence_basis` is required alongside it and must state *why* rather than
+restate the value. Both are enforced by `validate_state.py` check `E16`. All
+claims are backfilled; `unassessed` is the required default where no defensible
+basis exists, so the field cannot be satisfied by guessing.
+
+The charter's concern was correct and the duplication argument was wrong:
+`confidence` and `epistemic_status` are independent, and the schema documents
+the case that proves it — a `provisional` claim may carry `high` confidence (an
+exact result over a narrow verified range) or `unassessed` confidence
+(chat-only, no basis to judge).
+
+## B.3 Statement-type taxonomy — **RESOLVED**
+
+~~Charter §2 requires distinguishing Evidence, Inference, Conjecture and
+Judgment. Charter §7 Stage 7 requires a claim type of theorem, empirical result,
+interpretation, conjecture, or judgment. The implemented schema's `type` field
+records subject matter instead, so the charter's distinction is not currently
+representable.~~
+
+**Both are now represented, on separate axes.** `statement_class` carries §2
+(`evidence | inference | conjecture | judgment`) and `claim_kind` carries Stage 7
+(the five charter values plus five clearly marked `[EXT]` extensions). The
+subject-matter `type` field remains as a third, independent tag.
+
+Enforced by `E13` and `E14`, and the distinction has teeth rather than being
+merely recorded: `E17` blocks `statement_class: judgment` from being
+`supported` (a judgment is not a fact) and `E18` blocks `claim_kind: conjecture`
+from being `supported`.
+
+## B.4 Red-team checklist divergence — **RESOLVED**
+
+~~Charter §7 Stage 8 lists nine specific attacks. The implementation's checklist
+is project-specific and omits several. Outstanding action: make the charter's
+nine the mandatory base and the project-specific items an extension.~~
+
+**Implemented exactly that way.** `research/templates/REDTEAM_TEMPLATE.yaml`
+requires all nine charter attacks as `attacks.A1..A9`, each with `attempted`,
+`finding`, `evidence`, `severity`, `unresolved` and `effect_on_candidate`. The
+seven project-specific checks are `extensions.X1..X7` and are explicitly
+**non-substitutive**.
+
+`research/tools/validate_redteam.py` fails the run on a missing attack (`R4`),
+an incomplete field (`R5`), an unexplained skip (`R6`), an invalid severity or
+effect (`R7`, `R8`), a `fatal` severity that did not produce `verdict: killed`
+(`R9`), and — implementing the Stage 8 independence requirement — a reviewer
+that saw the affirmative summary (`R3`). Self-tested: deleting A5 from a
+complete report yields exit code 1.
+
+---
+
+## B.5 What remains open
+
+Recording these here so the resolution above is not read as "the charter is
+fully mechanised". It is not — see `research/CHARTER_COMPLIANCE.md` for the
+full accounting.
+
+- **§5 (A–H) and §6 (slop warnings) are enforced by workflow discipline, not by
+  the schema.** They are required artifacts of a `/research` task and are
+  checked for *presence and completeness* by `research/tools/validate_task.py`.
+  Nothing checks their quality.
+- **Stages 1, 2, 3 and 9 have templates and completeness checks, not
+  correctness checks.** An agent can fill a required section with something
+  adequate-sounding.
+- **§8 bridge audit** is templated but untriggered; `DISP-VERTEX-CHIRAL-001` is
+  the case that will require it.
+- **Stage 0 is discharged per question, not globally.** 3 of 11 sources are
+  inspected. A task must inspect its own load-bearing sources or return
+  `Infrastructure first`.

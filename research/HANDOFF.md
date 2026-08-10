@@ -26,17 +26,31 @@ state diffusion rather than quantum jumps.
 
 ## 2. Current research decision
 
-**The project is in post-audit migration, not active research.** A full
-reconstruction audit (`audit/2026-08-10/`) found the previous information
-architecture unsafe for delegated work. The knowledge plane under
-`research/state/` was bootstrapped on 2026-08-10 and is incomplete.
+**The knowledge-layer migration blockers are cleared and delegated read-only
+research may now begin.** The reconstruction audit (`audit/2026-08-10/`) found
+the previous information architecture unsafe for delegated work; the knowledge
+plane under `research/state/` was bootstrapped on 2026-08-10 and hardened since.
+It is usable but still incomplete — see `research/README.md` §"Blockers" for
+what remains open and what each remaining blocker actually blocks.
 
-No new physics investigation should begin until the migration blockers in
-`research/README.md` §4 are cleared.
+Investigations run through the `/research` workflow, which stops at **Human Gate
+A** and never writes `research/state/**` or launches compute. Read
+`.claude/skills/research/SKILL.md` before opening a task.
+
+Still gated on the human: merging any proposal into state, approving an
+`experiments/<EXP-ID>.yaml`, approving any local pilot, and **all HPC
+submission — permanently**. Agents prepare HPC packages and stop at
+`READY_FOR_HUMAN_SUBMISSION`; they never submit. See
+`research/RESOURCE_POLICY.md`.
 
 ## 3. Active tasks
 
-None. `research/tasks/active/` is empty.
+None. `research/tasks/active/` is empty apart from `TASK_TEMPLATE/`.
+
+Completed infrastructure validation:
+`research/tasks/completed/TASK-2026-08-10-AMP096/` — the historical-case
+regression test for `/research` v1. It is a **workflow test, not a research
+result**; its findings are provenance and were not merged into state.
 
 ## 4. Open disputes
 
@@ -77,17 +91,31 @@ Validate with `research/tools/validate_state.py`.
   `EV-CODE-ANCHORSCAN-001`.
 - **`theory/**` is historical or unreconciled.** Check the `lifecycle:`
   front-matter before reading. Nothing under `theory/` is authoritative.
+- **Unregistered outputs under `analysis/`** (`global_fss*.json`,
+  `phase_diagram_data.json`, `parity_sweep.log`) are untracked, have no
+  provenance record, and are cited by nothing in `research/state/`. They are not
+  evidence. Do not cite them without registering them first.
+- **`OBS-BL-001` is retired.** The audit found one label covering two
+  quantities: use `OBS-BLPROD-001` (average-of-products, ours) or
+  `OBS-BLKMR-001` (product-of-averages, KMR's). Never compare across them.
+  `OBS-ACTIVITY-001` is still `needs_audit`.
 - **Data lives in two places** with no unified index:
   `~/Downloads/01_M1_Internship/Data/` and `results/` inside the repo. The
   second is newer and larger and was undocumented until the audit.
-- **No HPC job** without an approved `research/experiments/<EXP-ID>.yaml`.
+- **No agent ever submits an HPC job**, at any stage, gate or approval level.
+  An approved `research/experiments/<EXP-ID>.yaml` authorises *preparation* of a
+  package; the researcher submits it manually. `research/RESOURCE_POLICY.md` §4.
+- **Autonomous compute is local-only**, read-only during `/research`, and any
+  local pilot needs prior human approval and fits the budget in
+  `research/RESOURCE_POLICY.md` §3. No HPC access is available at present.
 
 ## 7. What to read next
 
 1. `research/RESEARCH_CHARTER.md` — mandatory, governs all substantive work.
 2. `research/README.md` — how the knowledge plane is organised, and what is
    still missing.
-3. Then only the specific claim, evidence and observable files your task
+3. `.claude/skills/research/SKILL.md` — how a research task is actually run.
+4. Then only the specific claim, evidence and observable files your task
    touches. **Do not preload the state.**
 
 For historical context, and only as provenance, never as evidence:
