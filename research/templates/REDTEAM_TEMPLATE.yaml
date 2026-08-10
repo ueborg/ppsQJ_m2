@@ -1,0 +1,46 @@
+# MANDATORY red-team output. Charter section 7 Stage 8.
+# Location: research/proposals/<TASK-ID>-redteam/REDTEAM.yaml
+# Validated by: research/tools/validate_redteam.py
+# A MISSING ATTACK IS A HARD FAILURE, not a warning.
+
+task_id:                 # REQUIRED
+candidate:               # REQUIRED: claim id or candidate statement under attack
+reviewer:                # REQUIRED: agent or human id. MUST NOT be the proposer.
+date:
+inputs_seen:             # REQUIRED. Charter Stage 8: the review must NOT rely on
+  - claim: []            # the affirmative reasoning. List what was read.
+  - evidence: []
+  - lead_summary_seen: false   # MUST be false. Reviewing the narrative is not review.
+
+# --- the nine mandated attacks. All nine keys REQUIRED. ---------------------
+attacks:
+  A1_already_solved_elsewhere:
+    attempted:           # REQUIRED bool
+    finding:             # REQUIRED if attempted
+    evidence: []         # SRC-/EV-/CLAIM- ids, or explicit "none"
+    severity:            # none | minor | material | fatal
+    unresolved:          # REQUIRED, may be "none"
+    effect_on_candidate: # none | narrow_scope | downgrade_status | kill
+  A2_follows_trivially_from_assumptions: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A3_baseline_disadvantaged:            {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A4_gain_from_extra_information_or_resources: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A5_fails_under_dependence_causality_or_boundary_cases: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A6_measures_a_proxy_not_the_phenomenon: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A7_disappears_under_realistic_conditions: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A8_statistically_or_practically_negligible: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+  A9_simpler_explanation_accounts_for_evidence: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+
+# --- project-specific extensions (architecture, NOT charter) ----------------
+# These do not substitute for A1-A9. Recommended, not required.
+extensions:
+  X1_window_chosen_after_seeing_the_answer: {attempted:, finding:, severity:}
+  X2_parameterization_stated_and_comparisons_matched: {attempted:, finding:, severity:}
+  X3_single_cell_single_L_or_single_pair: {attempted:, finding:, severity:}
+  X4_alternative_observable_or_estimator_disagrees: {attempted:, finding:, severity:}
+  X5_cited_path_actually_exists: {attempted:, finding:, severity:}
+  X6_depends_on_a_claim_that_has_moved: {attempted:, finding:, severity:}
+  X7_ignores_a_recorded_negative_result: {attempted:, finding:, severity:}
+
+verdict:                 # REQUIRED: survives | survives_with_scope_restriction | killed
+verdict_reason:          # REQUIRED
+proposed_status:         # REQUIRED: resulting epistemic_status if it survives

@@ -1,0 +1,159 @@
+# Claim schema — CANONICAL. Aligned to Research Charter sections 2 and 7 Stage 7.
+# research/state/claims/<CLAIM-ID>.yaml   |   enforced by research/tools/validate_state.py
+# Supersedes audit/2026-08-10/CLAIM_SCHEMA.yaml (non-canonical draft).
+
+schema_version: "1.0"
+aligned_to_charter: "2026-08-10 restored original"
+
+# ===========================================================================
+# THE FOUR AXES. These are independent and must never be collapsed.
+#
+#   1. statement_class   WHAT KIND of assertion is this?          (charter sec 2)
+#   2. claim_kind        WHAT KIND of scientific object?          (charter Stage 7)
+#   3. epistemic_status  HOW WELL SUPPORTED is it?                (charter Stage 7)
+#   4. confidence        HOW LIKELY is it TRUE within its scope?  (charter Stage 7)
+#
+# Plus, on evidence rather than claims: reproducibility (architecture extension).
+# ===========================================================================
+
+# --- Axis 1: statement_class (charter sec 2) -------------------------------
+# Assigned by WHAT THE STATEMENT ASSERTS, never by how well it is supported.
+# A poorly supported report of an observation is still statement_class: evidence.
+# How well it holds up is carried by epistemic_status and confidence.
+statement_class:
+  evidence:   "Asserts something directly obtained from a cited source, derivation, dataset, or executed experiment."
+  inference:  "Asserts something that follows from evidence but was not itself directly observed."
+  conjecture: "Asserts something plausible but presently unsupported."
+  judgment:   "Asserts an assessment of importance, novelty, practicality, or research value."
+rule: "Do not present an inference as evidence or a judgment as a fact. (charter sec 2)"
+
+# --- Axis 2: claim_kind (charter Stage 7) ----------------------------------
+claim_kind:
+  # the five charter values
+  theorem:          "A mathematical result or exact identity."
+  empirical_result: "A measured or computed quantity or behaviour."
+  interpretation:   "A reading of what a result means."
+  conjecture:       "A proposed but unestablished proposition."
+  judgment:         "An assessment of value, priority, or adequacy."
+  # architecture extensions, clearly marked as such
+  derivation:                "[EXT] An analytic chain from stated assumptions. Charter Stage 7 groups this with theorem; separated here because this project's derivations repeatedly failed while their conclusions survived."
+  methodological_result:     "[EXT] A result about how to compute, not about the physics."
+  negative_result:           "[EXT] An elimination. Charter sec 4.4 requires these be preserved as first-class."
+  data_adequacy_assessment:  "[EXT] A statement about what the current data can and cannot resolve."
+  infrastructure_fact:       "[EXT] A checkable statement about the repository, data, or environment."
+
+# --- Axis 3: epistemic_status (charter Stage 7, AUTHORITATIVE vocabulary) ---
+epistemic_status:
+  unsupported:  "No adequate supporting evidence located."
+  provisional:  "Supported, but not decisively established."
+  supported:    "Established within its stated scope."
+  contradicted: "Shown to be false, or falsified by later evidence."
+  withdrawn:    "Retracted or superseded by a replacement claim."
+authority_note: >
+  This is the charter vocabulary and it governs. The pre-2026-08-10 architecture
+  vocabulary (verified/plausible/open/contested/superseded/refuted) is retained
+  per claim in `architecture_status_legacy` for lossless mapping.
+lossless_mapping:
+  verified:   supported
+  plausible:  provisional
+  open:       unsupported
+  superseded: withdrawn
+  refuted:    contradicted
+  contested:  "NOT a status. Migrated to the orthogonal `contested:` boolean plus an epistemic_status assigned on its own merits."
+
+# --- contested (architecture extension, orthogonal to status) --------------
+contested:
+  type: boolean
+  meaning: >
+    [EXT] A live competing claim exists. Orthogonal to epistemic_status: two
+    provisional claims can contest each other, and a contradicted claim is not
+    thereby contested. Requires `contests` and `dispute_id` when true.
+  rationale: >
+    The charter has no `contested` status. Folding contestation into status
+    would force a reinterpretation of every disputed claim, which charter sec 4.4
+    forbids. Separating it keeps both sides live without altering their support.
+
+# --- Axis 4: confidence (charter Stage 7) ----------------------------------
+confidence:
+  definition: >
+    Probability-like credence that the statement AS WRITTEN is true WITHIN ITS
+    STATED SCOPE. NOT a restatement of epistemic_status. A claim can be
+    `provisional` with `high` confidence (exact result, narrow verified range) or
+    `provisional` with `unassessed` confidence (chat-only, no basis to judge).
+  values:
+    unassessed: "No defensible basis to assign. THE REQUIRED DEFAULT on migration."
+    very_low:   "<10%.  Believed false or superseded."
+    low:        "10-40%. Plausible but a competing account is comparably good."
+    moderate:   "40-75%. Favoured, with identified ways it could fail."
+    high:       "75-95%. Would be surprising to overturn within the stated scope."
+    very_high:  ">95%.  Exact, or directly and repeatedly checked."
+  rules:
+    - "Never guess. If it cannot be justified, use `unassessed`."
+    - "`confidence_basis` is REQUIRED and must state WHY, not restate the value."
+    - "Confidence applies within `scope` and `validity_range`, not universally."
+
+# ===========================================================================
+# ENTRY TEMPLATE
+# ===========================================================================
+id:                    # <DOMAIN>-<TOPIC>-<NNN>, immutable
+statement:             # one sentence, no hedging adverbs
+type:                  # subject-matter tag (amplitude|exponent|mechanism|methodology|...)
+
+statement_class:       # REQUIRED, axis 1
+claim_kind:            # REQUIRED, axis 2
+epistemic_status:      # REQUIRED, axis 3
+confidence:            # REQUIRED, axis 4
+confidence_basis:      # REQUIRED, prose justification
+contested:             # REQUIRED boolean
+
+architecture_status_legacy:   # pre-migration value, lossless mapping
+status_migration:
+  from:
+  to:
+  rule:
+  meaning_changed:     # must be false unless a human confirmed a reinterpretation
+  human_confirmed:     # false until the researcher reviews
+
+domain:                # cut_A | cut_B | shared_theory | methodology | production | infrastructure
+parameterization:      # REQUIRED for exponent|amplitude|scaling_law
+observable_id:         # REQUIRED for exponent|amplitude
+estimator:
+value: {central:, uncertainty:, uncertainty_type:, units:}
+
+scope:                 # REQUIRED, qualitative conditions
+validity_range:        # REQUIRED for exponent|amplitude
+fitting_window:        # REQUIRED for exponent
+window_sensitivity:    # REQUIRED for exponent, >=3 windows
+
+evidence: [{id:, role:}]        # role: discriminating|supporting|postdiction|diagnostic
+evidence_note:                  # REQUIRED if evidence is empty
+discriminating_evidence: []     # REQUIRED non-empty for epistemic_status: supported
+
+depends_on: []         # staleness cascades from contradicted|withdrawn
+contests: []           # symmetric; requires contested: true and dispute_id
+dispute_id:
+supersedes: []
+superseded_by:
+
+assumptions: []        # REQUIRED
+falsifiers: []         # REQUIRED (charter sec 5C)
+
+created: {date:, by:}
+last_reviewed: {date:, by:}
+review_status:         # proposed|in_review|approved|stale|rejected
+review_record: {}
+
+# ===========================================================================
+# VALIDATOR RULES
+#   epistemic_status: supported REQUIRES
+#     (a) >=1 discriminating evidence item, AND
+#     (b) that item's reproducibility in {fully_reproducible, partially_reproducible}
+#   chat_only / unrecoverable evidence CAPS a claim at `provisional`
+#   claim_kind: conjecture is INCOMPATIBLE with epistemic_status: supported
+#   statement_class: judgment may NOT be `supported` (charter sec 2: a judgment
+#     is not a fact); use provisional and record the reasoning
+#   depends_on a contradicted|withdrawn claim -> review_status must be `stale`
+#   contested: true REQUIRES contests[] and dispute_id, symmetrically
+#   confidence is REQUIRED and must be in the enum; confidence_basis required
+#   no claim may cite memory, HANDOFF, a manuscript, or a chat as evidence
+# ===========================================================================
