@@ -284,6 +284,58 @@ def _batched_compute_B_L(covs_list: list[np.ndarray], L: int) -> dict:
         return out
 
 
+def _batched_compute_MI_ends(covs_list: list[np.ndarray], L: int) -> dict:
+    """Mutual information between the two END regions of the chain.
+
+    This is the Cut A / Case A topological order parameter: in the phase with
+    Majorana zero modes at the two ends, the ends share one delocalised fermion
+    and I(A:C) -> 1 bit; in the trivial phase I(A:C) -> 0. Contrast with the
+    peaked ``CMI`` of ``_batched_compute_B_L``, whose A,B,C are the first three
+    contiguous quarters (that quantity is NOT a 0->1 order parameter).
+
+    Two region sizes are returned so the convention can be revisited without
+    a rerun:
+        MI_ends_q4 : A = sites [0, L/4),  C = sites [3L/4, L)
+        MI_ends_q8 : A = sites [0, L/8),  C = sites [7L/8, L)
+    with MI = S_A + S_C - S_AC. For a pure global state this equals the
+    conditional mutual information I(A:C|B) with B the whole remaining middle.
+    """
+    N_c = len(covs_list)
+    keys = ("MI_ends_q4", "MI_ends_q8")
+
+    def _nan_out() -> dict:
+        return {k: np.full(N_c, np.nan, dtype=np.float64) for k in keys}
+
+    if L % 4 != 0:
+        return _nan_out()
+
+    gamma = np.stack([np.asarray(c, dtype=np.float64) for c in covs_list], axis=0)
+    nM = 2 * L  # Majorana dimension; site j -> Majoranas 2j, 2j+1
+
+    def _ent(idx: np.ndarray) -> np.ndarray:
+        sub = gamma[:, idx, :][:, :, idx]
+        ell = sub.shape[-1] // 2
+        eigs = np.linalg.eigvalsh((1j * sub).astype(np.complex128))
+        nus = np.clip(np.abs(eigs[:, ell:]), 0.0, 1.0)
+        p_p = np.clip(0.5 * (1.0 + nus), 1e-15, 1.0 - 1e-15)
+        p_m = np.clip(0.5 * (1.0 - nus), 1e-15, 1.0 - 1e-15)
+        return -np.sum(p_p * np.log2(p_p) + p_m * np.log2(p_m), axis=-1)
+
+    out = _nan_out()
+    try:
+        for key, denom in (("MI_ends_q4", 4), ("MI_ends_q8", 8)):
+            if L % denom != 0:
+                continue
+            w = nM // denom                      # Majorana width of one end block
+            iA = np.arange(0, w)
+            iC = np.arange(nM - w, nM)
+            iAC = np.concatenate([iA, iC])
+            out[key] = (_ent(iA) + _ent(iC) - _ent(iAC)).astype(np.float64)
+    except np.linalg.LinAlgError:
+        return _nan_out()
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

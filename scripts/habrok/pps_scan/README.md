@@ -132,3 +132,34 @@ print(f"Z_T = {bwd.Z_T:.6f}, theta = {bwd.theta_doob:.6f}")
 
 The loaded object is a drop-in replacement for `GaussianBackwardData` in
 `doob_gaussian_trajectory` (same `state_at(t)` interface).
+
+---
+
+## Slope-test run (added 2026-05-26)
+
+**Goal**: discriminate Möbius slope 1/8 from naive NLSM slope 1/4 at ζ=1.
+Requires λ_c(ζ) at ζ ∈ {0.7,0.8,0.9} to ~0.5% precision.
+
+### Phase 1 — fill L≤128 gaps (fast, cheap)
+
+ζ ∈ {0.80, 0.90} are missing from the cloning aggregate at all L.
+Add them with the existing nc_for_L schedule.
+
+Grid: L ∈ {32,48,64,96,128} × ζ ∈ {0.80,0.90} × 24 λ-points
+= 240 tasks, <2h each. Cost: ~480 CPU-hours.
+
+Purpose: (a) rough λ_c estimates at ζ=0.80,0.90; (b) narrows the λ-scan
+for Phase 2 from 24 to ~12 points (halves Phase 2 cost).
+
+### Phase 2 — high-L precision (necessary for slope test)
+
+Grid: L ∈ {192,256} × ζ ∈ {0.70,0.80,0.90} × 24 λ-points × N_c=200
+= 144 tasks, ~14h each. Cost: ~2016 CPU-hours (~2 days cluster time).
+
+ζ=1.00 at L≫128 is anchored analytically (Carollo λ_c=1/2); do NOT rerun.
+ζ=0.50 at L=192,256 already exists from Run B.
+
+Expected discriminating power:
+  λ_c(0.7): Möbius=0.456, NLSM=0.412, diff=0.044
+  At N_c=200, L=256: σ(λ_c) ≈ 0.005 → 8σ discrimination if slope~1/4.
+

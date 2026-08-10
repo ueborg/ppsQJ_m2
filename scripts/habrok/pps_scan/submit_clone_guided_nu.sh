@@ -13,12 +13,17 @@
 # prod/highL/ladder output dirs.
 #
 # SUBMISSION (size-binned; all ranges < MaxArraySize 1001):
-#   # higher size L=160
-#   GRID=guided_highL  sbatch --array=0-194%48   --time=08:00:00 --job-name=gB_highL  scripts/habrok/pps_scan/submit_clone_guided_nu.sh
+#   IMPORTANT: use --export=ALL,GRID=... for ladder jobs. A bare
+#   "GRID=guided_ladder sbatch ..." may not export the variable to the compute
+#   node environment (Habrok bug observed 2026-06-17; caused all three gL_*
+#   jobs to silently fall back to guided_highL and produce wrong data).
+#
+#   # higher size L=160 (guided_highL default is fine here)
+#   sbatch --export=ALL,GRID=guided_highL  --array=0-194%48   --time=08:00:00 --job-name=gB_highL  scripts/habrok/pps_scan/submit_clone_guided_nu.sh
 #   # ladder, by L tier (ids: L96 0-104, L128 105-209, L160 210-314)
-#   GRID=guided_ladder sbatch --array=0-104%48   --time=04:00:00 --job-name=gL_96   scripts/habrok/pps_scan/submit_clone_guided_nu.sh
-#   GRID=guided_ladder sbatch --array=105-209%48 --time=08:00:00 --job-name=gL_128  scripts/habrok/pps_scan/submit_clone_guided_nu.sh
-#   GRID=guided_ladder sbatch --array=210-314%32 --time=14:00:00 --job-name=gL_160  scripts/habrok/pps_scan/submit_clone_guided_nu.sh
+#   sbatch --export=ALL,GRID=guided_ladder --array=0-104%48   --time=04:00:00 --job-name=gL_96  scripts/habrok/pps_scan/submit_clone_guided_nu.sh
+#   sbatch --export=ALL,GRID=guided_ladder --array=105-209%48 --time=08:00:00 --job-name=gL_128 scripts/habrok/pps_scan/submit_clone_guided_nu.sh
+#   sbatch --export=ALL,GRID=guided_ladder --array=210-314%32 --time=14:00:00 --job-name=gL_160 scripts/habrok/pps_scan/submit_clone_guided_nu.sh
 # Recommended order if time is tight: prod -> gL_96 -> gL_128 -> gB_highL -> gL_160.
 #
 #SBATCH --job-name=gB_nu
@@ -36,6 +41,21 @@ GRID="${GRID:-guided_highL}"
 REPO_DIR="${REPO_DIR:-$HOME/pps_qj}"
 VENV_DIR="${VENV_DIR:-$HOME/venvs/pps_qj}"
 OUTPUT_DIR="${OUTPUT_DIR:-/scratch/$USER/pps_qj/pps_clone_${GRID}}"
+
+# Guard: fail loudly if GRID was not exported to the job environment.
+# The silent fallback to guided_highL has caused gL_* ladder jobs to run
+# as guided_highL (wrong grid, wrong L/N_c, wrong output dir).
+# Always submit ladder jobs with: sbatch --export=ALL,GRID=guided_ladder ...
+_VALID_GRIDS="guided_highL guided_ladder"
+_grid_ok=0
+for _g in $_VALID_GRIDS; do [[ "$GRID" == "$_g" ]] && _grid_ok=1; done
+if [[ $_grid_ok -eq 0 ]]; then
+    echo "ERROR: GRID='$GRID' is not a recognised value." >&2
+    echo "       Valid values: $_VALID_GRIDS" >&2
+    echo "       Submit ladder jobs with: sbatch --export=ALL,GRID=guided_ladder ..." >&2
+    exit 1
+fi
+echo "INFO: GRID=$GRID  OUTPUT_DIR=$OUTPUT_DIR  TASK=$SLURM_ARRAY_TASK_ID" >&2
 
 mkdir -p logs "$OUTPUT_DIR"
 module purge

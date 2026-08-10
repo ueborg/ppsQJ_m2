@@ -241,3 +241,75 @@ def task_params_guided_caseA(task_id: int) -> dict:
 def guided_caseA_tier_ranges() -> dict:
     per_L = len(ZETA_GUIDED_CASEA) * _GUIDED_CASEA_NLAM
     return {L: (i * per_L, (i + 1) * per_L - 1) for i, L in enumerate(L_GUIDED_CASEA)}
+
+# ======================================================================
+# Case A ORDER-PARAMETER grid.  --grid order
+# Targets the end-to-end mutual information I(A_left : C_right), which is a
+# genuine 0 -> 1 order parameter for Cut A (1 bit in the phase with Majorana
+# end modes, 0 in the trivial phase). The peaked CMI of the guided grid is NOT
+# that quantity, so this grid exists to be analysed with MI_ends_q4/q8.
+#
+# Two blocks:
+#   DENSE  -- 5 L x 7 zeta x 12 lambda in [0.42, 0.64], resolves the step
+#             near the self-dual point lambda_c = 1/2.        420 tasks
+#   SWEEP  -- 3 L x 2 zeta x 15 lambda in [0.15, 0.85], shows both plateaus
+#             end to end for demonstration.                    90 tasks
+# Total 510 tasks (ids 0..509). Seeds offset by 9e9 to stay disjoint.
+# ======================================================================
+
+ZETA_ORDER_DENSE: List[float] = [0.05, 0.10, 0.20, 0.30, 0.50, 0.70, 0.85]
+L_ORDER_DENSE: List[int] = [32, 48, 64, 96, 128]
+_ORDER_DENSE_LAMS: List[float] = [round(float(x), 4)
+                                  for x in np.linspace(0.42, 0.64, 12)]
+
+ZETA_ORDER_SWEEP: List[float] = [0.30, 0.70]
+L_ORDER_SWEEP: List[int] = [32, 64, 128]
+_ORDER_SWEEP_LAMS: List[float] = [round(float(x), 4)
+                                  for x in np.linspace(0.15, 0.85, 15)]
+
+
+def make_order_caseA_grid() -> List[dict]:
+    grid: List[dict] = []
+    tid = 0
+    for block, Ls, zetas, lams in (
+        ("dense", L_ORDER_DENSE, ZETA_ORDER_DENSE, _ORDER_DENSE_LAMS),
+        ("sweep", L_ORDER_SWEEP, ZETA_ORDER_SWEEP, _ORDER_SWEEP_LAMS),
+    ):
+        for L in Ls:
+            T = _time_horizon_guided_caseA(L)
+            for zeta in zetas:
+                for lam in lams:
+                    gamma_rate, alpha_rate = alpha_gamma_from_lam(lam)
+                    grid.append(dict(
+                        task_id=tid, L=int(L), lam=float(lam),
+                        gamma_rate=float(gamma_rate),
+                        alpha_rate=float(alpha_rate),
+                        zeta=float(zeta), T=float(T),
+                        N_c=_NC_GUIDED_CASEA[L],
+                        seed=_seed(L, lam, zeta) + 9_000_000_000,
+                        block=block,
+                    ))
+                    tid += 1
+    return grid
+
+
+def task_params_order_caseA(task_id: int) -> dict:
+    g = make_order_caseA_grid()
+    if not (0 <= task_id < len(g)):
+        raise IndexError(f"order caseA task_id {task_id} out of range [0, {len(g)})")
+    return g[task_id]
+
+
+def order_caseA_tier_ranges() -> dict:
+    """Task-id ranges keyed by (block, L) for size-binned submission."""
+    out: dict = {}
+    tid = 0
+    for block, Ls, zetas, lams in (
+        ("dense", L_ORDER_DENSE, ZETA_ORDER_DENSE, _ORDER_DENSE_LAMS),
+        ("sweep", L_ORDER_SWEEP, ZETA_ORDER_SWEEP, _ORDER_SWEEP_LAMS),
+    ):
+        per_L = len(zetas) * len(lams)
+        for L in Ls:
+            out[(block, L)] = (tid, tid + per_L - 1)
+            tid += per_L
+    return out

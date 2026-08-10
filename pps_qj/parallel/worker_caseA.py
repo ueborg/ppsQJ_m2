@@ -34,10 +34,12 @@ from pps_qj.gaussian_backend_caseA import build_caseA_model
 from pps_qj.parallel.grid_caseA import (
     task_params_caseA,
     task_params_guided_caseA,
+    task_params_order_caseA,
     N_REAL,
 )
 from pps_qj.parallel.worker_clone_pps import (
     _batched_compute_B_L,
+    _batched_compute_MI_ends,
     _nanstat,
     _write_summary_atomic,
     _load_partial,
@@ -124,6 +126,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     _GRID_DISPATCH = {
         "v1": task_params_caseA,
         "guided": task_params_guided_caseA,
+        "order": task_params_order_caseA,
     }
     _task_params = _GRID_DISPATCH.get(grid_name, task_params_caseA)
 
@@ -197,6 +200,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         ESSs = np.full(N_REAL, np.nan)
         B_L_means = np.full(N_REAL, np.nan)
         CMI_means = np.full(N_REAL, np.nan)
+        MI4_means = np.full(N_REAL, np.nan)
+        MI8_means = np.full(N_REAL, np.nan)
         S_AB_means = np.full(N_REAL, np.nan)
         S_BC_means = np.full(N_REAL, np.nan)
         S_B_means = np.full(N_REAL, np.nan)
@@ -226,6 +231,13 @@ def main(argv: Optional[list[str]] = None) -> int:
             n_ancestors_all[r] = res.get("n_ancestors", np.nan)
             if can_compute_B_L:
                 comps = _batched_compute_B_L(res["final_covs"], L)
+                mis = _batched_compute_MI_ends(res["final_covs"], L)
+                for _n2, _a2 in (("MI_ends_q4", MI4_means),
+                                 ("MI_ends_q8", MI8_means)):
+                    _v2 = mis[_n2]
+                    _f2 = np.isfinite(_v2)
+                    if _f2.any():
+                        _a2[r] = float(np.mean(_v2[_f2]))
                 for _name, _arr in (("B_L", B_L_means), ("CMI", CMI_means),
                                     ("S_AB", S_AB_means), ("S_BC", S_BC_means),
                                     ("S_B", S_B_means), ("S_ABC", S_ABC_means)):
@@ -242,6 +254,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         ESS_mean, _, _, _ = _nanstat(ESSs)
         B_L_mean, _, B_L_err, nBL = _nanstat(B_L_means)
         CMI_mean, _, CMI_err, _ = _nanstat(CMI_means)
+        MI4_mean, _, MI4_err, _ = _nanstat(MI4_means)
+        MI8_mean, _, MI8_err, _ = _nanstat(MI8_means)
         S_AB_mean, _, S_AB_err, _ = _nanstat(S_AB_means)
         S_BC_mean, _, S_BC_err, _ = _nanstat(S_BC_means)
         S_B_mean, _, S_B_err, _ = _nanstat(S_B_means)
@@ -288,6 +302,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             theta_mean=theta_mean, theta_err=theta_err,
             B_L_mean=B_L_mean, B_L_err=B_L_err,
             CMI_mean=CMI_mean, CMI_err=CMI_err,
+            MI_ends_q4_mean=MI4_mean, MI_ends_q4_err=MI4_err,
+            MI_ends_q8_mean=MI8_mean, MI_ends_q8_err=MI8_err,
             min_ess_frac_mean=min_ess_frac_mean,
             n_collapses=n_collapses_total,
             wall_time=wall_time, status="complete",
