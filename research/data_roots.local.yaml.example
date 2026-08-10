@@ -1,0 +1,10 @@
+# Template. Copy to research/data_roots.local.yaml and edit for your machine.
+# See research/state/DATA_ROOTS.yaml for what each logical root means.
+machine: "<hostname or description>"
+created: <YYYY-MM-DD>
+roots:
+  REPO:              /path/to/ppsQJ_m2
+  DATA_INTERNSHIP:   /path/to/01_M1_Internship
+  PAPERS_LIBRARY:    /path/to/papers
+  DESKTOP_INTERNSHIP: /path/to/loose/internship/folder
+  AUDIT_EPHEMERAL:   /path/to/ppsQJ_m2/audit/2026-08-10/recovered_ephemeral
