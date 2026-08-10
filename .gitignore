@@ -40,9 +40,33 @@ coverage.xml
 *.swo
 *~
 
-# Cursor / Claude
-.claude/
+# Cursor
 .cursor/
+
+# ---- Claude Code infrastructure (revised 2026-08-10, /research v1) -------
+# Shared research infrastructure is VERSION-CONTROLLED. Charter section 9 treats
+# code, interfaces and tooling as first-class scientific outputs, and the
+# `/research` guarantees (no state writes, no push, no HPC) are only auditable
+# if the rules enforcing them are in git.
+#
+# Ignore everything under .claude/ by default, then re-include the shared parts.
+# Order matters: .claude/* must not be .claude/, or the negations cannot apply.
+.claude/*
+!.claude/settings.json
+!.claude/agents/
+!.claude/skills/
+!.claude/hooks/
+!.claude/workflows/
+!.claude/commands/
+
+# Machine- and session-specific. Never tracked.
+#   settings.local.json  per-machine permission grants
+#   worktrees/           git worktree checkouts
+#   launch.json          local debug config; it targets notebooks/, which is
+#                        itself gitignored, so it is not shared infrastructure
+.claude/settings.local.json
+.claude/worktrees/
+.claude/launch.json
 
 # LaTeX build artifacts
 continuousmeasurementslatex/
@@ -74,6 +98,10 @@ results/
 # Machine-local data-root mapping (see research/state/DATA_ROOTS.yaml).
 # The .example template IS tracked.
 research/data_roots.local.yaml
+
+# Machine-local compute profile (see research/RESOURCE_POLICY.md).
+# The .example template IS tracked.
+research/resource_profile.local.yaml
 
 # Regenerable catalogue (research/tools/catalogue_runs.py, ~2 min, 1.3 MB)
 research/runs/_catalogue/

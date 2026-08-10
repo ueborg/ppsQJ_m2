@@ -1,0 +1,92 @@
+# TASK-LOCAL EVIDENCE TIER. Location: <TASK_DIR>/TASK_EVIDENCE.yaml
+# Validated by research/tools/validate_task.py (E1-E3).
+#
+# WHY THIS EXISTS
+# In TASK-2026-08-10-AMP096 the literature worker opened the KMR PDF and read
+# the body, establishing something canonical state did not yet record. Under a
+# strict two-tier model (canonical vs provenance) that verification was
+# formally unusable for the rest of the run, even though it was the most
+# reliable thing in the task. Meanwhile the endpoint argument turned on a zeta
+# convention that nobody could verify - and there was no way to express the
+# difference between "checked it against the paper" and "took it from notes".
+#
+# So a task has FOUR tiers:
+#
+#   canonical        research/state/**. Durable, cross-task, human-merged.
+#   task-verified    inspected during THIS task, by a named worker, against a
+#                    named artifact. Admissible WITHIN this task, including by
+#                    the red team. Never canonical automatically.
+#   provenance       manuscripts, theory/**, audit/**, history/**, prior chats.
+#                    Read for orientation, cited as origin, never as support.
+#   conjecture       plausible, unsupported. Labelled [C] or [J] in prose.
+#
+# The task SOURCE_REGISTER.md is the task-level authority for source inspection
+# achieved during the run; this file is its machine-readable form.
+
+schema_version: 1
+task_id:
+
+task_verified: []
+  # - id: TV-1                       # task-local id, referenced as TV-*
+  #   tier: task_verified
+  #   kind: source_inspection        # source_inspection | artifact_check |
+  #                                  # code_read | recomputation
+  #   source_or_artifact: SRC-KMR-2023    # canonical id where one exists...
+  #   locator: "SciPost Phys. 14, 031, Sec. 3.2 and Appendix B"   # ...and where
+  #   what_was_verified: >           # EXACTLY what was established. Not a topic
+  #     KMR's B_L is the product of trajectory-AVERAGED quantities, stated in
+  #     the body and not only in the appendix title.
+  #   what_it_does_not_establish: >  # REQUIRED in spirit: the limit of the check
+  #     Nothing about our own stored B_L definition.
+  #   verified_by: literature        # which worker, so it can be re-checked
+  #   date: 2026-08-10
+  #   canonical: false               # ALWAYS false here (E3)
+  #   promotion_status: proposed     # proposed | not_proposed. A task PROPOSES.
+  #   proposed_change: >             # what the human would merge, if they agree
+  #     SRC-KMR-2023.inspection_level -> fully_inspected for this section.
+  #   supersedes_task_assumption:    # optional: the assumption this replaces
+
+# --- EXTERNAL sources discovered and inspected during this task -------------
+# research/state/sources/** is NOT an exhaustive corpus. Most relevant work has
+# never been downloaded here. Anything an agent actually OPENS during the run is
+# recorded below, becomes task-verified, and is usable by the rest of the task
+# including the red team. It is NOT canonical.
+#
+# A SEARCH-RESULT SNIPPET IS DISCOVERY, NOT EVIDENCE. Neither is an abstract,
+# a citation count, or another paper's description of a third paper. Record the
+# real inspection_level and let it cap what the source can support (X3).
+#
+# Only sources that became DECISION-RELEVANT should normally be proposed for
+# promotion. Do not propose every paper anyone happened to open.
+external_sources: []
+  # - id: EXT-1                      # task-local id, referenced as EXT-*
+  #   title: "Thermal metal-insulator transition in a helical topological superconductor"
+  #   authors: "Fulga, Akhmerov, Tworzydlo, Beri, Beenakker"
+  #   year: 2012
+  #   doi_or_arxiv: "arXiv:1205.1441"        # DOI or arXiv id where available
+  #   url_or_identifier: "https://arxiv.org/abs/1205.1441"
+  #   discovery_method: "WebSearch: class DIII thermal metal-insulator exponent"
+  #   source_class: preprint          # journal_article | preprint |
+  #                                   # supplementary | documentation
+  #   inspection_level: relevant_sections   # fully_inspected |
+  #        relevant_sections | abstract_only | search_result_snippet |
+  #        not_inspected | metadata_only
+  #   sections_inspected: "Sec. V D, Table I, Table II"   # exact pages/equations
+  #   what_it_establishes: >
+  #     nu = 2.06 [1.89, 2.20] for the 2D disordered class-DIII network model.
+  #   what_it_does_not_establish: >
+  #     nothing about measurement, monitoring, replicas or the Born rule.
+  #   verified_by: literature         # which worker opened it
+  #   date: 2026-08-10
+  #   derived_task_evidence: [TV-2]   # TV-* ids drawn from this source
+  #   used_as_support: true           # only legitimate above snippet/abstract
+  #   promotion_status: proposed      # proposed | not_proposed
+  #   why_promote: "load-bearing for DEC-CITATION-001 item 3"
+
+# Assumptions this task could NOT verify. Listing them is what stops an
+# unverified convention from silently carrying an argument.
+unverified_assumptions: []
+  # - assumption: "zeta = 1 is the Born / unpostselected endpoint"
+  #   why_unverified: "SRC-LMR-2025 records it as taken from project notes"
+  #   what_depends_on_it: [C3]
+  #   how_to_verify: "read the convention out of the LMR paper"

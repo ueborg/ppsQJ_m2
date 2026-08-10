@@ -1,0 +1,70 @@
+# Template. Copy to research/resource_profile.local.yaml and fill in for THIS
+# machine. The real file is gitignored; this template is tracked.
+#
+# Why it exists: research/RESOURCE_POLICY.md deliberately names no hardware, so
+# that the policy stays portable and no machine-specific value ever reaches
+# research/state/**. Agents read the policy for the rules and this file for the
+# numbers.
+#
+# Regenerate with read-only commands, e.g. on macOS:
+#   sysctl -n hw.model machdep.cpu.brand_string
+#   sysctl -n hw.physicalcpu hw.logicalcpu
+#   sysctl -n hw.perflevel0.physicalcpu hw.perflevel1.physicalcpu
+#   sysctl -n hw.memsize ; sysctl -n vm.swapusage
+#   uname -m ; sw_vers ; df -h /
+#   .venv/bin/python3 -c "import numpy; numpy.show_config()"
+schema_version: "1.0"
+generated: <YYYY-MM-DD>
+generated_by: "<how these values were obtained>"
+
+machine:
+  identifier: "<hw.model, e.g. Mac15,12>"
+  chip: "<machdep.cpu.brand_string>"
+  architecture: "<uname -m>"
+  os: "<sw_vers ProductVersion and build>"
+
+cpu:
+  physical_cores: <int>
+  logical_cores: <int>
+  performance_cores: <int>        # omit on non-heterogeneous CPUs
+  efficiency_cores: <int>
+  note: "budget sustained numerical work against performance cores only"
+
+memory:
+  physical_bytes: <int>
+  physical_gib: <int>
+  swap_total_mib: <int>
+  swap_used_mib_at_profiling: <int>
+  note: "if swap is heavily used, real headroom is far below physical RAM"
+
+disk:
+  root_avail_gib: <int>
+  data_volume_avail_gib: <int>
+
+python:
+  executable: <path to the project interpreter>
+  version: "<x.y.z>"
+  numpy: "<version>"
+  scipy: "<version>"
+
+blas:
+  library: "<accelerate | openblas | mkl | ...>"
+  version: "<version or unknown>"
+  threading_env:
+    OMP_NUM_THREADS: <value or unset>
+    OPENBLAS_NUM_THREADS: <value or unset>
+    MKL_NUM_THREADS: <value or unset>
+    VECLIB_MAXIMUM_THREADS: <value or unset>
+    NUMEXPR_NUM_THREADS: <value or unset>
+  note: "unset means the library picks its own thread count; pin before a pilot"
+
+local_pilot_budget:
+  max_wall_minutes: 10
+  max_concurrent_cpu_jobs: 1
+  nested_multiprocessing: forbidden
+  recommended_thread_pin: <performance core count>
+  memory_ceiling_note: "judge against observed free memory, not physical RAM"
+
+hpc:
+  available: <true | false>
+  agent_submission: NEVER         # not a per-machine setting; permanent policy

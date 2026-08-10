@@ -1,46 +1,79 @@
-# MANDATORY red-team output. Charter section 7 Stage 8.
-# Location: research/proposals/<TASK-ID>-redteam/REDTEAM.yaml
+# MANDATORY red-team output. Charter section 7 Stage 8. SCHEMA VERSION 2.
+# Location: <TASK_DIR>/REDTEAM.yaml
 # Validated by: research/tools/validate_redteam.py
 # A MISSING ATTACK IS A HARD FAILURE, not a warning.
+#
+# WHY V2 EXISTS
+# V1 had ONE global `verdict`. In TASK-2026-08-10-AMP096 four candidates died
+# and C4 survived scoped, and the single field could only say `killed` - so the
+# report simultaneously claimed "all candidates killed" and "C4 survives",
+# which is not a defect of the reviewer's reasoning but of the form it had to
+# write it on. A fatal attack now kills THE CANDIDATE IT APPLIES TO and cannot
+# erase an unrelated survivor.
+#
+# V1 reports remain readable: validate_redteam.py detects the absence of
+# `candidate_reviews` and validates them under the v1 rules, labelled LEGACY-V1.
+
+schema_version: 2
 
 task_id:                 # REQUIRED
-candidate:               # REQUIRED: claim id or candidate statement under attack
 reviewer:                # REQUIRED: agent or human id. MUST NOT be the proposer.
 date:
+
 inputs_seen:             # REQUIRED. Charter Stage 8: the review must NOT rely on
-  - claim: []            # the affirmative reasoning. List what was read.
-  - evidence: []
-  - lead_summary_seen: false   # MUST be false. Reviewing the narrative is not review.
+  claims: []             # the affirmative reasoning. List what was read.
+  evidence: []
+  task_verified: []      # task-local verifications consumed (TASK_EVIDENCE.yaml
+                         # ids). Admissible within this task; NOT canonical.
+  lead_summary_seen: false   # MUST be false. Reviewing the narrative is not review.
 
-# --- the nine mandated attacks. All nine keys REQUIRED. ---------------------
-attacks:
-  A1_already_solved_elsewhere:
-    attempted:           # REQUIRED bool
-    finding:             # REQUIRED if attempted
-    evidence: []         # SRC-/EV-/CLAIM- ids, or explicit "none"
-    severity:            # none | minor | material | fatal
-    unresolved:          # REQUIRED, may be "none"
-    effect_on_candidate: # none | narrow_scope | downgrade_status | kill
-  A2_follows_trivially_from_assumptions: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A3_baseline_disadvantaged:            {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A4_gain_from_extra_information_or_resources: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A5_fails_under_dependence_causality_or_boundary_cases: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A6_measures_a_proxy_not_the_phenomenon: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A7_disappears_under_realistic_conditions: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A8_statistically_or_practically_negligible: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
-  A9_simpler_explanation_accounts_for_evidence: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+# --- one review per candidate ----------------------------------------------
+# Keys are the candidate ids the lead supplied (C1, C2, ...). EVERY candidate
+# gets its own nine attacks and its own verdict.
+candidate_reviews:
 
-# --- project-specific extensions (architecture, NOT charter) ----------------
-# These do not substitute for A1-A9. Recommended, not required.
-extensions:
-  X1_window_chosen_after_seeing_the_answer: {attempted:, finding:, severity:}
-  X2_parameterization_stated_and_comparisons_matched: {attempted:, finding:, severity:}
-  X3_single_cell_single_L_or_single_pair: {attempted:, finding:, severity:}
-  X4_alternative_observable_or_estimator_disagrees: {attempted:, finding:, severity:}
-  X5_cited_path_actually_exists: {attempted:, finding:, severity:}
-  X6_depends_on_a_claim_that_has_moved: {attempted:, finding:, severity:}
-  X7_ignores_a_recorded_negative_result: {attempted:, finding:, severity:}
+  C1:
+    statement:           # REQUIRED: the candidate as attacked, verbatim
+    verdict:             # REQUIRED: killed | survives | survives_scoped | unresolved
+    reason:              # REQUIRED: why, specifically. Cite IDs and paths.
+    surviving_scope:     # REQUIRED when verdict is survives_scoped: the
+                         # restricted conditions under which it stands
+    attacks:             # all nine REQUIRED, per candidate
+      A1_already_solved_elsewhere:
+        attempted:       # REQUIRED bool
+        finding:         # REQUIRED (also when attempted is false: say why not)
+        evidence: []     # SRC-/EV-/CLAIM- ids, or explicit "none"
+        severity:        # none | minor | material | fatal
+        unresolved:      # REQUIRED, may be "none"
+        effect_on_candidate:  # none | narrow_scope | downgrade_status | kill
+      A2_follows_trivially_from_assumptions: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A3_baseline_disadvantaged:            {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A4_gain_from_extra_information_or_resources: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A5_fails_under_dependence_causality_or_boundary_cases: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A6_measures_a_proxy_not_the_phenomenon: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A7_disappears_under_realistic_conditions: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A8_statistically_or_practically_negligible: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+      A9_simpler_explanation_accounts_for_evidence: {attempted:, finding:, evidence: [], severity:, unresolved:, effect_on_candidate:}
+    extensions:          # project-specific, NON-substitutive for A1-A9
+      X1_window_chosen_after_seeing_the_answer: {attempted:, finding:, severity:}
+      X2_parameterization_stated_and_comparisons_matched: {attempted:, finding:, severity:}
+      X3_single_cell_single_L_or_single_pair: {attempted:, finding:, severity:}
+      X4_alternative_observable_or_estimator_disagrees: {attempted:, finding:, severity:}
+      X5_cited_path_actually_exists: {attempted:, finding:, severity:}
+      X6_depends_on_a_claim_that_has_moved: {attempted:, finding:, severity:}
+      X7_ignores_a_recorded_negative_result: {attempted:, finding:, severity:}
 
-verdict:                 # REQUIRED: survives | survives_with_scope_restriction | killed
-verdict_reason:          # REQUIRED
-proposed_status:         # REQUIRED: resulting epistemic_status if it survives
+  # C2: { ... same shape ... }
+
+# --- the task-level picture -------------------------------------------------
+# Derived from the per-candidate verdicts and CHECKED against them (rule R10):
+# surviving_candidates must be exactly those whose verdict is not `killed`.
+overall_task_assessment:
+  surviving_candidates: []   # REQUIRED (may be empty)
+  killed_candidates: []      # REQUIRED (may be empty)
+  recommendation_basis:      # REQUIRED: what the mixed outcome implies. This is
+                             # input to the lead's gate, NOT the gate verdict.
+  proposed_status:           # REQUIRED: resulting epistemic_status for anything
+                             # that survived, or "none - nothing survived"
+  cross_candidate_notes:     # optional: an attack that bears on several
+                             # candidates at once, stated once here

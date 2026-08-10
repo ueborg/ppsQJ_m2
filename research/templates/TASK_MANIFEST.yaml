@@ -1,0 +1,89 @@
+# TASK PHASE LEDGER. Append-only. One per task, at the task root.
+# Validated by research/tools/validate_task.py (checks M1-M8).
+# Written by research/tools/task_phase.py, not by hand:
+#
+#   .venv/bin/python3 research/tools/task_phase.py <TASK_DIR> close stage_1_problem
+#
+# WHY THIS EXISTS
+# TASK-2026-08-10-AMP096's PROBLEM_MEMO.md - nominally a Stage 1, written before
+# any investigator ran - contained the sentence "three independent investigators
+# found ...". A pre-investigation artifact had been backfilled after
+# investigation, and nothing detected it. A research record that can be rewritten
+# to agree with its own results is not a record.
+#
+# The ledger freezes an artifact's SHA-256 when its stage closes. Any later edit
+# to a frozen artifact is validator error M5 and fails the task.
+#
+# This is not a permission system - an agent can still edit the file. It is an
+# EVIDENCE system: the edit becomes visible and the task fails until the
+# researcher decides whether it was legitimate.
+
+schema_version: 2
+task_id:                     # TASK-YYYY-MM-DD-SHORTNAME
+mode:                        # normal | historicalValidation
+
+# --- the ordered phase ledger ----------------------------------------------
+# Stages MUST close in this order (validator M3). `closed: null` means open.
+# `frozen` maps a task-relative path to the SHA-256 it had at close time.
+phases:
+
+  - stage: task_created
+    closed:                  # ISO-8601 UTC, e.g. 2026-08-10T14:32:00Z
+    frozen: {}               # nothing frozen yet
+    note:
+
+  - stage: stage_1_problem
+    closed:
+    frozen:                  # CHARTER.md, PROBLEM_MEMO.md, SOURCE_REGISTER.md
+      # CHARTER.md: sha256:...
+    note: >
+      Closes BEFORE any investigator is dispatched. CHARTER.md must already
+      carry the kill criterion and the competing hypotheses: a kill criterion
+      written after seeing evidence is not a kill criterion.
+
+  - stage: investigators_dispatched
+    closed:
+    frozen: {}
+    workers:                 # roles actually dispatched, and their models
+      # - {role: literature, model: sonnet}
+    workers_skipped:         # roles deliberately not spawned, with the reason
+    note: >
+      Stage 1 artifacts are frozen from this moment. New information goes to
+      agent_reports/ and to the append-only result artifacts, never back into
+      PROBLEM_MEMO.md.
+
+  - stage: stage_3_candidates
+    closed:
+    frozen:                  # CANDIDATES.md, FALSIFICATION_PLAN.md,
+                             # ANALYSIS_SPEC.yaml (if any), NOVELTY_GATE.md
+    note: >
+      FALSIFICATION_PLAN.md is the PRE-SPECIFIED plan and freezes here.
+      Outcomes go to FALSIFICATION_RESULTS.md, which is written afterwards and
+      is never merged back into the plan.
+
+  - stage: redteam_dispatched
+    closed:
+    frozen: {}
+    note: >
+      Candidates are frozen from this moment. The reviewer attacks what was
+      actually proposed, not a version improved in response to the attack.
+
+  - stage: synthesis_closed
+    closed:
+    frozen:                  # REDTEAM.yaml, RESEARCH_MEMO.md, RECOMMENDATION.md,
+                             # FALSIFICATION_RESULTS.md, ASSESSMENT_AH.md,
+                             # SLOP_WARNINGS.md
+    note: Terminal. Human Gate A.
+
+# --- amendments -------------------------------------------------------------
+# A frozen artifact may be corrected ONLY by recording the correction here.
+# This is the escape hatch, and it is deliberately noisy: it names the file, the
+# old and new hashes, the reason, and who authorised it. Silent rewriting is the
+# thing being prevented; an acknowledged, attributed correction is fine.
+amendments: []
+  # - path: PROBLEM_MEMO.md
+  #   was: sha256:...
+  #   now: sha256:...
+  #   at: 2026-08-10T18:00:00Z
+  #   reason: "typo in a claim ID; no substantive change"
+  #   authorised_by: human

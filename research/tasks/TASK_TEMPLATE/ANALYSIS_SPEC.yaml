@@ -1,0 +1,99 @@
+# ANALYSIS SPECIFICATION. One block per numerical analysis that could become a
+# candidate. Location: <TASK_DIR>/ANALYSIS_SPEC.yaml
+# Frozen at stage_3_candidates. Validated by research/tools/validate_task.py (N1-N6).
+#
+# WHY THIS EXISTS
+# In TASK-2026-08-10-AMP096 a candidate rested on A = 0.543 +/- 0.010 from the
+# July campaign. The red team found the "crossing" at zeta = 0.8 sat at the LAST
+# sampled lambda, with both B_L values collapsed to numerical zero, and that at
+# zeta = 0.05 the pair difference changed sign five times so no crossing was
+# defined at all. Restricting to the clean interior reproduced the incumbent
+# exactly. The number was an artifact of the window, and nothing in the pipeline
+# had to declare what counted as a valid crossing before producing it.
+#
+# This file does NOT impose a crossing rule. The project has legitimate reasons
+# to vary one. It requires that the rule be STATED BEFORE the fit, and that
+# crossings failing it be FLAGGED before they can enter the primary estimator.
+
+schema_version: 1
+task_id:
+
+analyses:
+
+  - id:                        # REQUIRED, task-local, e.g. AN-1
+    purpose:                   # REQUIRED: which hypothesis this can discriminate
+    role: primary              # REQUIRED: primary | sensitivity
+                               # A sensitivity may deliberately change the rule
+                               # below, but must name the primary it varies from
+                               # and can never silently replace it (N5).
+    varies_from:               # REQUIRED when role is sensitivity: the primary id
+    what_is_varied:            # REQUIRED when role is sensitivity
+
+    # --- inputs -------------------------------------------------------------
+    evidence_id:               # REQUIRED: canonical EV-* id, or a task-verified
+                               # TV-* id from TASK_EVIDENCE.yaml
+    observable_id:             # REQUIRED: OBS-* . Never compare across
+                               # conventions; OBS-BLPROD-001 and OBS-BLKMR-001
+                               # are different quantities.
+    parameterization:          # REQUIRED: e.g. lambda_c or r_c = lambda/(1-lambda)
+
+    # --- estimator ----------------------------------------------------------
+    pair_selection_rule:       # REQUIRED: e.g. "wide pairs, L2 >= 2*L1", "all pairs"
+    crossing_definition:       # REQUIRED: what counts as a crossing of the two
+                               # curves, stated precisely
+    interpolation:             # REQUIRED: e.g. linear between adjacent lambda
+    aggregation:               # e.g. median over pairs
+    fitting_window:            # REQUIRED: variable and range
+    weighting:                 # REQUIRED: e.g. inverse-variance, or "unweighted"
+    uncertainty_model:         # REQUIRED: what the error bar MEANS. If it is
+                               # statistical-only on a systematics-dominated
+                               # quantity, say so here, not in a footnote.
+    finite_size_extrapolation: # REQUIRED: form and exponent, or "none".
+                               # If an exponent is chosen because it assumes a
+                               # value of nu, SAY SO - that is circular and
+                               # METH-EXTRAP-001 already records it.
+
+    # --- crossing validity gate --------------------------------------------
+    # The rule is declared here; every crossing is then classified against it.
+    # A crossing failing any REQUIRED check is `invalid` and MUST NOT enter the
+    # primary fit. An `ambiguous` crossing may enter only if the analysis says
+    # explicitly how it was handled.
+    validity_rule:
+      internally_bracketed: required          # the crossing lies strictly
+                                              # between two sampled points
+      not_at_scan_endpoint: required          # not pinned to the first or last
+                                              # sampled point of the scan
+      sign_change_multiplicity: record        # record the count; >1 is ambiguous
+      unique_crossing: required               # exactly one sign change in window
+      observable_not_collapsed: required      # |observable| must exceed its own
+                                              # error by the factor below
+      collapse_factor: 3.0                    # |value| > factor * error
+      min_nearby_grid_points: 3               # sampled lambda points bracketing
+      extrapolation_within_sampled_range: required   # or explicitly flagged
+                                              # `outside` with justification
+      on_violation: exclude_and_report        # exclude_and_report | flag_only
+                                              # flag_only requires a reason
+
+    # --- classification output (filled by the numerics worker) -------------
+    # Every cell that produced or failed to produce a crossing appears here.
+    # This is the record that makes an artifact visible instead of averaged in.
+    crossing_classification:
+      # - cell: {zeta: 0.8, pair: [64, 128]}
+      #   status: invalid            # valid | ambiguous | invalid
+      #   reasons: [at_scan_endpoint, observable_collapsed]
+      #   detail: "crossing at lambda = 0.7155 = grid max; B_L(64)=0.0003+/-0.0001,
+      #            B_L(128)=0.0000+/-0.0000"
+      #   entered_primary_fit: false
+      n_valid:
+      n_ambiguous:
+      n_invalid:
+      excluded_cells:              # REQUIRED if any were excluded
+
+    # --- result -------------------------------------------------------------
+    result:
+      value:
+      uncertainty:
+      uncertainty_type:            # statistical | systematic | combined | none
+      n_points_in_fit:
+      script:                      # path under <TASK_DIR>/scratch/
+      reproducible_by:             # the exact command

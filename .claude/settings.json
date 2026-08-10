@@ -1,0 +1,103 @@
+{
+  "$comment": [
+    "SHARED project settings for ppsQJ_m2. TRACKED IN GIT (see .gitignore).",
+    "Layer 1 of the research-engine protections. Layer 2 is the PreToolUse hook",
+    ".claude/hooks/guard_research.py, which inspects whole shell command strings",
+    "and therefore catches composition that prefix matching misses.",
+    "Deny beats allow, and a machine-local settings.local.json cannot re-open",
+    "anything denied here.",
+    "Rationale for each rule: research/CHARTER_COMPLIANCE.md, section 'What an",
+    "agent can and cannot get away with today'.",
+    "",
+    "The scheduler and remote-launch denials are PERMANENT (research/",
+    "RESOURCE_POLICY.md section 4). No gate, no experiment approval, no",
+    "successful local pilot and no future return of HPC access lifts them.",
+    "Agents prepare HPC packages and stop at READY_FOR_HUMAN_SUBMISSION; the",
+    "researcher submits manually. Reading, writing, grepping and validating",
+    "SLURM scripts stays allowed - that IS the permitted work."
+  ],
+
+  "permissions": {
+    "defaultMode": "default",
+
+    "deny": [
+      "Edit(research/state/**)",
+      "Write(research/state/**)",
+      "NotebookEdit(research/state/**)",
+
+      "Edit(continuousmeasurementslatex/**)",
+      "Write(continuousmeasurementslatex/**)",
+      "Edit(**/*.tex)",
+      "Write(**/*.tex)",
+
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(git checkout -f:*)",
+      "Bash(git checkout --force:*)",
+      "Bash(git restore:*)",
+      "Bash(git branch -D:*)",
+
+      "Bash(sbatch:*)",
+      "Bash(srun:*)",
+      "Bash(salloc:*)",
+      "Bash(sattach:*)",
+      "Bash(scancel:*)",
+      "Bash(scontrol:*)",
+      "Bash(squeue:*)",
+      "Bash(sinfo:*)",
+      "Bash(sacctmgr:*)",
+      "Bash(qsub:*)",
+      "Bash(qdel:*)",
+      "Bash(qalter:*)",
+      "Bash(qrsh:*)",
+      "Bash(bsub:*)",
+      "Bash(bkill:*)",
+      "Bash(condor_submit:*)",
+      "Bash(oarsub:*)",
+      "Bash(mpirun:*)",
+      "Bash(mpiexec:*)",
+      "Bash(jsrun:*)",
+      "Bash(aprun:*)",
+      "Bash(ssh:*)",
+      "Bash(sftp:*)",
+      "Bash(scp:*)",
+      "Bash(rsync:*)",
+
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+
+      "Bash(python analysis/anchor_scan.py:*)",
+      "Bash(python3 analysis/anchor_scan.py:*)",
+      "Bash(.venv/bin/python analysis/anchor_scan.py:*)",
+      "Bash(.venv/bin/python3 analysis/anchor_scan.py:*)"
+    ],
+
+    "ask": [
+      "Edit(research/RESEARCH_CHARTER.md)",
+      "Write(research/RESEARCH_CHARTER.md)",
+      "Edit(research/schemas/**)",
+      "Edit(research/tools/**)",
+      "Bash(git commit:*)",
+      "Bash(git worktree:*)",
+      "Bash(git branch:*)",
+      "Bash(pip install:*)",
+      "Bash(.venv/bin/pip:*)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|NotebookEdit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_research.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

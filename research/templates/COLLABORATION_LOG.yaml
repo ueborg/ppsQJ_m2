@@ -1,0 +1,78 @@
+# BOUNDED AFFIRMATIVE COLLABORATION. Location: <TASK_DIR>/COLLABORATION_LOG.yaml
+# Freezes at `collaboration_closed`. Validated by validate_task.py (C1-C9).
+#
+# WHY THIS EXISTS
+# Three investigators working in total isolation independently rediscovered the
+# same fact in TASK-2026-08-10-AMP096. Useful cross-silo chains were impossible:
+# literature could not ask theory whether a paper's assumptions transfer, and
+# theory could not ask numerics to run the one check that separates two
+# explanations. But letting agents talk freely destroys the independence that
+# made the first passes worth having.
+#
+# So: independence FIRST, then ONE bounded round of structured messages.
+#
+# HARD LIMITS (enforced)
+#   - first passes must be written and FROZEN before this opens
+#   - exactly ONE round, ever, in v1
+#   - only the implicated affirmative roles take part
+#   - the RED TEAM IS NEVER A PARTICIPANT
+#   - atomic messages only - NO transcript sharing, no reasoning traces
+#   - a response is not a retry and does not license a retry loop
+#
+# WHAT THE LEAD SENDS
+# The lead extracts the SMALLEST fact or question needed for cross-examination
+# and sends that. Not the peer's report. Not their reasoning. One claim, one
+# question, and the IDs backing it.
+
+schema_version: 1
+task_id:
+round: 1                     # v1 permits exactly one. A second is rejected (C7).
+
+# Recorded by `task_phase.py <TASK_DIR> collaborate open`, before any message.
+justification:
+  unresolved_dependency:     # REQUIRED: what cross-role gap exists
+  roles_involved: []         # REQUIRED: subset of literature|theory|numerics
+  concrete_question:         # REQUIRED: the question being answered
+  expected_decision_value:   # REQUIRED: why another invocation is worth it
+
+messages:
+
+  - message_id: M1           # REQUIRED, unique
+    from_role:               # REQUIRED: literature | theory | numerics | lead
+    to_roles: []             # REQUIRED, non-empty; never `red-team` (C5)
+    type:                    # REQUIRED: source_check | theoretical_assumption_check |
+                             # derivation_check | numerical_test_request |
+                             # estimator_question | contradiction |
+                             # prior_art_check | clarification
+    question_or_finding:     # REQUIRED: the ATOMIC fact or question. One thing.
+                             # Not a summary of a report, not a reasoning trace.
+    supporting_canonical: [] # CB-*/EV-*/OBS-*/DEC-*/DISP-* ids
+    supporting_task_verified: []   # TV-* ids from TASK_EVIDENCE.yaml
+    external_sources: []     # EXT-* ids from TASK_EVIDENCE.yaml
+    requested_action:        # REQUIRED: exactly what the recipient should do
+    response:                # REQUIRED once answered
+    result_class:            # REQUIRED: confirmed | contradicted | narrowed |
+                             # unresolved | no_effect
+    candidate_relevance:     # REQUIRED: which candidate this bears on, or "none"
+    invocation_justification: # REQUIRED if answering needed a new model call:
+                             # what it cost and what decision it could change
+    traces_to:               # REQUIRED: the frozen first-pass report or the
+                             # TV-*/EXT-* item this points back to. A
+                             # collaboration result that traces to nothing is
+                             # not evidence (C6).
+
+# --- conclusions that changed -----------------------------------------------
+# If cross-examination changed an investigator's conclusion, record it HERE.
+# NEVER rewrite the frozen first-pass report to make the outcome look
+# consensual in hindsight. Disagreement is a valid output and is preserved.
+revisions: []
+  # - role: theory
+  #   FIRST_PASS: "the endpoint relation excludes A = 0.96"
+  #   AFTER_CROSS_EXAMINATION: "it excludes it only if zeta=1 is the Born endpoint"
+  #   WHY_CHANGED: "literature could not verify the convention in SRC-LMR-2025"
+  #   still_disagrees_with:      # optional; unresolved disagreement is fine
+
+# --- what was NOT pursued ---------------------------------------------------
+# Cross-examination surfaces tangents. They go to PARKING_LOT.md, not here, and
+# they are not investigated during this task.
+deferred_to_parking_lot: []
