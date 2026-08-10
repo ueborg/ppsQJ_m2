@@ -1,0 +1,195 @@
+# Claim schema (proposed). Audit 2026-08-10, Stage 3. Non-canonical.
+# One file per claim at research/state/claims/<id>.yaml
+# Enforced by research/tools/validate_state.py
+
+$schema_version: "0.1"
+
+# ---------------------------------------------------------------------------
+# CHANGES FROM THE DRAFT SCHEMA, WITH REASONS
+#
+#  ADDED  parameterization   - the 0.96-vs-0.51 failure was a parameterization
+#                              confusion, not a numerical error. Making it
+#                              structural is the single cheapest fix.
+#  ADDED  observable_id      - phi varies 0.36-0.57 across locators. A claim
+#                              about an exponent is meaningless without one.
+#  ADDED  fitting_window +
+#         window_sensitivity - phi drifts 0.19 -> 1.02 across zeta windows.
+#  ADDED  depends_on         - retraction cascade. theta_1 depended on
+#                              Delta_zeta=1 and nobody noticed for ten weeks.
+#  ADDED  contests           - preserves disagreement symmetrically. NOT the
+#                              same as supersedes.
+#  ADDED  falsifiers         - a claim that cannot state what would kill it is
+#                              not a scientific claim.
+#  ADDED  discriminating_evidence - separates hypothesis from executed test.
+#  ADDED  provenance_note    - free text for how the number was obtained.
+#  REMOVED confidence        - it duplicated `status` on an uncalibrated second
+#                              axis and invites hedging language. Reproducibility
+#                              lives on evidence, not here. If a numeric
+#                              uncertainty is meant, it belongs in `value`.
+#  SPLIT   scope -> scope + validity_range (qualitative vs numeric)
+# ---------------------------------------------------------------------------
+
+id: CB-AMP-001                    # REQUIRED. <DOMAIN>-<TOPIC>-<NNN>, immutable.
+
+statement: >                      # REQUIRED. One sentence. No hedging adverbs.
+  The Cut B critical line satisfies lambda_c(zeta) = A * sqrt(zeta) with
+  A = 0.49 +/- 0.02 over the fitted window.
+
+type: amplitude                   # REQUIRED. enum:
+  # amplitude | exponent | scaling_law | universality_class | mechanism
+  # methodology | data_adequacy | infrastructure | negative_result
+  # Type gates which fields are required (see conditional_requirements below).
+
+domain: cut_B                     # REQUIRED. enum:
+  # cut_A | cut_B | shared_theory | methodology | production | infrastructure
+
+status: verified                  # REQUIRED. enum:
+  # verified   - discriminating, reproducible evidence exists
+  # plausible  - supported, not decisively established
+  # open       - unresolved or speculative
+  # contested  - live competing claim exists; see `contests` and dispute_id
+  # superseded - replaced; see superseded_by
+  # refuted    - shown wrong; retained for the record
+
+# --- what the claim is ABOUT (prevents category confusion) -----------------
+
+parameterization: lambda_c        # REQUIRED for amplitude|exponent|scaling_law.
+  # enum: lambda_c | r_c | one_minus_zeta | zeta | other:<free text>
+  # Two claims that differ ONLY in parameterization are NOT competing.
+  # The validator refuses to link them via `contests`.
+
+observable_id: OBS-BL-CROSSING    # REQUIRED for amplitude|exponent.
+  # -> state/observables/. Changing an observable definition mints a NEW id
+  #    and cascades `stale` to every dependent claim.
+
+estimator: wide_pair_binder_crossing_median
+
+value:                            # OPTIONAL but expected for numeric claims.
+  central: 0.49
+  uncertainty: 0.02
+  uncertainty_type: audit_grade   # enum: bootstrap | jackknife | pair_spread |
+                                  # propagated | audit_grade | none
+  units: dimensionless
+
+# --- where the claim is valid ---------------------------------------------
+
+scope: >                          # REQUIRED. Qualitative conditions.
+  Guided cloning generation. Wide-pair (L2 >= 2*L1) Binder crossings.
+  Not L-extrapolated. Not corrections-to-scaling corrected.
+
+validity_range:                   # REQUIRED for amplitude|exponent.
+  zeta: [0.05, 0.85]
+  L: [32, 160]
+  T_over_L: [0.80, 2.0]
+
+fitting_window:                   # REQUIRED for exponent, and for amplitude
+  variable: zeta                  # when obtained by fitting.
+  range: [0.05, 0.85]
+  n_points: 15
+
+window_sensitivity:               # REQUIRED for type: exponent.
+  # A single-window exponent is schema-INVALID. At least three windows.
+  # This is the direct fix for window-shopping.
+  - {range: [0.05, 0.125], value: 0.185}
+  - {range: [0.05, 0.20],  value: 0.255}
+  - {range: [0.05, 0.40],  value: 0.390}
+  - {range: [0.05, 0.85],  value: 0.495}
+  - {range: [0.15, 0.85],  value: 0.630}
+  - {range: [0.25, 0.85],  value: 0.670}
+  verdict: strongly_window_dependent   # enum: stable | mildly | strongly
+
+# --- evidence -------------------------------------------------------------
+
+evidence:                         # REQUIRED, non-empty. -> state/evidence/
+  - {id: EV-DATA-AGGCASEB-001, role: supporting}
+  - {id: EV-EXEC-AUDITREPRO-001, role: discriminating}
+
+discriminating_evidence: [EV-EXEC-AUDITREPRO-001]
+  # REQUIRED non-empty for status: verified.
+  # Evidence that could have come out the other way. A derivation that merely
+  # reproduces an already-known number is `role: postdiction` and does NOT
+  # count here.
+
+# VALIDATOR RULE: status: verified requires
+#   (a) >=1 discriminating_evidence, AND
+#   (b) that item's reproducibility in {fully_reproducible, partially_reproducible}.
+# Evidence with reproducibility: chat_only CAPS the claim at `plausible`,
+# however convincing the chat is.
+
+# --- relations ------------------------------------------------------------
+
+depends_on: []                    # claim ids this claim's validity rests on.
+  # On any dependency moving to refuted|superseded, tools/check_dependencies.py
+  # sets this claim's review_status to `stale` and surfaces it in
+  # ACTIVE_QUESTIONS.md. Retroactive example:
+  #   PPS-YZETA-001 depends_on [PPS-VERTEX-001]
+  #   METH-EXTRAP-001 depends_on [CB-NU-001]
+
+contests: []                      # SYMMETRIC. Live competing claims.
+  # Both sides keep status: contested. NEITHER gets superseded_by.
+  # Requires dispute_id. e.g. CB-PHI-HALF-001 contests CB-PHI-LINEAR-001.
+
+dispute_id: null                  # -> state/disputes/ when contested.
+
+supersedes: [CB-AMP-000]          # ASYMMETRIC and directional. Use only when
+superseded_by: null               # the older claim is genuinely replaced by
+                                  # better evidence, not merely disagreed with.
+                                  # Superseded claims are NEVER deleted.
+
+assumptions:                      # REQUIRED. Explicit, itemised.
+  - "Binder crossings locate lambda_c without L-extrapolation."
+  - "Finite-N_c bias cancels in crossings (see DEC-NC-CANCEL-001)."
+
+falsifiers:                       # REQUIRED. What would kill this claim.
+  - "L-extrapolated crossings over the same window giving A outside 0.45-0.53."
+  - "A corrections-to-scaling fit shifting A by more than the stated uncertainty."
+
+# --- lifecycle ------------------------------------------------------------
+
+created: {date: 2026-08-10, by: audit-stage1}
+last_reviewed: {date: 2026-08-10, by: audit-stage2}
+
+review_status: approved           # enum:
+  # proposed  - agent-generated, in proposals/, not yet in state/
+  # in_review - red-team assigned
+  # approved  - human gate passed; only this may sit in state/ as non-stale
+  # stale     - auto-set by dependency cascade; needs re-review
+  # rejected  - reviewed and declined; retained with reason
+
+review_record:
+  reviewers: [red-team-agent, human]
+  human_approval: {by: utku, date: 2026-08-10}
+  notes: >
+    Reproduced independently in audit/2026-08-10/scripts/reproduce_amplitude.py
+    on a dataset independent of the one the 2026-06-07 conclusion used.
+
+provenance_note: >
+  Supersedes A = 0.96 +/- 0.05 (SESSION_2026_05_20.md), which was the r_c-type
+  prefactor. See audit/2026-08-10/03_AMPLITUDE_TRACE.md for the full chain.
+
+# ---------------------------------------------------------------------------
+# CONDITIONAL REQUIREMENTS (validator)
+#
+#   type: exponent
+#     require observable_id, parameterization, fitting_window,
+#             window_sensitivity (>=3 entries), validity_range
+#   type: amplitude
+#     require observable_id, parameterization, validity_range
+#   type: universality_class
+#     require assumptions, and >=1 evidence of type derivation or literature
+#   type: methodology | production
+#     require metric_id on supporting evidence; only metrics listed in
+#     DEC-MASTER-METRIC may support domain: production
+#   type: negative_result
+#     require falsifiers to state what would REVIVE the approach
+#   status: contested  -> require contests non-empty AND dispute_id
+#   status: superseded -> require superseded_by
+#   status: verified   -> require discriminating_evidence + reproducibility rule
+#
+# GLOBAL RULES
+#   - No numeric scientific value may appear in any prose document under
+#     research/. Prose cites claim ids only.
+#   - No claim may cite a proposal, a chat, a manuscript, project memory, or
+#     HANDOFF as evidence. Those are not evidence types.
+#   - id is immutable. Correcting a claim means a new claim plus supersedes.
+# ---------------------------------------------------------------------------

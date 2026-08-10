@@ -1,0 +1,36 @@
+########## RCHUNK=16
+L=32 zeta=0.9 T=64.0 N_c=32 dtau=0.54405 a*=-0.3645 NREP=6
+guided cloning (a=0): <S>=1.9769+-0.0067 <CMI>=0.5349+-0.0283 GESS=1.57 n_anc=2.5 ESS/N_c=0.989 wall=13.0s
+CONTROLLED cloning  : <S>=1.9268+-0.0282 <CMI>=0.5015+-0.0312 GESS=2.90 n_anc=3.5 ESS/N_c=0.869 wall=12.5s
+
+--- equal-walltime efficiency 1/(Var * wall) ---
+  guided cloning (a=0) S  : sd=0.0164 wall=  13.0s eff=   286.866
+  guided cloning (a=0) CMI: sd=0.0693 wall=  13.0s eff=    16.049
+  CONTROLLED cloning   S  : sd=0.0691 wall=  12.5s eff=    16.775
+  CONTROLLED cloning   CMI: sd=0.0764 wall=  12.5s eff=    13.716
+  SPEEDUP at equal precision, S: 0.06x
+  SPEEDUP at equal precision, CMI: 0.85x
+########## RCHUNK=128
+L=32 zeta=0.9 T=64.0 N_c=32 dtau=4.35238 a*=-0.3645 NREP=6
+guided cloning (a=0): <S>=1.9796+-0.0408 <CMI>=0.5452+-0.0377 GESS=2.00 n_anc=3.3 ESS/N_c=0.655 wall=13.2s
+CONTROLLED cloning  : <S>=1.9355+-0.0625 <CMI>=0.4968+-0.0329 GESS=3.93 n_anc=5.8 ESS/N_c=0.566 wall=11.7s
+
+--- equal-walltime efficiency 1/(Var * wall) ---
+  guided cloning (a=0) S  : sd=0.1001 wall=  13.2s eff=     7.572
+  guided cloning (a=0) CMI: sd=0.0923 wall=  13.2s eff=     8.895
+  CONTROLLED cloning   S  : sd=0.1530 wall=  11.7s eff=     3.661
+  CONTROLLED cloning   CMI: sd=0.0805 wall=  11.7s eff=    13.215
+  SPEEDUP at equal precision, S: 0.48x
+  SPEEDUP at equal precision, CMI: 1.49x
+########## RCHUNK=1024
+L=32 zeta=0.9 T=64.0 N_c=32 dtau=34.81906 a*=-0.3645 NREP=6
+guided cloning (a=0): <S>=2.1352+-0.0873 <CMI>=0.7072+-0.2095 GESS=2.12 n_anc=3.2 ESS/N_c=0.129 wall=14.6s
+CONTROLLED cloning  : <S>=1.9681+-0.0859 <CMI>=0.5270+-0.0280 GESS=7.41 n_anc=13.8 ESS/N_c=0.367 wall=11.8s
+
+--- equal-walltime efficiency 1/(Var * wall) ---
+  guided cloning (a=0) S  : sd=0.2138 wall=  14.6s eff=     1.502
+  guided cloning (a=0) CMI: sd=0.5132 wall=  14.6s eff=     0.261
+  CONTROLLED cloning   S  : sd=0.2105 wall=  11.8s eff=     1.916
+  CONTROLLED cloning   CMI: sd=0.0687 wall=  11.8s eff=    17.995
+  SPEEDUP at equal precision, S: 1.28x
+  SPEEDUP at equal precision, CMI: 69.07x

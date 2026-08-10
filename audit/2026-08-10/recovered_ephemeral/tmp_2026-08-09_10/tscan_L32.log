@@ -1,0 +1,15 @@
+=== (a) T-scaling of Var(log W), L=32 zeta=0.90 ===
+    T  Var base  Var ctrl    gain  ESS base  ESS ctrl  wall base  wall ctrl
+   16     4.224     0.442    9.56     0.024     0.674      0.253      0.292
+   32     7.323     0.982    7.46     0.023     0.461      0.478      0.418
+   64    13.672     1.931    7.08     0.022     0.313      0.908      0.772
+  128    26.787     2.391   11.20     0.041     0.240      1.962      1.433
+
+=== (b) quadrature gate for I at a_eff=-0.3645 (T=64) ===
+  dt_max=  inf: Var(logW)=  1.9848  <S>=  2.2248  <CMI>=  0.5887  wall= 0.766s
+  dt_max=  0.2: Var(logW)=  1.1957  <S>=  1.9682  <CMI>=  0.4937  wall= 0.818s
+  dt_max= 0.05: Var(logW)=  1.8982  <S>=  1.8668  <CMI>=  0.4895  wall= 1.114s
+
+=== (c) end-to-end exactness vs production guided cloning (T=64) ===
+  controlled path-IS  M=300:  <S>=1.9249  <CMI>=0.4847  ESS=31.1  wall_total=151.9s
+  cloning wall_total=143.5s

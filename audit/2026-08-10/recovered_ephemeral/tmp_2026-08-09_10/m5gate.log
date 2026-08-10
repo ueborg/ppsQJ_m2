@@ -1,0 +1,5 @@
+MEAN-ONE GATE  L=16 zeta=0.9 T=32.0 M=2000 a*=-0.3645 tau_K=3.65
+  a/a*=0.5 simpson=False: E[R]=0.95237+-0.02844 (-1.67s)  sd(logR)=1.060 <CMI>=0.56815 ESS/M=0.220 wall=0.056s
+  a/a*=0.5 simpson=True : E[R]=0.99261+-0.02948 (-0.25s)  sd(logR)=1.060 <CMI>=0.56704 ESS/M=0.234 wall=0.068s
+  a/a*=1.0 simpson=False: E[R]=0.72705+-0.06502 (-4.20s)  sd(logR)=1.999 <CMI>=0.55154 ESS/M=0.556 wall=0.054s
+  a/a*=1.0 simpson=True : E[R]=0.78449+-0.06871 (-3.14s)  sd(logR)=1.998 <CMI>=0.55259 ESS/M=0.568 wall=0.067s

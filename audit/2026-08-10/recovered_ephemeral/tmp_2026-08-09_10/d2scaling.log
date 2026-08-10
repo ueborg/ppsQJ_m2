@@ -1,0 +1,20 @@
+D2 SCALING  zeta=0.9 lam=0.4743 a*=-0.3761 tau_K=3.76 M=40
+   L     arm  windows    sum D2    mean D2  Var(totX)   tau_X    wall
+  16  guided      228     0.020  8.659e-05      1.526   12.55    1.8s
+  16    ctrl      228     0.004  1.651e-05      0.129   18.74    2.1s
+  24  guided      524     0.034  6.462e-05      4.947   25.84    5.2s
+  24    ctrl      524     0.007  1.272e-05      0.198   39.46    5.8s
+  32  guided      941     0.034  3.617e-05      5.550   39.98   11.4s
+  32    ctrl      941     0.010  1.109e-05      0.381   64.51   12.9s
+  48  guided     2140     0.059  2.736e-05     23.867   75.31   45.6s
+  48    ctrl     2140     0.017  7.799e-06      0.949  103.35   49.6s
+  64  guided     3825     0.073  1.913e-05     32.140   97.31  124.7s
+  64    ctrl     3825     0.024  6.326e-06      1.436  121.45  133.7s
+
+--- predicted relative population requirement R_N = sumD2_ctrl / sumD2_guided ---
+  L= 16  sumD2 guided=   0.020  ctrl=   0.004  R_N= 0.191   (Var(totX) ratio  0.085)
+  L= 24  sumD2 guided=   0.034  ctrl=   0.007  R_N= 0.197   (Var(totX) ratio  0.040)
+  L= 32  sumD2 guided=   0.034  ctrl=   0.010  R_N= 0.307   (Var(totX) ratio  0.069)
+  L= 48  sumD2 guided=   0.059  ctrl=   0.017  R_N= 0.285   (Var(totX) ratio  0.040)
+  L= 64  sumD2 guided=   0.073  ctrl=   0.024  R_N= 0.331   (Var(totX) ratio  0.045)
+DONE

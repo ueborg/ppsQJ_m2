@@ -1,0 +1,10 @@
+  traj 0, 1s
+  traj 4, 7s
+  traj 8, 12s
+  traj 12, 17s
+  traj 16, 23s
+
+rbar=13.4897  <G phi> (should be ~0 in steady state) = [0.2943 0.4334 0.2722]
+s=  8.0  nblk= 320  sigma0^2= 15.009  Gain(K)= 14.44  Gain(all3)= 14.91  a_K=-3.3964
+s= 16.0  nblk= 160  sigma0^2= 19.495  Gain(K)= 20.34  Gain(all3)= 20.68  a_K=-3.4578
+s= 32.0  nblk=  80  sigma0^2= 22.547  Gain(K)= 34.19  Gain(all3)= 34.72  a_K=-3.4742

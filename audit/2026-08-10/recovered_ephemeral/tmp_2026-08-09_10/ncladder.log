@@ -1,0 +1,23 @@
+N_c LADDER  L=32 zeta=0.9 T=64.0 budget=300.0s/config a*=-0.3645 tau_K=3.65
+guided N_c=64    n=  9 wall/rep= 35.7s GESS= 2.89 | S=1.9916+-0.0165  CMI=0.5377+-0.0154  B_L=1.0720+-0.0364
+guided N_c=32    n= 17 wall/rep= 17.8s GESS= 1.77 | S=1.9803+-0.0248  CMI=0.5312+-0.0168  B_L=1.0567+-0.0438
+ctrl   N_c=32    n= 15 wall/rep= 20.7s GESS= 5.81 | S=2.0074+-0.0191  CMI=0.5680+-0.0173  B_L=1.1414+-0.0389
+ctrl   N_c=24    n= 20 wall/rep= 15.4s GESS= 4.70 | S=2.0020+-0.0161  CMI=0.5535+-0.0133  B_L=1.1102+-0.0316
+ctrl   N_c=16    n= 30 wall/rep= 10.3s GESS= 3.38 | S=2.0020+-0.0231  CMI=0.5554+-0.0192  B_L=1.1206+-0.0488
+ctrl   N_c=12    n= 38 wall/rep=  8.1s GESS= 2.69 | S=1.9437+-0.0227  CMI=0.5489+-0.0203  B_L=1.0778+-0.0513
+
+--- efficiency E_O = 1/(wall_rep * Var_rep), ratio vs guided N_c=32 ---
+  guided N_c=64     S= 2.13x  CMI= 1.11x  B_L= 1.36x
+  guided N_c=32     S= 1.00x  CMI= 1.00x  B_L= 1.00x
+  ctrl   N_c=32     S= 1.65x  CMI= 0.91x  B_L= 1.24x
+  ctrl   N_c=24     S= 2.33x  CMI= 1.56x  B_L= 1.89x
+  ctrl   N_c=16     S= 1.12x  CMI= 0.74x  B_L= 0.79x
+  ctrl   N_c=12     S= 1.18x  CMI= 0.67x  B_L= 0.72x
+
+--- finite-population bias check: means vs guided N_c=64 ---
+  guided N_c=64    S:+0.00s  C:+0.00s  BL:+0.00s
+  guided N_c=32    S:-0.38s  C:-0.29s  BL:-0.27s
+  ctrl   N_c=32    S:+0.63s  C:+1.30s  BL:+1.30s
+  ctrl   N_c=24    S:+0.45s  C:+0.78s  BL:+0.79s
+  ctrl   N_c=16    S:+0.37s  C:+0.72s  BL:+0.80s
+  ctrl   N_c=12    S:-1.70s  C:+0.44s  BL:+0.09s

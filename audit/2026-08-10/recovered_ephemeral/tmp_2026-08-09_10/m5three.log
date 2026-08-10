@@ -1,0 +1,13 @@
+THREE-ARM  L=32 zeta=0.9 T=64.0 N_c=32 dtau=0.03400 a*=-0.3645 tau_K=3.65 NREP=30
+A production guided: <S>=2.0040+-0.0181 <CMI>=0.5262+-0.0117 GESS=1.99 wall=21.0s
+   GESS(t) @ t=0,~5,~10,...: [np.float64(32.0), np.float64(20.95), np.float64(13.76), np.float64(9.78), np.float64(8.01), np.float64(6.15), np.float64(5.27), np.float64(4.81)]
+B constant twisted : <S>=1.9536+-0.0137 <CMI>=0.5191+-0.0109 GESS=6.04 wall=34.9s
+   GESS(t) @ t=0,~5,~10,...: [np.float64(32.0), np.float64(24.11), np.float64(19.49), np.float64(16.25), np.float64(14.32), np.float64(12.88), np.float64(11.81), np.float64(11.1)]
+C tapered twisted  : <S>=1.9841+-0.0125 <CMI>=0.5409+-0.0090 GESS=6.13 wall=34.6s
+   GESS(t) @ t=0,~5,~10,...: [np.float64(32.0), np.float64(24.11), np.float64(19.49), np.float64(16.25), np.float64(14.32), np.float64(12.88), np.float64(11.81), np.float64(11.1)]
+
+--- efficiency ratio vs production (>1 better), equal wall ---
+  B constant twisted  S:   1.05x   (sd 0.0992 -> 0.0750)
+  B constant twisted  C:   0.69x   (sd 0.0639 -> 0.0595)
+  C tapered twisted   S:   1.27x   (sd 0.0992 -> 0.0687)
+  C tapered twisted   C:   1.03x   (sd 0.0639 -> 0.0491)

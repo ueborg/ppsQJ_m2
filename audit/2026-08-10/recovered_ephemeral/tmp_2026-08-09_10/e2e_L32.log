@@ -1,0 +1,12 @@
+L=32 zeta=0.9 lam=0.4743 T=64.0 a*=-0.3645 NREP=6 M=48 N_c=32
+guided path-IS (a=0): <S>=2.1417+-0.1179 <CMI>=0.5368+-0.0626 ESS=2.3/48  wall/rep=19.3s
+CONTROLLED path-IS : <S>=1.9983+-0.0548 <CMI>=0.4825+-0.0300 ESS=14.9/48  wall/rep=15.2s
+guided CLONING      : <S>=2.0030+-0.0118 <CMI>=0.5936+-0.0221 ESS=32.0/32  wall/rep=19.8s
+
+--- equal-walltime efficiency:  1 / (Var(estimator) * wall) ---
+  guided path-IS (a=0)  S  : sd=0.2887 wall=  19.3s  eff=    0.6204
+  guided path-IS (a=0)  CMI: sd=0.1533 wall=  19.3s  eff=    2.1996
+  CONTROLLED path-IS   S  : sd=0.1343 wall=  15.2s  eff=    3.6427
+  CONTROLLED path-IS   CMI: sd=0.0735 wall=  15.2s  eff=   12.1425
+  guided CLONING        S  : sd=0.0288 wall=  19.8s  eff=   60.8656
+  guided CLONING        CMI: sd=0.0541 wall=  19.8s  eff=   17.2437

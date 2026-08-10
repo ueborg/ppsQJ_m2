@@ -1,0 +1,15 @@
+L=32 zeta=0.9 T=64.0 N_c=32 dtau=0.03400 a*=-0.3645 NREP=8
+guided cloning (a=0): <S>=2.0197+-0.0194 <CMI>=0.5421+-0.0160 GESS=2.08 n_anc=2.9 ESS/N_c=1.000 wall=22.2s
+CONTROLLED cloning  : <S>=1.9845+-0.0651 <CMI>=0.4807+-0.0363 GESS=1.26 n_anc=1.5 ESS/N_c=0.990 wall=22.0s
+
+--- equal-walltime efficiency 1/(Var * wall) ---
+  guided cloning (a=0) S  : sd=0.0549 wall=  22.2s eff=    14.931
+  guided cloning (a=0) CMI: sd=0.0453 wall=  22.2s eff=    21.960
+  CONTROLLED cloning   S  : sd=0.1842 wall=  22.0s eff=     1.337
+  CONTROLLED cloning   CMI: sd=0.1028 wall=  22.0s eff=     4.295
+  SPEEDUP at equal precision, S: 0.09x
+Traceback (most recent call last):
+  File "/tmp/controlled_cloning.py", line 90, in <module>
+    r = (b["sd" + ob] ** 2 * b["wall"]) / (c["sd" + ob] ** 2 * c["wall"])
+         ~^^^^^^^^^^^
+KeyError: 'sdCMI'

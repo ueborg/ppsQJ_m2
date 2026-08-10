@@ -1,0 +1,217 @@
+# Evidence schema (proposed). Audit 2026-08-10, Stage 3. Non-canonical.
+# ONE registry, typed. Replaces the overlapping RESULTS_REGISTER / DATA_CATALOG idea.
+# One file per item at research/state/evidence/<id>.yaml
+
+$schema_version: "0.1"
+
+# ---------------------------------------------------------------------------
+# COMMON FIELDS - required for every type
+# ---------------------------------------------------------------------------
+common:
+  id:            # <EV>-<TYPE>-<SLUG>-<NNN>, immutable
+  type:          # see the eleven types below
+  title:         # one line
+  reproducibility:
+    # THE SECOND AXIS. Independent of any claim's epistemic status.
+    #   fully_reproducible    - inputs + script + config + env all preserved
+    #   partially_reproducible- re-runnable but some config/seed lost
+    #   artifact_only         - output preserved, procedure incomplete/lost
+    #   procedure_only        - script preserved, output lost
+    #   chat_only             - described in conversation, no artifact found
+    #   ephemeral_recovered   - rescued from /tmp or similar, non-canonical origin
+    #   unrecoverable         - neither artifact nor procedure survives
+  role:
+    # discriminating - could have come out the other way
+    # supporting     - consistent with, does not test
+    # postdiction    - reproduces an already-known number. Cannot support `verified`.
+    # diagnostic     - health/instrumentation only
+  supports:      [CLAIM-ID, ...]      # may be empty
+  contradicts:   [CLAIM-ID, ...]      # may be empty. MUST be filled if known.
+  created:       {date:, by:}
+  notes:
+
+# Fields that genuinely cannot apply to a type are OMITTED, never null-filled.
+
+# ---------------------------------------------------------------------------
+# 1. raw_simulation_dataset
+# ---------------------------------------------------------------------------
+raw_simulation_dataset:
+  location: {path:, host: mac|ruche|other, verified_at:, exists: true}
+  format:                       # npz | json-tree | pkl | csv
+  n_files:
+  size_bytes:
+  checksum: {method: sha256, value:, of: manifest|file}
+  generated_by:
+    script:                     # repo-relative
+    git_commit:                 # REQUIRED if the script is tracked
+    git_dirty: true|false       # true is allowed but must be declared
+    submit_script:
+    authorised_by:              # EXP-ID. REQUIRED for HPC runs.
+  parameters:
+    cut: A|B
+    L: []
+    zeta: []
+    lambda: {min:, max:, n:}
+    T: {}                       # value or rule, e.g. "T = L" / "capped at 128"
+    T_over_L: {}                # REQUIRED. The audit found this was the binding
+                                # unrecorded quantity for every nu claim.
+    N_c: []
+    n_real:
+    burn_in:
+    seeds: {base:, scheme:, disjoint_from: []}
+  environment: {python:, numpy:, blas:, threads_pinned: true|false}
+  observable_fields: []         # exact stored field names
+  metadata_gaps: []             # REQUIRED, explicit. e.g. ["T absent from CSV"]
+  # Example gap set from the audit, results/boundary_aggregate.csv:
+  #   ["T", "N_c", "burn_in", "seeds", "generating script", "date"]
+
+# ---------------------------------------------------------------------------
+# 2. aggregated_dataset
+# ---------------------------------------------------------------------------
+aggregated_dataset:
+  location: {path:, verified_at:, sha256:}
+  input_evidence: [EV-ID, ...]  # REQUIRED. What raw data this aggregates.
+  aggregation_script: {path:, git_commit:}
+  n_records:
+  parameters:                   # as above; coverage of the AGGREGATE
+  per_realisation_arrays: true|false
+  superseded_by:                # e.g. a rebuilt aggregate
+
+# ---------------------------------------------------------------------------
+# 3. executed_numerical_analysis
+# ---------------------------------------------------------------------------
+executed_numerical_analysis:
+  script: {path:, git_commit:, git_dirty:}
+  input_evidence: [EV-ID, ...]  # REQUIRED
+  config: {}                    # every parameter that changes the answer
+  seeds: []
+  output_artifacts:             # REQUIRED non-empty, else reproducibility is
+    - {path:, sha256:, verified_at:}   # procedure_only
+  environment: {}
+  metric_id:                    # REQUIRED when supporting domain: production.
+                                # Only metrics in DEC-MASTER-METRIC qualify.
+  runtime_seconds:
+  result_summary: >             # prose, but the NUMBER lives on the claim
+
+# ---------------------------------------------------------------------------
+# 4. executed_analytic_calculation   (symbolic / exact-diagonalisation checks)
+# ---------------------------------------------------------------------------
+executed_analytic_calculation:
+  script: {path:, git_commit:}
+  method:                       # e.g. exact Liouville space, free-fermion GS
+  system_sizes: []
+  precision_achieved:           # e.g. 1e-8 agreement with full L_zeta
+  gates_passed: []
+  output_artifacts: []
+
+# ---------------------------------------------------------------------------
+# 5. derivation
+# ---------------------------------------------------------------------------
+derivation:
+  document: {path:, lifecycle: active|superseded|historical}
+  starting_assumptions: []      # REQUIRED, itemised
+  key_steps: []
+  predicts: []                  # REQUIRED. What it forecasts.
+  registered_before_evidence: true|false
+    # REQUIRED. THE ANTI-POSTDICTION FIELD.
+    # false + predicts an already-measured value  =>  role is forced to
+    # `postdiction` by the validator, and it cannot support `verified`.
+    # Retroactive application: every re-derivation of sqrt(zeta) after the
+    # empirical sqrt(zeta) was in hand is false here.
+  independently_checked_by:     # human or agent id, or null. NOT the author.
+  known_gaps: []
+
+# ---------------------------------------------------------------------------
+# 6. code_implementation
+# ---------------------------------------------------------------------------
+code_implementation:
+  path:
+  git_commit:                   # null is ALLOWED but then reproducibility
+  tracked: true|false           # cannot exceed partially_reproducible
+  validated_against: [EV-ID]    # e.g. an exact backend
+  defines_observable: OBS-ID    # if it computes an observable
+  behaviour_verified: true|false
+
+# ---------------------------------------------------------------------------
+# 7. test
+# ---------------------------------------------------------------------------
+test:
+  path:
+  git_commit:
+  covers: [EV-ID | OBS-ID, ...]
+  last_run: {date:, result: pass|fail, by:}
+  tolerance:
+
+# ---------------------------------------------------------------------------
+# 8. literature_source        (mirrors state/sources/<SRC-ID>.yaml)
+# ---------------------------------------------------------------------------
+literature_source:
+  source_id: SRC-...
+  citation:
+  doi_or_arxiv:
+  local_copy: {path:, verified_at:}
+  inspection_level:
+    # REQUIRED. not_inspected | abstract_only | skimmed | relevant_sections
+    # | fully_inspected
+    # A claim may NOT cite a source at inspection_level: not_inspected or
+    # abstract_only as discriminating evidence. This is the direct fix for the
+    # hallucinated Koenig-Brouwer citation and the mis-attributed Carollo anchor.
+  supports_exactly: >           # REQUIRED. The precise claim we take from it,
+                                # not a topic summary.
+  replica_limit:                # n->0 vs n->1 where relevant. The Fulga misuse
+                                # was exactly this distinction.
+  attribution_verified: true|false
+
+# ---------------------------------------------------------------------------
+# 9. figure_or_table
+# ---------------------------------------------------------------------------
+figure_or_table:
+  path: {}
+  generated_by: {script:, git_commit:}
+  input_evidence: [EV-ID, ...]  # REQUIRED. A figure with no traceable input is
+                                # artifact_only at best.
+  caption_claims: [CLAIM-ID]
+
+# ---------------------------------------------------------------------------
+# 10. chat_only_evidence
+# ---------------------------------------------------------------------------
+chat_only_evidence:
+  conversation_ref:             # url or id
+  date:
+  described_result: >
+  search_performed_for_artifact: true    # REQUIRED true before registering
+  artifact_search_notes: >
+  re_derivable_from: [EV-ID, ...]        # data that exists to recompute it
+  recovery_priority: high|medium|low
+  # reproducibility is ALWAYS chat_only. Caps supported claims at `plausible`.
+  # Examples from the audit: the entropy-scaling log-to-area confirmation;
+  # phi ~ 0.50 from the bootstrapped (64,128) CMI pair.
+
+# ---------------------------------------------------------------------------
+# 11. recovered_ephemeral_artifact
+# ---------------------------------------------------------------------------
+recovered_ephemeral_artifact:
+  original_path:                # e.g. /tmp/crossing_prod_result.json
+  recovered_path:               # audit/2026-08-10/recovered_ephemeral/...
+  original_mtime:
+  size_bytes:
+  sha256:
+  reproducing_script: {path:, exists: true|false}
+  # If reproducing_script.exists is false -> reproducibility: artifact_only.
+  # If true and config is recorded      -> partially_reproducible.
+  provenance_warning: >
+    Origin is a non-canonical scratch location. Copying is preservation, not
+    verification.
+
+# ---------------------------------------------------------------------------
+# CROSS-CUTTING VALIDATOR RULES
+#   - every `path` with `exists: true` is stat'ed. Absent path => hard fail.
+#     (This is the mechanism that would have caught `paper/main.tex`.)
+#   - every referenced CLAIM-ID / EV-ID / OBS-ID / SRC-ID / EXP-ID must resolve.
+#   - raw_simulation_dataset from HPC without `authorised_by` => hard fail.
+#   - `contradicts` must be filled when the registering agent is aware of a
+#     conflict. Suppressing a contradiction is the one unrecoverable offence.
+#   - metadata_gaps is REQUIRED and may be empty, but omitting the field fails.
+#     Forcing an explicit statement of what is missing is cheaper than
+#     discovering it two months later.
+# ---------------------------------------------------------------------------

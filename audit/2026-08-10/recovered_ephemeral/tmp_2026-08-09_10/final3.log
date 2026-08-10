@@ -1,0 +1,12 @@
+L=32 T=64.0 N_c=32 NREP=30 a*=-0.3645 tau_K=3.65
+A production      : <S>=2.0040+-0.0181 <CMI>=0.5262+-0.0117 <B_L>=1.0577+-0.0293 GESS=1.99 wall=18.1s
+C taper + Simpson : <S>=1.9841+-0.0125 <CMI>=0.5409+-0.0090 <B_L>=1.0744+-0.0213 GESS=6.13 wall=33.4s
+D taper + trapez. : <S>=1.9871+-0.0117 <CMI>=0.5362+-0.0096 <B_L>=1.0671+-0.0228 GESS=6.23 wall=20.9s
+
+--- paired bootstrap of E_O = 1/(wall*Var), ratio vs production ---
+  C taper + Simpson  S  :  1.13x  [0.82,1.53]  P(>1)=0.63
+  C taper + Simpson  C  :  0.92x  [0.68,1.25]  P(>1)=0.39
+  C taper + Simpson  BL :  1.02x  [0.74,1.44]  P(>1)=0.53
+  D taper + trapez.  S  :  2.06x  [1.50,2.79]  P(>1)=0.98
+  D taper + trapez.  C  :  1.28x  [0.93,1.78]  P(>1)=0.78
+  D taper + trapez.  BL :  1.42x  [1.05,2.00]  P(>1)=0.88

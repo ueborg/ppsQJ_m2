@@ -1,0 +1,24 @@
+COUPLED+SNAPSHOT  L=32 zeta=0.9 lam0=0.4743 delta=0.04 T=64.0 N_c=32 R=20 snap spacing=8.0
+  coupled rep 0  78s
+  coupled rep 6  432s
+  coupled rep 12  793s
+  coupled rep 18  1222s
+coupled     : K=6 <D>=-0.8760  Var(single)=0.05078  Var(K-avg)=0.00868  Var(GLS)=0.00419  snapshot gain=5.85x  wall/rep=64.6s
+              GLS weights: [0.145, 0.365, 0.164, 0.043, 0.049, 0.234]
+  independent rep 0  69s
+  independent rep 6  509s
+  independent rep 12  1057s
+  independent rep 18  1612s
+independent : K=6 <D>=-0.8895  Var(single)=0.05533  Var(K-avg)=0.01049  Var(GLS)=0.00762  snapshot gain=5.27x  wall/rep=85.7s
+              GLS weights: [0.052, 0.349, 0.213, 0.108, 0.068, 0.21]
+
+--- compounding check ---
+  coupling gain, single snapshot : 1.09x
+  coupling gain, K-averaged      : 1.21x
+  snapshot gain, coupled arm     : 5.85x
+  snapshot gain, independent arm : 5.27x
+  TOTAL vs independent+single    : 6.37x
+  (product of separate gains would be 6.37x)
+
+  dD/dlambda ~ 10.950;  Var(lambda_c) ~ Var(Dbar)/F'^2 = 7.240e-05  ->  sd(lambda_c) per realisation = 0.0085
+DONE

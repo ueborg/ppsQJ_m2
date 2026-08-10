@@ -1,0 +1,12 @@
+CHUNK CERT  L=32 zeta=0.9 T=32.0 N_c=32 R=40 dtau0=0.03400
+  mult=1: wall/rep= 15.51s GESS= 3.01 | S=2.0247+-0.0153 CMI=0.5516+-0.0095 B_L=1.1182+-0.0231
+  mult=2: wall/rep=  8.72s GESS= 3.10 | S=1.9844+-0.0126 CMI=0.5367+-0.0096 B_L=1.0668+-0.0226
+  mult=4: wall/rep=  7.99s GESS= 3.16 | S=1.9799+-0.0135 CMI=0.5529+-0.0096 B_L=1.0973+-0.0239
+  mult=8: wall/rep=  8.22s GESS= 3.04 | S=1.9845+-0.0159 CMI=0.5577+-0.0094 B_L=1.1090+-0.0235
+
+--- bias vs mult=1 (sigma), and realised speedup ---
+  mult=1: dS=+0.00s  dCMI=+0.00s  dB_L=+0.00s   speedup= 1.00x   efficiency= 1.00x
+  mult=2: dS=-2.03s  dCMI=-1.10s  dB_L=-1.59s   speedup= 1.78x   efficiency= 1.87x
+  mult=4: dS=-2.20s  dCMI=+0.10s  dB_L=-0.63s   speedup= 1.94x   efficiency= 1.82x
+  mult=8: dS=-1.82s  dCMI=+0.46s  dB_L=-0.28s   speedup= 1.89x   efficiency= 1.83x
+DONE

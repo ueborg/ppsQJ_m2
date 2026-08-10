@@ -1,0 +1,8 @@
+N_c LADDER  L=32 zeta=0.9 T=64.0 budget=900.0s/config a*=-0.3645 tau_K=3.65
+guided N_c=128   n= 12 wall/rep= 76.7s GESS= 3.37 | S=2.0204+-0.0111  CMI=0.5488+-0.0088  B_L=1.1095+-0.0222
+
+--- efficiency E_O = 1/(wall_rep * Var_rep), ratio vs guided N_c=32 ---
+  guided N_c=128    S= 1.00x  CMI= 1.00x  B_L= 1.00x
+
+--- finite-population bias check: means vs guided N_c=64 ---
+  guided N_c=128   S:+0.00s  C:+0.00s  BL:+0.00s

@@ -1,0 +1,10 @@
+L=32 zeta=0.9 T=64.0 N_c=32 dtau=0.03400 a*=-0.3645 NREP=10  (production resampling interval)
+production guided   : <S>=1.9634+-0.0273 <CMI>=0.5346+-0.0276 GESS=1.76 ESS/N_c=1.000 ESSuntw=1.000 wall=23.1s
+controlled RAW      : <S>=1.9683+-0.0311 <CMI>=0.5293+-0.0189 GESS=1.13 ESS/N_c=0.990 ESSuntw=1.000 wall=31.2s
+controlled TWISTED  : <S>=1.9706+-0.0393 <CMI>=0.5535+-0.0335 GESS=6.23 ESS/N_c=1.000 ESSuntw=0.637 wall=24.9s
+
+--- efficiency ratio vs production guided (>1 = better), equal wall ---
+  controlled RAW       S  :   0.57x   (sd 0.0862 -> 0.0985)
+  controlled RAW       C  :   1.57x   (sd 0.0872 -> 0.0599)
+  controlled TWISTED   S  :   0.45x   (sd 0.0862 -> 0.1242)
+  controlled TWISTED   C  :   0.63x   (sd 0.0872 -> 0.1059)

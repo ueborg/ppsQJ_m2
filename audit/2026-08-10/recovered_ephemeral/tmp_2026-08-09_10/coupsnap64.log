@@ -1,0 +1,9 @@
+COUPLED+SNAPSHOT  L=64 zeta=0.9 lam0=0.4743 delta=0.04 T=64.0 N_c=32 R=14 snap spacing=8.0
+  coupled rep 0  556s
+  coupled rep 6  2770s
+  coupled rep 12  4550s
+coupled     : K=5 <D>=-1.3662  Var(single)=0.07325  Var(K-avg)=0.02758  Var(GLS)=0.01200  snapshot gain=2.66x  wall/rep=346.2s
+              GLS weights: [0.105, 0.467, 0.463, -0.115, 0.08]
+
+  dD/dlambda ~ 17.077;  Var(lambda_c) ~ Var(Dbar)/F'^2 = 9.458e-05  ->  sd(lambda_c) per realisation = 0.0097
+DONE

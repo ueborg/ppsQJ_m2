@@ -1,0 +1,15 @@
+CROSSING PROD  L1=32 L2=64 zeta=0.9 lams=[0.44, 0.474, 0.508] N_c=32 R=18 mult=4 T=L burn=0.25
+  L=32 lam=0.440: term=1.5458 dense=1.5084 sparse=1.4886  (106s)
+  L=32 lam=0.474: term=1.0865 dense=1.1160 sparse=1.1276  (220s)
+  L=32 lam=0.508: term=0.7593 dense=0.7774 sparse=0.7844  (336s)
+  L=64 lam=0.440: term=1.8457 dense=1.8790 sparse=1.8811  (1376s)
+  L=64 lam=0.474: term=1.2225 dense=1.2203 sparse=1.2343  (2723s)
+  L=64 lam=0.508: term=0.7500 dense=0.7014 sparse=0.6981  (4032s)
+
+--- bootstrapped crossing, per estimator ---
+  terminal    : lambda_c = 0.5053 +- 0.0127   (kept 3998/4000)
+  dense(K=8)  : lambda_c = 0.4942 +- 0.0032   (kept 4000/4000)
+  sparse(K=4) : lambda_c = 0.4936 +- 0.0034   (kept 4000/4000)
+  G_snap^(lc) [dense(K=8)] = 15.79x
+  G_snap^(lc) [sparse(K=4)] = 14.23x
+DONE

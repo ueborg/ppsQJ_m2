@@ -1,0 +1,19 @@
+L=64 zeta=0.9 lam=0.4743 T=64.0 a*=-0.3761 alpha=0.4743 M_ref=400
+GATE A (a=0 identity, L=64): max |log W + (1-z)Lambda| = 0.000e+00   PASS
+   ref 100/400  317s
+   ref 200/400  628s
+   ref 300/400  961s
+   ref 400/400  1266s
+
+REFERENCE controlled path-IS (no cloning), M=400, ESS=39.1 (0.098), wall=1266s
+  <S>   = 2.1418 +- 0.0439
+  <CMI> = 0.4319 +- 0.0458
+  <B_L> = 0.9250 +- 0.1064
+  COMPARE: ctrl-clone N_c=32 S=2.2519 CMI=0.4973 B_L=1.1212 | guided-clone N_c=32 S=2.3379 CMI=0.5370 B_L=1.2586
+
+GATE B  mean-one <R_t> at a=0.5a*, Simpson
+  t=  8.0: <R_t>=1.0240 +- 0.1001  (+0.24s)  sd(logR)=1.174
+  t= 16.0: <R_t>=0.9469 +- 0.1209  (-0.44s)  sd(logR)=1.600
+  t= 32.0: <R_t>=0.8165 +- 0.1821  (-1.01s)  sd(logR)=2.175
+  t= 64.0: <R_t>=0.5980 +- 0.3213  (-1.25s)  sd(logR)=3.185
+DONE

@@ -1,0 +1,17 @@
+SNAPSHOT GAIN  L=64 zeta=0.9 T=64.0 N_c=32 DT=8.0 grid=8 NREP=16
+  rep 0  136s
+  rep 5  811s
+  rep 10  1614s
+  rep 15  2536s
+
+S: rho_l (lag in units of 8.0) = [1.0, 0.077, 0.03, 0.021, -0.153, 0.084]
+   g_snap: K=2: 1.86x  K=4: 3.46x
+
+CMI: rho_l (lag in units of 8.0) = [1.0, 0.219, 0.296, 0.058, -0.066, 0.34]
+   g_snap: K=2: 1.64x  K=4: 2.42x
+
+B_L: rho_l (lag in units of 8.0) = [1.0, 0.18, 0.235, 0.031, -0.059, 0.375]
+   g_snap: K=2: 1.70x  K=4: 2.63x
+
+wall total 2536s
+DONE
