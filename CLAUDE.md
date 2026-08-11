@@ -80,6 +80,7 @@ Python is `.venv/bin/python3`. Validators:
 .venv/bin/python3 research/tools/validate_redteam.py         # Stage 8, per candidate
 .venv/bin/python3 research/tools/validate_task.py <TASK_DIR> # completeness + phase lock
 .venv/bin/python3 research/tools/validate_resource_policy.py # policy wiring
+.venv/bin/python3 research/tools/test_model_routing.py       # three-tier routing
 .venv/bin/python3 research/tools/test_workflow_regressions.py
 .venv/bin/python3 .claude/hooks/test_guard_research.py
 ```

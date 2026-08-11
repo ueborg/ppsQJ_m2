@@ -10,6 +10,25 @@ This is context compression, **not** rule weakening. Every rule below is
 enforced exactly as it would be under the full Skill, several of them by a
 PreToolUse hook rather than by your good intentions.
 
+**Your model was chosen for your subproblem, not for your importance.** The lead
+routes each role across three tiers (`sonnet` / `opus` / `best`) per
+`research/RESOURCE_POLICY.md` §5.4. Two consequences bind you:
+
+- **A stronger model is not a lower evidential standard.** Everything in this
+  contract applies identically at every tier. If you were routed to the top
+  tier you may derive, invent and propose freely — new hypotheses, new
+  architectures, new falsifiers — and every one of them still needs support,
+  still faces the red team, and still stops at Human Gate A. Confidence is not
+  evidence at any tier.
+- **If your tier is wrong for the problem, say so and stop.** Put it in
+  `confidence_note` — one line naming the specific step that needs stronger
+  reasoning. Do **not** compensate by generating more text, and do not run a
+  wider search when the bottleneck is conceptual. That note is the escalation
+  signal; using it costs the run one line and is always the right call.
+
+You are not told which tier your peers are on, and you should not ask. It is a
+status cue and it contaminates a first pass.
+
 ---
 
 ## 1. Authority — four tiers
@@ -171,3 +190,82 @@ the next step needs human approval. Do not keep going because more is possible.
 Full policy: `research/RESOURCE_POLICY.md`. Full procedure (lead's):
 `.claude/skills/research/SKILL.md`. Governing document:
 `research/RESEARCH_CHARTER.md`.
+
+---
+
+## 12. Implication strength — do not climb the ladder for free
+
+Added after the TASK-2026-08-10-UNIVCLASS stress test. Generic; not about any
+one result.
+
+When you establish that two things **differ** — models, ensembles, probability
+measures, unravellings, estimators, constructions — keep these four apart:
+
+1. **microscopic inequivalence** — they are demonstrably different objects;
+2. **invalidity of direct identification / transfer** — a result proven for one
+   may not simply be imported to the other;
+3. **evidence for different effective theories** — the coarse-grained
+   descriptions differ (action, symmetry, target manifold, operator content);
+4. **evidence for different universality classes / asymptotic behaviour** — the
+   fixed points differ.
+
+**1 does not imply 2. 2 does not imply 3. 3 does not imply 4.** Different
+microscopic dynamics routinely flow to the same fixed point. Establishing (1)
+entitles you to write "direct transfer is not established". It does **not**
+entitle you to write "they cannot share a universality class".
+
+Each step up needs its own argument, stated as such. **Use the weakest claim
+your evidence actually supports** — the synthesis records this in
+`CLAIM_STRENGTH_AUDIT.yaml`, and `validate_task.py` check `L4` rejects a claimed
+level above the established level with no declared inference step.
+
+## 13. One exponent is not a universality class
+
+- Equality or compatibility of a **single** exponent **never** establishes that
+  two systems share a universality class.
+- A **difference** in a universal exponent *can* establish different classes —
+  but only if the observable, the convention, the scaling regime and the
+  uncertainty comparison are all valid. State all four.
+- **"Does not discriminate with current evidence" is strictly weaker than
+  "cannot discriminate."** The first is a statement about our error bars; the
+  second is a claim about the quantity itself and needs an argument, not a wide
+  confidence interval.
+- An inconclusive finite-size comparison does **not** show the exponent is
+  irrelevant.
+
+## 14. A different worker is not an independent check
+
+Independence is not "someone else looked" and not "a different command". It is
+**varying the assumption that could be wrong** — above all the assumption about
+how the thing you are looking for is *represented*.
+
+In the stress test, one worker searched directory names for cloning-campaign
+cells and a second scanned ζ values inside `.csv`/`.json`. Different workers,
+different commands, same representation blind spot: both missed a tracked
+Markdown benchmark, and the false negative was reported as independently
+confirmed.
+
+If you write **"independently verified"**, **"independently confirmed"** or
+**"independent check"**, there must be a record in `INDEPENDENCE_LEDGER.yaml`
+giving both methods, both **source representations**, the assumptions shared,
+the assumptions deliberately varied, and a classification. Two checks over the
+same representation are `same_method_replication` or `partially_independent` —
+never `methodologically_independent` (`validate_task.py` check `V4`).
+
+## 15. A diagnostic that misses something is not thereby wrong
+
+If a quality diagnostic fails to detect a failure mode, that is a statement
+about its **coverage**, not its **correctness**. Write "the existing ESS
+diagnostic does not detect severe genealogical degeneracy", not "ESS is wrong" —
+the second asserts an intended semantics you have not established. Distinguish
+current-weight degeneracy from genealogical / path-space degeneracy. Check `Q1`
+enforces the wording; the physics is yours.
+
+## 16. A post-hoc analysis cannot re-enter a frozen spec
+
+If an analysis is conceived after `ANALYSIS_SPEC.yaml` freezes at
+`stage_3_candidates`, it **cannot** be added to that task. Declaring the
+estimator before the fit is the entire point of the freeze. Propose it as a
+**child task** (`research/tools/child_task.py propose`), which the human
+approves and launches separately. **Never spawn a follow-up task yourself, and
+never run the analysis while proposing it.**

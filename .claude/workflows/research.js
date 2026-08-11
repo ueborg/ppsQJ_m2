@@ -3,7 +3,7 @@ export const meta = {
   description: 'Charter-compliant research investigation: independent investigators, then an uncontaminated red team. Read-only, local-only, stops at Human Gate A.',
   whenToUse: 'A ppsQJ_m2 research question that needs literature, theory and numerics investigated independently and then adversarially reviewed. The main session is the lead: it does orientation (Phase A) before calling this, and synthesis, the decision gate and experiment design (Phases C narrative, E, F) after it returns.',
   phases: [
-    { title: 'Investigate', detail: 'up to three independent investigators; sonnet; no preferred conclusion given' },
+    { title: 'Investigate', detail: 'up to three independent investigators, routed per role by tier; no preferred conclusion given' },
     { title: 'Collaborate', detail: 'optional ONE bounded cross-examination round; atomic messages only; red team excluded' },
     { title: 'RedTeam', detail: 'all nine Stage-8 attacks per candidate, with independent web search and no lead summary' },
   ],
@@ -30,6 +30,9 @@ export const meta = {
 //
 // RESOURCE POLICY (research/RESOURCE_POLICY.md) is enforced here as code:
 //   - explicit model per role; nothing inherits the lead's model  (sec 5.4)
+//   - adaptive tiers: sonnet / opus / best, per role and posture  (sec 5.4a-i)
+//   - escalation needs a 5-field record, NOT a failed cheap pass  (sec 5.4d-e)
+//   - a Tier-3 request degrades, it never crashes the run         (sec 5.4g)
 //   - workers get the lead's compact context, not the repository  (sec 5.1)
 //   - workers load WORKER_CONTRACT.md, not the full Skill         (sec 5.2)
 //   - one invocation, at most one retry, NO generic fallback      (sec 5.8)
@@ -60,8 +63,28 @@ export const meta = {
 //   mode:        "normal" | "historicalValidation"      (default "normal")
 //   workers:     subset of ["literature","theory","numerics"]. Omit for all
 //                three. Role economy is the lead's call (sec 5.5).
-//   theoryEscalationReason: non-empty string -> theory runs on opus. Requires a
-//                concrete reason; anything falsy keeps theory on sonnet.
+//   posture:     "economical" | "normal" | "deep"       (default "normal")
+//                MODEL_POSTURE from the research question. See sec 5.4i.
+//   roleTier:    { role: "tier_1"|"tier_2"|"tier_3" } - explicit per-role
+//                override. Escalating ABOVE the posture default requires a
+//                matching entry in `escalations`; without one the router
+//                refuses the escalation, logs it, and uses the default.
+//   roleAlias:   { role: "fable" } - force a specific alias, bypassing tier
+//                resolution. For pinning a model family deliberately (a
+//                reproducibility experiment), not for ordinary research.
+//   escalations: [ { role, from, to, question, decision_at_stake } ] - the
+//                five-field record from sec 5.4e. No essay. `material_value`
+//                is filled in AFTERWARDS by the lead in RESOURCE_USAGE.md.
+//   effort:      { role: "low"|"medium"|"high" } - independent of tier
+//                (sec 5.4f). Omit to inherit. Do NOT reflexively pair tier_3
+//                with high effort.
+//   availableModels: optional string[] - aliases this environment allows.
+//                When supplied, tier resolution walks its fallback chain to
+//                the first allowed alias instead of failing.
+//
+//   theoryEscalationReason: LEGACY, still honoured. Non-empty string -> theory
+//                is escalated one tier from its posture default and the string
+//                becomes the escalation record's `question`.
 // }
 // ---------------------------------------------------------------------------
 
@@ -86,17 +109,145 @@ if (!QUESTION) {
   return { error: 'no question' }
 }
 
-// --- model routing (RESOURCE_POLICY sec 5.4) -------------------------------
-// Aliases, not pinned IDs, so this survives model updates. NOTHING inherits.
-// In the 2026-08-10 validation run every worker silently ran on opus because
-// the definitions said `model: inherit`. That is the bug this table exists to
-// prevent, so the resolved choice is logged on every run.
-const THEORY_ESCALATED = !REGRESSION && !!a.theoryEscalationReason
-const MODEL = {
-  literature: 'sonnet',
-  numerics: 'sonnet',
-  theory: THEORY_ESCALATED ? 'opus' : 'sonnet',
-  'red-team': REGRESSION ? 'sonnet' : 'opus',
+// --- adaptive model routing (RESOURCE_POLICY sec 5.4) ----------------------
+// Governing principle: use the model with the highest expected scientific value
+// for the decision being made. NOT "cheapest unless clearly necessary".
+//
+// Two failure modes, both real, both guarded here:
+//   (1) everything inherits the lead's strongest model. That was the
+//       2026-08-10 run - `model: inherit` in every agent definition - and it
+//       bought nothing. Nothing inherits; every role resolves explicitly.
+//   (2) everything is pinned to the cheapest model, so a conceptual bottleneck
+//       gets a high-effort search instead of reasoning. That is what this
+//       rewrite fixes.
+//
+// THIS TABLE MIRRORS research/model_routing.yaml. A workflow script has no
+// filesystem access and cannot read it at run time, so the duplicate is
+// deliberate - and validate_resource_policy.py cross-checks the two rather
+// than trusting them. Edit both or the validator fails.
+const TIER_ALIAS = { tier_1: 'sonnet', tier_2: 'opus', tier_3: 'best' }
+const TIERS = ['tier_1', 'tier_2', 'tier_3']
+
+// Fallback chains. Tier 3 routes to `best` (not `fable`) so the configuration
+// stays correct where Fable is unavailable: `best` resolves to the strongest
+// model this installation offers and degrades to Opus-class otherwise. A
+// Tier-3 request must NEVER crash a run.
+const FALLBACK = {
+  tier_3: ['best', 'fable', 'opus'],
+  tier_2: ['opus', 'best', 'sonnet'],
+  tier_1: ['sonnet', 'opus'],
+}
+
+const POSTURE_DEFAULTS = {
+  economical: { literature: 'tier_1', theory: 'tier_1', numerics: 'tier_1', 'red-team': 'tier_2' },
+  normal:     { literature: 'tier_1', theory: 'tier_2', numerics: 'tier_1', 'red-team': 'tier_2' },
+  deep:       { literature: 'tier_1', theory: 'tier_3', numerics: 'tier_1', 'red-team': 'tier_2' },
+}
+// Regression mode overrides everything: reduced scope AND reduced model. The
+// answer is already known, so there is no discovery to buy. Tier 3 is refused.
+const REGRESSION_TIERS = { literature: 'tier_1', theory: 'tier_1', numerics: 'tier_1', 'red-team': 'tier_1' }
+
+const POSTURE = REGRESSION
+  ? 'economical'
+  : (['economical', 'normal', 'deep'].includes(a.posture) ? a.posture : 'normal')
+
+const DEFAULT_TIER = REGRESSION ? REGRESSION_TIERS : POSTURE_DEFAULTS[POSTURE]
+
+// Escalation records (sec 5.4e). Five fields, no essay. A record is REQUIRED to
+// go above the posture default - not to prove the cheaper model failed (sec
+// 5.4d explicitly withdraws that), but so the choice can be scored later.
+const rawEscalations = Array.isArray(a.escalations) ? a.escalations : []
+// Legacy arg: theoryEscalationReason still works, one tier up from default.
+if (!REGRESSION && a.theoryEscalationReason && !rawEscalations.some(e => e && e.role === 'theory')) {
+  const from = DEFAULT_TIER.theory
+  const to = TIERS[Math.min(TIERS.indexOf(from) + 1, 2)]
+  rawEscalations.push({
+    role: 'theory', from: TIER_ALIAS[from], to: TIER_ALIAS[to],
+    question: String(a.theoryEscalationReason),
+    decision_at_stake: '(not stated; supplied via the legacy theoryEscalationReason arg)',
+    tier: to, legacy: true,
+  })
+}
+
+const escalationFor = role => rawEscalations.find(e =>
+  e && e.role === role && e.question && String(e.question).trim() &&
+  e.decision_at_stake && String(e.decision_at_stake).trim())
+
+const routingNotes = []
+const escalationsApplied = []
+const escalationsRefused = []
+
+// Resolve the TIER for a role: posture default, then any explicit override,
+// gated on a valid escalation record when the override goes upward.
+function resolveTier(role) {
+  const def = DEFAULT_TIER[role] || 'tier_1'
+  const want = (a.roleTier || {})[role]
+  if (!want || !TIERS.includes(want) || want === def) return def
+
+  const up = TIERS.indexOf(want) > TIERS.indexOf(def)
+  if (!up) {
+    // Downward is always allowed and needs no record: recognising that a
+    // subproblem is mechanical is exactly the judgment we want cheap.
+    routingNotes.push(`${role}: de-escalated ${def} -> ${want} (no record required)`)
+    return want
+  }
+  if (REGRESSION && want === 'tier_3') {
+    escalationsRefused.push(`${role}: tier_3 refused in historicalValidation mode; regression stays Tier 1`)
+    return def
+  }
+  const rec = escalationFor(role)
+  if (!rec) {
+    escalationsRefused.push(`${role}: ${def} -> ${want} refused; no escalation record with a question and a decision_at_stake (RESOURCE_POLICY 5.4e)`)
+    return def
+  }
+  escalationsApplied.push({
+    role, from: TIER_ALIAS[def], to: TIER_ALIAS[want],
+    question: String(rec.question), decision_at_stake: String(rec.decision_at_stake),
+    material_value: 'pending',
+  })
+  return want
+}
+
+// Resolve the ALIAS for a tier, walking the fallback chain. If the caller told
+// us what this environment allows, respect it; otherwise take the first choice
+// and let the runtime-level fallback in roleAgent() handle a rejection.
+const ALLOWED = Array.isArray(a.availableModels) && a.availableModels.length
+  ? a.availableModels.map(s => String(s).trim().toLowerCase())
+  : null
+
+function resolveAlias(tier, role) {
+  const chain = FALLBACK[tier] || FALLBACK.tier_1
+  if (!ALLOWED) return chain[0]
+  for (const alias of chain) if (ALLOWED.includes(alias)) return alias
+  // Nothing in the chain is permitted. Degrade rather than crash: an
+  // unavailable strong model is a routing problem, not a research verdict.
+  const any = ALLOWED[0] || 'sonnet'
+  routingNotes.push(`${role}: no alias in the ${tier} chain [${chain.join(', ')}] is available here; degraded to '${any}'`)
+  return any
+}
+
+const TIER = {}
+const MODEL = {}
+for (const role of ['literature', 'theory', 'numerics', 'red-team']) {
+  // roleAlias is a deliberate bypass: pin a family (e.g. `fable`) when the run
+  // itself is about model behaviour. Not for ordinary research.
+  const forced = (a.roleAlias || {})[role]
+  TIER[role] = resolveTier(role)
+  if (forced) {
+    MODEL[role] = String(forced)
+    routingNotes.push(`${role}: alias pinned to '${forced}' by roleAlias, bypassing tier resolution`)
+  } else {
+    MODEL[role] = resolveAlias(TIER[role], role)
+  }
+}
+
+// Effort is an INDEPENDENT axis (sec 5.4f). Do not reflexively pair tier_3 with
+// maximum effort, and never let a high-effort Tier-1 search stand in for a
+// Tier-2/3 reasoning step when the bottleneck is conceptual.
+const EFFORT = {}
+for (const role of ['literature', 'theory', 'numerics', 'red-team']) {
+  const want = (a.effort || {})[role]
+  if (['low', 'medium', 'high', 'xhigh', 'max'].includes(want)) EFFORT[role] = want
 }
 
 const LENGTH_RULE = REGRESSION
@@ -229,33 +380,66 @@ const REPORT_SCHEMA = {
 // substitution: a general-purpose agent returns something that reads like a
 // specialist report and is not one, which is worse than no report.
 const TRANSIENT = /timeout|timed out|rate.?limit|overloaded|econn|socket|network|temporar|503|429|stream (?:ended|error)/i
+// A rejected model ALIAS is not a research failure and must not end a run. The
+// router steps down the tier's fallback chain and says so. This is the last
+// line of defence for sec 5.4g: Tier 3 degrades, it never crashes.
+const MODEL_REJECTED = /model|alias/i
+const MODEL_REJECTED_STRICT = /(?:unknown|invalid|unsupported|unrecognis|unrecogniz|not (?:a )?(?:valid|allowed|available|permitted|supported))[^.\n]{0,40}model|model[^.\n]{0,40}(?:not (?:found|allowed|available|permitted|supported)|is not valid|unavailable)|availableModels|not in the allowlist/i
 const resourceLog = []
 
 async function roleAgent(role, prompt, opts) {
-  const model = MODEL[role]
-  const record = { role, model, attempts: 0, retried: false, failure: null }
+  const chain = (a.roleAlias || {})[role]
+    ? [String((a.roleAlias || {})[role])]
+    : (FALLBACK[TIER[role]] || FALLBACK.tier_1).filter(m => !ALLOWED || ALLOWED.includes(m))
+  // Start where resolveAlias landed, then continue down the same chain.
+  let idx = Math.max(0, chain.indexOf(MODEL[role]))
+  if (!chain.length) chain.push(MODEL[role])
+
+  const record = {
+    role, tier: TIER[role], model: chain[idx] || MODEL[role],
+    requested_model: MODEL[role], effort: EFFORT[role] || 'inherit',
+    attempts: 0, retried: false, substitutions: [], failure: null,
+  }
   resourceLog.push(record)
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    record.attempts = attempt
+  let transientRetries = 0
+  // At most: one transient retry (policy 5.8) plus up to two alias
+  // substitutions. A substitution is a ROUTING correction - same role, same
+  // prompt, weaker model - not a second attempt at the science.
+  for (let guard = 0; guard < 4; guard++) {
+    const model = chain[idx] || MODEL[role]
+    record.model = model
+    record.attempts += 1
     try {
-      return await agent(prompt, { ...opts, agentType: role, model })
+      const opt = { ...opts, agentType: role, model }
+      if (EFFORT[role]) opt.effort = EFFORT[role]
+      return await agent(prompt, opt)
     } catch (e) {
       const msg = String(e && e.message ? e.message : e)
+
+      if (MODEL_REJECTED.test(msg) && MODEL_REJECTED_STRICT.test(msg) && idx + 1 < chain.length) {
+        const from = model, to = chain[idx + 1]
+        idx += 1
+        record.substitutions.push(`${from} -> ${to}: ${msg}`)
+        record.model = to
+        log(`MODEL SUBSTITUTION for '${role}': '${from}' was rejected by this runtime (${msg}). Stepping down the ${TIER[role]} chain to '${to}'. Same role, same prompt - this is a routing correction, not a retry, and the run continues.`)
+        continue
+      }
 
       if (/agent type .* not found|not found\. Available agents/i.test(msg)) {
         record.failure = `project agent '${role}' is not registered`
         log(`INFRASTRUCTURE FIRST: project agent '${role}' is not registered in this session (${msg}). NOT substituting a generic agent. Start a fresh Claude Code session so .claude/agents/ is loaded, then re-run.`)
         return null
       }
-      if (attempt === 1 && TRANSIENT.test(msg)) {
+      if (transientRetries === 0 && TRANSIENT.test(msg)) {
+        transientRetries += 1
         record.retried = true
-        record.failure = `attempt 1 failed transiently: ${msg}`
+        record.failure = `attempt ${record.attempts} failed transiently: ${msg}`
         log(`RETRY (1 of 1 permitted) for '${role}': transient failure - ${msg}. No completed work is reused; the invocation restarts.`)
         continue
       }
       record.failure = msg
-      log(`'${role}' failed and the failure is not transient: ${msg}. No retry, no substitution.`)
+      log(`'${role}' failed and the failure is not transient: ${msg}. No retry, no substitution of a different AGENT. (Model-alias substitution is separate and is exhausted.)`)
       return null
     }
   }
@@ -332,8 +516,11 @@ let infrastructureFirst = []
 
 if (STAGE === 'investigate' || STAGE === 'both') {
   phase('Investigate')
-  log(`Phase B on ${TASK_ID} [mode=${MODE}]: ${INVESTIGATORS.map(i => `${i.key}=${MODEL[i.key]}`).join(', ')}. No preferred conclusion supplied.`)
-  if (THEORY_ESCALATED) log(`theory escalated to opus. Recorded reason: ${a.theoryEscalationReason}`)
+  log(`Phase B on ${TASK_ID} [mode=${MODE}, posture=${POSTURE}]: ${INVESTIGATORS.map(i => `${i.key}=${MODEL[i.key]}(${TIER[i.key]})`).join(', ')}. No preferred conclusion supplied.`)
+  for (const e of escalationsApplied.filter(e => INVESTIGATORS.some(i => i.key === e.role)))
+    log(`MODEL_ESCALATION applied - role=${e.role} ${e.from} -> ${e.to} | question: ${e.question} | decision_at_stake: ${e.decision_at_stake} | material_value: pending (the lead records it in RESOURCE_USAGE.md after the result)`)
+  for (const r of escalationsRefused) log(`MODEL_ESCALATION REFUSED - ${r}`)
+  for (const n of routingNotes) log(`routing: ${n}`)
   if (skipped.length) log(`Roles deliberately NOT spawned: ${skipped.join(', ')}. The lead judged they cannot materially improve this question. Their domains are UNINVESTIGATED, not clear.`)
 
   const results = await parallel(INVESTIGATORS.map(inv => () =>
@@ -452,7 +639,9 @@ if (STAGE === 'redteam' || STAGE === 'both') {
     log('Phase D skipped: no candidate survived to review. That is a result, not a failure - the lead should read it as Stop or Infrastructure first.')
   } else {
     phase('RedTeam')
-    log(`Phase D: red team (${MODEL['red-team']}) against ${candidates.length} bare candidate statement(s). No lead summary supplied.`)
+    log(`Phase D: red team (${MODEL['red-team']}, ${TIER['red-team']}) against ${candidates.length} bare candidate statement(s). No lead summary supplied.`)
+    for (const e of escalationsApplied.filter(e => e.role === 'red-team'))
+      log(`MODEL_ESCALATION applied - role=red-team ${e.from} -> ${e.to} | question: ${e.question} | decision_at_stake: ${e.decision_at_stake} | material_value: pending`)
 
     const rawReports = Object.entries(reports).map(([k, r]) =>
       `## Raw report - ${k}\n\n${JSON.stringify(r, null, 2)}`
@@ -593,11 +782,31 @@ return {
   // RESOURCE_POLICY sec 5.10: a small, non-authoritative usage record for the
   // lead to fold into the task's RESOURCE_USAGE.md. Never scientific evidence.
   resource_summary: {
+    posture: POSTURE,
     models_used: resourceLog.map(r => `${r.role}=${r.model}`),
+    tiers_used: resourceLog.map(r => `${r.role}=${r.tier}`),
+    // RESOURCE_POLICY 5.11: counts by tier, so stronger-model spending can be
+    // scored after the fact instead of argued about in advance.
+    tier_counts: {
+      tier_1_sonnet: resourceLog.filter(r => r.tier === 'tier_1').length,
+      tier_2_opus: resourceLog.filter(r => r.tier === 'tier_2').length,
+      tier_3_best: resourceLog.filter(r => r.tier === 'tier_3').length,
+    },
+    // Five fields each (5.4e). `material_value` is 'pending' here by
+    // construction: only the lead, after reading the result, can say whether
+    // the stronger model changed anything.
+    escalations: escalationsApplied,
+    escalations_refused: escalationsRefused,
+    effort_overrides: Object.keys(EFFORT).length ? EFFORT : null,
+    // A Tier-3 request the runtime would not honour. Degrading is correct;
+    // hiding it is not - the recorded tier must be the tier actually used.
+    model_substitutions: resourceLog.flatMap(r => r.substitutions.map(s => `${r.role}: ${s}`)),
+    routing_notes: routingNotes,
     retries: resourceLog.filter(r => r.retried).map(r => `${r.role}: ${r.failure}`),
     failures: resourceLog.filter(r => r.failure && !r.retried).map(r => `${r.role}: ${r.failure}`),
     roles_skipped_by_lead: skipped,
     generic_fallback_used: false,
+    material_value_note: 'The lead MUST fill material_value for each escalation in RESOURCE_USAGE.md: changed_conclusion | new_derivation | caught_error | confirmed_existing | no_material_gain. That record is what lets routing be tuned empirically.',
   },
   infrastructure_first: infrastructureFirst.length ? infrastructureFirst : null,
   // Deliberately absent: any recommendation. The decision gate (A-H, the twelve

@@ -16,6 +16,10 @@ Checks:
   P4  model routing matches the policy table
   P5  no generic-agent fallback in the workflow
   P6  workflow routes models explicitly and supports historicalValidation
+  P14 the tier table agrees across model_routing.yaml, RESOURCE_POLICY.md,
+      the four agent definitions and the workflow (four copies, one truth)
+  P15 only supported aliases are routed, no pinned version IDs, and Tier 3
+      degrades through a fallback chain instead of crashing the run
   P7  scheduler / remote commands denied in settings.json AND the hook
   P8  SLURM inspection still permitted (the policy is unimplementable otherwise)
   P9  weak "no HPC without <gate>" wording absent from agent-facing docs
@@ -47,14 +51,31 @@ def read(root, rel):
     return open(p, encoding="utf-8").read() if os.path.isfile(p) else None
 
 
-# role -> (normal model, regression model)
-EXPECTED_MODEL = {
-    "literature": "sonnet",
-    "numerics": "sonnet",
-    "theory": "sonnet",
-    "red-team": "opus",
+# Adaptive routing (RESOURCE_POLICY 5.4, research/model_routing.yaml).
+# Tier -> alias.
+TIER_ALIAS = {"tier_1": "sonnet", "tier_2": "opus", "tier_3": "best"}
+# Aliases this Claude Code build accepts. Verified against the installed CLI's
+# alias list. `best` is real and resolves to the strongest available model,
+# degrading to Opus-class where Fable is absent - which is exactly why routing
+# uses it rather than pinning `fable`.
+SUPPORTED_ALIASES = {"sonnet", "opus", "haiku", "fable", "best"}
+
+# Role defaults per posture. Four copies of this table exist (YAML, policy
+# prose, agent frontmatter, workflow) because a workflow script cannot read a
+# file at run time. They are CHECKED against each other, not trusted.
+POSTURE_TIERS = {
+    "economical": {"literature": "tier_1", "theory": "tier_1",
+                   "numerics": "tier_1", "red-team": "tier_2"},
+    "normal": {"literature": "tier_1", "theory": "tier_2",
+               "numerics": "tier_1", "red-team": "tier_2"},
+    "deep": {"literature": "tier_1", "theory": "tier_3",
+             "numerics": "tier_1", "red-team": "tier_2"},
 }
+# An agent definition's frontmatter is the `normal` posture default: it is what
+# the role gets when nothing routes it explicitly.
+EXPECTED_MODEL = {r: TIER_ALIAS[t] for r, t in POSTURE_TIERS["normal"].items()}
 WORKERS = tuple(EXPECTED_MODEL)
+REGRESSION_TIERS = {r: "tier_1" for r in WORKERS}
 DELEGATION_TOOLS = ("Task", "Agent", "Workflow")
 # External research is a first-class capability: all four roles need it, with
 # different remits. literature owns broad prior art; theory and numerics search
@@ -120,9 +141,15 @@ def check(root):
         elif m.group(1) == "inherit":
             err("P3", rel, "`model: inherit` - this is exactly the bug that put "
                            "every worker on Opus in the 2026-08-10 run")
+        elif m.group(1) not in SUPPORTED_ALIASES:
+            err("P15", rel, f"model {m.group(1)!r} is not a supported Claude "
+                            f"Code alias {sorted(SUPPORTED_ALIASES)}; do not "
+                            f"pin version IDs (policy 5.4g)")
         elif m.group(1) != EXPECTED_MODEL[role]:
-            err("P4", rel, f"model is {m.group(1)!r}, policy 5.4 says "
-                           f"{EXPECTED_MODEL[role]!r}")
+            err("P4", rel, f"model is {m.group(1)!r}; the `normal` posture "
+                           f"default for {role} is {EXPECTED_MODEL[role]!r} "
+                           f"(policy 5.4b). Frontmatter is the default, not a "
+                           f"ceiling - the lead still routes per subproblem.")
 
         tools = re.search(r"^tools:\s*(.+)$", fm, re.MULTILINE)
         if tools:
@@ -153,20 +180,57 @@ def check(root):
         if "Infrastructure first" not in wf and "INFRASTRUCTURE FIRST" not in wf:
             err("P5", "research.js", "no Infrastructure-first path for a "
                                      "missing project agent")
-        if not re.search(r"const MODEL\s*=", wf):
-            err("P6", "research.js", "no explicit model routing table")
-        else:
-            for role, expected in EXPECTED_MODEL.items():
-                if role == "red-team":
-                    continue  # mode-dependent; checked below
-                if not re.search(rf"{role}:\s*'{expected}'", wf) and \
-                   not re.search(rf"{role}:\s*THEORY_ESCALATED", wf):
-                    err("P6", "research.js", f"routing for {role} does not "
-                                             f"pin {expected}")
+        if not re.search(r"const POSTURE_DEFAULTS\s*=", wf):
+            err("P6", "research.js", "no explicit per-posture model routing table")
+        if not re.search(r"agent\([^)]*\{[^}]*model", wf, re.DOTALL) and \
+           "agentType: role, model" not in wf:
+            err("P6", "research.js", "agent() is called without an explicit "
+                                     "model; a worker would inherit the lead's")
         if "historicalValidation" not in wf:
             err("P6", "research.js", "no historicalValidation mode")
-        if "model" not in wf.split("const MODEL")[0][-2000:] and False:
-            pass  # placeholder; the explicit-pass check is the MODEL table
+
+        # P14: the four copies of the tier table must agree ------------------
+        for posture, roles in POSTURE_TIERS.items():
+            row = re.search(rf"\n  {posture}:\s*\{{([^}}]*)\}}", wf)
+            if not row:
+                err("P14", "research.js", f"no `{posture}` posture row in "
+                                          f"POSTURE_DEFAULTS")
+                continue
+            for role, tier in roles.items():
+                if not re.search(rf"'?{role}'?:\s*'{tier}'", row.group(1)):
+                    err("P14", "research.js",
+                        f"posture {posture}: {role} is not {tier}. The four "
+                        f"copies of this table must agree "
+                        f"(research/model_routing.yaml is the source).")
+        for role, tier in REGRESSION_TIERS.items():
+            if not re.search(rf"REGRESSION_TIERS = \{{[^}}]*'?{role}'?:\s*'{tier}'", wf):
+                err("P14", "research.js",
+                    f"regression mode does not pin {role} to {tier}; "
+                    f"historical validation must stay Tier 1")
+
+        # P15: aliases and safe degradation ---------------------------------
+        chains = re.search(r"const FALLBACK = \{(.*?)\n\}", wf, re.DOTALL)
+        if not chains:
+            err("P15", "research.js", "no FALLBACK chains; a Tier-3 request "
+                                      "that the runtime rejects would crash "
+                                      "the run (policy 5.4g)")
+        else:
+            used = set(re.findall(r"'([a-z0-9\[\]-]+)'", chains.group(1)))
+            bad = used - SUPPORTED_ALIASES
+            if bad:
+                err("P15", "research.js", f"routes unsupported alias(es) "
+                                          f"{sorted(bad)}; allowed: "
+                                          f"{sorted(SUPPORTED_ALIASES)}")
+            if not re.search(r"tier_3:\s*\['best'", chains.group(1)):
+                err("P15", "research.js", "the tier_3 chain does not start at "
+                                          "`best`; pinning `fable` breaks in "
+                                          "environments without it (5.4g)")
+        if re.search(r"claude-(?:opus|sonnet|fable|haiku)-[0-9]", wf):
+            err("P15", "research.js", "a pinned model version ID is routed; "
+                                      "use aliases (5.4g)")
+        if "escalationsRefused" not in wf or "decision_at_stake" not in wf:
+            err("P15", "research.js", "escalations are not recorded with a "
+                                      "decision_at_stake (policy 5.4e)")
 
     # P13 (settings side): nothing may block the web tools ---------------------
     settings_for_web = read(root, ".claude/settings.json")
@@ -237,6 +301,62 @@ def check(root):
             err("P9", rel, "superseded wording: HPC described as permitted "
                            "after a gate/approval. The rule is that agents "
                            "NEVER submit; a gate authorises PREPARATION only.")
+
+    # P14 (YAML + policy side) -------------------------------------------------
+    routing = read(root, "research/model_routing.yaml")
+    if routing is None:
+        err("P14", "research/model_routing.yaml",
+            "missing; the machine-readable routing table is the source the "
+            "other three copies are checked against")
+    else:
+        for tier, alias in TIER_ALIAS.items():
+            if not re.search(rf"{tier}:\s*\n\s*alias:\s*{alias}\b", routing):
+                err("P14", "model_routing.yaml", f"{tier} does not map to {alias}")
+        for role in WORKERS:
+            pat = (rf"\n  {role}:\n    default_tier:\n"
+                   rf"      economical: {POSTURE_TIERS['economical'][role]}\n"
+                   rf"      normal: {POSTURE_TIERS['normal'][role]}\n"
+                   rf"      deep: {POSTURE_TIERS['deep'][role]}\n")
+            if not re.search(pat, routing):
+                err("P14", "model_routing.yaml",
+                    f"`{role}` default_tier block missing or disagrees with "
+                    f"the policy table")
+        if "failure_required_first: false" not in routing:
+            err("P14", "model_routing.yaml",
+                "the withdrawn 'escalate only after the cheap model failed' "
+                "rule is not explicitly recorded as withdrawn (policy 5.4d)")
+        for v in ("changed_conclusion", "new_derivation", "caught_error",
+                  "confirmed_existing", "no_material_gain"):
+            if v not in routing:
+                err("P14", "model_routing.yaml",
+                    f"material_value value {v!r} missing; stronger-model "
+                    f"spending cannot be scored afterwards (policy 5.11)")
+
+    if policy:
+        for posture in POSTURE_TIERS:
+            if f"**{posture}**" not in policy and f"`{posture}`" not in policy:
+                err("P14", "RESOURCE_POLICY.md",
+                    f"posture `{posture}` is not documented (5.4i)")
+        for role in WORKERS:
+            row = re.search(rf"^\|\s*`{role}`\s*\|(.+)$", policy, re.MULTILINE)
+            if not row:
+                err("P14", "RESOURCE_POLICY.md",
+                    f"no routing row for `{role}` in the 5.4b table")
+                continue
+            cells = [c.strip().lower() for c in row.group(1).split("|")]
+            for posture, tiers in POSTURE_TIERS.items():
+                want = tiers[role].replace("_", " ")
+                if not any(want in c for c in cells):
+                    err("P14", "RESOURCE_POLICY.md",
+                        f"`{role}` row does not show {want} for {posture}: "
+                        f"{row.group(1).strip()}")
+        if "model_routing.yaml" not in policy:
+            err("P14", "RESOURCE_POLICY.md",
+                "does not point at research/model_routing.yaml")
+        if "material_value" not in policy:
+            err("P14", "RESOURCE_POLICY.md",
+                "no material_value tracking; there would be no way to tell "
+                "later whether stronger models bought anything (5.11)")
 
     # P10 ---------------------------------------------------------------------
     for rel in POLICY_REFS:

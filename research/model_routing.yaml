@@ -1,0 +1,331 @@
+# Model routing — ppsQJ_m2
+#
+# AUTHORITATIVE, MACHINE-READABLE routing table. The prose that explains it is
+# research/RESOURCE_POLICY.md section 5.4. If the two disagree, they are both
+# wrong and validate_resource_policy.py fails: the checker cross-reads this
+# file, the policy table, the four agent definitions and the MODEL table
+# embedded in .claude/workflows/research.js.
+#
+# Why the table is duplicated in research.js: a workflow script has no
+# filesystem access and cannot read this file at run time. The duplicate is
+# deliberate and is checked, not trusted.
+#
+# Contains NO scientific values. Nothing here is evidence.
+
+schema: model_routing/v1
+last_reviewed: 2026-08-11
+owner: human
+authoritative_for: which reasoning tier each research role runs at
+contains_scientific_values: false
+
+# ---------------------------------------------------------------------------
+principle: >
+  Use the model with the highest expected scientific value for the decision
+  being made. Token cost is real and secondary. The superseded principle —
+  "use the cheapest model unless a stronger one is clearly necessary" — is
+  retired: it spent researcher attention to save model budget, which is the
+  wrong trade at a genuine research bottleneck.
+
+priority_order:
+  - scientific validity
+  - expected information value
+  - researcher attention saved
+  - experimental compute saved
+  - token / model cost
+
+# The lesson the 2026-08-10/11 campaigns actually support. General, not
+# task-specific: no scientific conclusion of those runs is encoded here.
+evidence_basis:
+  - stronger theory reasoning killed attractive but incorrect architectures
+    before any compute was spent
+  - stronger red-team reasoning repeatedly overturned numerical conclusions
+    that the affirmative team held confidently
+  - the large costs came from wrong specifications and proxy metrics, not from
+    difficult implementation
+  - therefore stronger-model budget at a few high-leverage decision points
+    reduces total research cost
+  - the counter-example stands: the run with EVERY worker on the strongest
+    model bought nothing. The goal is SELECTIVE use, not universal use.
+
+# ---------------------------------------------------------------------------
+tiers:
+
+  tier_1:
+    alias: sonnet
+    label: routine execution
+    rationale: work dominated by volume or execution, not by difficult inference
+    use_for:
+      - repository archaeology
+      - grep / search across project files
+      - provenance extraction
+      - routine literature extraction once the sources are identified
+      - reading straightforward sections of papers
+      - parsing logs, CSV, JSON
+      - running predefined numerical analyses
+      - profiling
+      - straightforward implementation
+      - mechanical prototype construction
+      - repetitive benchmark runs
+      - ordinary debugging
+      - formatting task artifacts
+      - regression / historical validation
+
+  tier_2:
+    alias: opus
+    label: difficult scientific reasoning
+    rationale: >
+      A nontrivial scientific inference or design decision. Do NOT require
+      evidence that Tier 1 already failed. If the problem is genuinely subtle,
+      Tier 2 is already justified.
+    use_for:
+      - deriving whether an algorithm samples the correct target measure
+      - Radon-Nikodym / Feynman-Kac reasoning
+      - finite-population bias reasoning
+      - difficult statistical-estimator questions
+      - interpreting unexpected numerical results
+      - checking transfer of field theories or universality arguments
+      - constructing falsifiers
+      - designing statistically sound experiments
+      - resolving conflicting evidence
+      - deriving a nontrivial control variate
+      - deciding whether an effect is physical or methodological
+      - synthesising literature + theory + numerics
+      - serious red-team attacks
+
+  tier_3:
+    alias: best
+    label: deepest / highest-value reasoning
+    resolves_to: >
+      Claude Code's `best` alias — the strongest available model for this
+      installation. It resolves to Fable where Fable is available and
+      degrades to an Opus-class model where it is not. Routing uses the alias
+      rather than a pinned ID so the configuration survives both model
+      updates and environments where Fable is absent.
+    use_for:
+      - deriving a fundamentally new algorithm from first principles
+      - deriving an exact or controlled change of measure
+      - inventing a rare-event / particle method specific to the PPS process
+      - deriving an analytic phase boundary
+      - difficult RG / field-theory construction
+      - deriving the optimal or approximate Doob / value function
+      - reconciling a stubborn theory-numerics contradiction
+      - finding a new direction after several plausible mechanisms failed
+      - combining partially successful algorithms into a new architecture
+      - designing a genuinely new mathematical estimator
+      - attacking the deepest surviving candidate after ordinary red team
+      - adjudicating an important disagreement unresolved after Tier-2 work
+      - long-horizon open synthesis where a major new insight is plausible
+    never_for:
+      - mechanical work whose PARENT task is important
+      - running benchmarks
+      - parsing logs
+      - downloading or reading many PDFs
+      - numerical voting between several expensive models
+
+# ---------------------------------------------------------------------------
+# Alias handling. Verified against the installed CLI (2.1.227), whose alias
+# list is ["sonnet","opus","haiku","fable","best","sonnet[1m]","opus[1m]",
+# "fable[1m]","opusplan"]. `best` is a real alias in this build and resolves
+# through the installation's builtin default, falling back to an Opus-class
+# model. Agent frontmatter accepts any of these strings.
+aliases:
+  allowed: [sonnet, opus, haiku, fable, best]
+  # Tried in order. The first that the runtime accepts wins. A Tier-3 request
+  # NEVER crashes a run: worst case it degrades to opus and says so.
+  tier_3_preference: [best, fable, opus]
+  tier_2_fallback: [opus, best, sonnet]
+  tier_1_fallback: [sonnet, opus]
+  # `best` is preferred over `fable` in engine routing so the configuration
+  # stays correct in environments where Fable is unavailable. Requiring Fable
+  # specifically — for a reproducibility experiment that must pin the model
+  # family, not for ordinary research — is done by passing the explicit
+  # `fable` alias: workflow arg roleTier/roleAlias, agent frontmatter
+  # `model: fable`, or `claude --model fable` for a session. Do not pin a
+  # version number (`claude-fable-5`) without a compelling reason.
+  require_fable_explicitly_via: roleAlias
+  # Two dispatch paths in this build. Agent frontmatter and the workflow accept
+  # `best`; the Agent TOOL's own model parameter enumerates only
+  # sonnet|opus|haiku|fable, so a direct (non-workflow) Tier-3 dispatch asks for
+  # `fable` and falls back to `opus`. Same tier, same record, different spelling.
+  dispatch_paths:
+    workflow_and_frontmatter: best
+    agent_tool_parameter: fable   # enum lacks `best` in CLI 2.1.227
+
+# ---------------------------------------------------------------------------
+# Postures. A research question may declare MODEL_POSTURE in its prompt.
+# /research defaults to `normal`.
+postures:
+  default: normal
+
+  economical:
+    summary: mostly Tier 1; Tier 2 only for a real scientific bottleneck
+    tier_3: requires an explicit recorded escalation
+  normal:
+    summary: adaptive routing; heterogeneous tiers within one task are normal
+    tier_3: requires a recorded escalation
+  deep:
+    summary: >
+      Tier 2 freely available; Tier 3 encouraged at major theory,
+      architecture and synthesis bottlenecks. `deep` does NOT mean
+      "make every worker Tier 3" — mechanical roles stay on Tier 1.
+    tier_3: default for theory; recorded escalation for other roles
+
+  # Task modes that pick a posture for you.
+  by_mode:
+    normal: normal
+    historicalValidation: economical
+
+# ---------------------------------------------------------------------------
+# Role defaults, per posture. These are DEFAULTS, not ceilings: any role may be
+# escalated one or two tiers with a recorded escalation (see `escalation`).
+roles:
+
+  literature:
+    default_tier:
+      economical: tier_1
+      normal: tier_1
+      deep: tier_1
+    escalate_to_tier_2_for:
+      - difficult prior-art synthesis
+      - conflicting papers
+      - deciding whether two constructions are genuinely equivalent
+      - extracting a subtle methodological assumption
+      - source-transfer questions requiring scientific reasoning
+    escalate_to_tier_3_for:
+      - major literature/theory synthesis where terminology differs strongly
+        across fields
+      - reconstructing an obscure theoretical connection essential to a
+        high-value candidate
+    never_escalate_for: reading or downloading many PDFs
+
+  theory:
+    default_tier:
+      economical: tier_1
+      normal: tier_2
+      deep: tier_3
+    de_escalate_to_tier_1_for:
+      - routine algebra checks
+      - straightforward derivation verification
+      - known formula substitution
+      - mechanical symbolic tasks
+    escalate_to_tier_3_for:
+      - first-principles derivation
+      - new algorithm invention
+      - analytic phase-boundary work
+      - difficult field theory / RG
+      - exact stochastic-control derivations
+      - unresolved conceptual contradictions
+      - genuinely novel theory synthesis
+    note: theory has comparatively easy access to Tier 3
+
+  numerics:
+    default_tier:
+      economical: tier_1
+      normal: tier_1
+      deep: tier_1
+    escalate_to_tier_2_for:
+      - subtle estimator design
+      - bias / variance reasoning
+      - experimental-design questions
+      - nontrivial statistical inference
+      - diagnosing a surprising numerical result
+      - deciding whether an observed scaling is real or an artifact
+    escalate_to_tier_3_for:
+      - designing a genuinely new mathematical numerical method
+      - a difficult numerical/statistical problem that resists ordinary
+        reasoning
+      - a numerical task that itself requires deep algorithmic invention
+    never_escalate_for: running benchmarks or parsing logs
+
+  red-team:
+    default_tier:
+      economical: tier_2
+      normal: tier_2
+      deep: tier_2
+    escalate_to_tier_3_for:
+      - the candidate is potentially load-bearing for the paper
+      - the affirmative team claims a major new theoretical or algorithmic
+        result
+      - a Tier-2 red-team pass left an important disagreement unresolved
+      - the candidate required substantial compute and a false positive would
+        be especially costly
+      - the candidate involves subtle mathematical exactness / bias claims
+      - the result could redirect a large production campaign
+    de_escalate_to_tier_1_for:
+      - routine regression red-team work
+
+  lead:
+    # The lead is the main session. Its model is the researcher's choice and
+    # the engine does not change it mid-session.
+    default_tier:
+      economical: tier_1
+      normal: tier_2
+      deep: tier_3
+    binding: false
+    note: >
+      Advisory only. The lead's model is whatever the researcher selected. If
+      the session model is weaker than the task warrants, do NOT redesign
+      orchestration to change it — dispatch a Tier-3 advisor worker for the
+      specific high-value synthesis step and keep the lead where it is.
+
+# Regression / historical-validation mode overrides every default above.
+# Reduced SCOPE and reduced MODEL. The evidential standard is untouched and the
+# nine Stage-8 attacks are never reduced.
+regression_overrides:
+  literature: tier_1
+  theory: tier_1
+  numerics: tier_1
+  red-team: tier_1
+  tier_3_allowed: false
+
+# ---------------------------------------------------------------------------
+# Escalation. Deliberately cheap: five short fields, no essay, no approval
+# round-trip. The point is a record that can later be scored, not a gate.
+escalation:
+  required_when: the resolved tier is above the role's posture default
+  failure_required_first: false   # explicitly NOT required — see policy 5.4d
+  test: >
+    "Is there a plausible material gain from stronger reasoning at this
+    decision point?" If yes, escalate. Do not force a throwaway Tier-1 pass
+    first on a problem that is obviously conceptual.
+  record_fields: [from, to, role, question, decision_at_stake]
+  after_fields: [material_value]
+  material_value_values:
+    - changed_conclusion
+    - new_derivation
+    - caught_error
+    - confirmed_existing
+    - no_material_gain
+  recorded_in: "<TASK_DIR>/RESOURCE_USAGE.md, section 'Model routing'"
+
+# ---------------------------------------------------------------------------
+# Effort is NOT capability. Do not pair Tier 3 with maximum effort by reflex,
+# and do not let a high-effort Tier-1 search stand in for a Tier-2/3 reasoning
+# step when the bottleneck is conceptual rather than informational.
+effort:
+  default: inherit
+  high_when:
+    - substantial literature or context must be integrated
+    - a long derivation is required
+    - a high-stakes candidate needs adversarial checking
+    - the task is genuinely open-ended
+  normal_when:
+    - a routine question that merely happens to be asked of a strong model
+
+# ---------------------------------------------------------------------------
+# What tier changes never change.
+invariants_unaffected_by_tier:
+  - evidence tiers and the canonical/task-verified distinction
+  - prediction-before-test
+  - the red-team contamination barrier
+  - claim-strength audit
+  - first-pass independence
+  - phase locking and analysis-spec freeze
+  - local-compute controls and human-only HPC submission
+  - Human Gate A
+notes: >
+  A Tier-3 worker may invent: new hypotheses, new algorithm architectures,
+  alternative mathematical formulations, new falsifiers, reinterpretations of
+  negative results, cross-field combinations. It is not restricted to auditing
+  weaker models' output. Its conclusions carry exactly the same evidential
+  burden. A stronger model does not receive a lower standard.

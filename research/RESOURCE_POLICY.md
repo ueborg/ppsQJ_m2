@@ -129,6 +129,17 @@ and must not be reintroduced. The rule is:
 > attention, model usage and local compute, subject to the full Research
 > Charter.
 
+**Priority order when these trade off.** Cost is last, and it is still real:
+
+1. scientific validity;
+2. expected information value;
+3. researcher attention saved;
+4. experimental compute saved;
+5. token / model cost.
+
+Token cost never dominates a high-value research decision. It routinely decides
+a low-value one, and most of a run is low-value one.
+
 ### 5.0 What efficiency may never buy
 
 Efficiency **never** justifies skipping a load-bearing source, skipping
@@ -166,33 +177,227 @@ Worker agents **never** spawn subagents or workflows. Only the main research
 workflow owns delegation. Worker tool lists exclude `Task`/`Agent` and
 `Workflow`; see §7 of this file's enforcement notes in `WORKER_CONTRACT.md`.
 
-### 5.4 Explicit model routing
+### 5.4 Adaptive model routing
 
-Never let a worker inherit the main session's strongest model by accident.
-Aliases (`sonnet`, `opus`) are used rather than pinned IDs so this survives
-model updates.
+**Governing principle.**
 
-| role | normal `/research` | historical / regression mode |
+> Use the model with the highest expected scientific value for the decision
+> being made.
+
+This **replaces** the earlier principle, *"use the cheapest model unless a
+stronger model is clearly necessary."* That rule spent researcher attention to
+save model budget, which is the wrong trade at a genuine research bottleneck.
+Two things remain true and are not in tension:
+
+- **Never let a worker inherit the lead's model by accident.** Every role is
+  routed explicitly, by alias, never by pinned ID.
+- **Do not make every worker Tier 3.** The 2026-08-10 run that silently put
+  every worker on the strongest model is the standing negative example. The
+  goal is **selective** use of stronger models.
+
+The machine-readable table is **`research/model_routing.yaml`**. This section is
+its prose. `validate_resource_policy.py` cross-checks the YAML, this table, the
+four agent definitions and the routing table embedded in
+`.claude/workflows/research.js`; a disagreement is an error, not a nuance.
+
+#### 5.4a The three tiers
+
+| tier | alias | for |
 |---|---|---|
-| lead (main session) | researcher's selected model | researcher's selected model |
-| `literature` | **sonnet** | **sonnet** |
-| `numerics` | **sonnet** | **sonnet** |
-| `theory` | **sonnet** by default | **sonnet** |
-| `red-team` | **opus** | **sonnet** |
+| **Tier 1** | `sonnet` | routine execution: work dominated by volume, not by difficult inference — repository archaeology, search, provenance extraction, routine literature extraction once sources are identified, parsing logs/CSV/JSON, predefined analyses, profiling, straightforward implementation, mechanical prototypes, repeat benchmarks, ordinary debugging, formatting artifacts, regression validation. **The workhorse.** |
+| **Tier 2** | `opus` | difficult scientific reasoning: target-measure correctness, Radon–Nikodym / Feynman–Kac, finite-population bias, hard estimator questions, interpreting unexpected numerics, universality/field-theory transfer, constructing falsifiers, statistically sound experimental design, resolving conflicting evidence, nontrivial control variates, physical-vs-methodological calls, literature+theory+numerics synthesis, serious red-team attacks. |
+| **Tier 3** | `best` | the deepest bottlenecks: a fundamentally new algorithm from first principles, an exact or controlled change of measure, a rare-event/particle method specific to the PPS process, an analytic phase boundary, hard RG/field theory, the optimal or approximate Doob/value function, a stubborn theory–numerics contradiction, a new direction after several mechanisms failed, combining partial algorithms into a new architecture, a genuinely new estimator, the deepest surviving candidate after ordinary red team, an important disagreement still unresolved after Tier-2 work, long-horizon open synthesis. |
 
-`theory` may be escalated to `opus` **only** with a concrete recorded reason: a
-genuinely difficult first-principles derivation, a subtle contradiction, or
-multiple serious mechanisms that cheaper reasoning cannot separate. Record the
-reason in the task `CHARTER.md`. **Do not use Opus because it is available.**
+**Tier 3 is not for mechanical work whose parent task is important.** Not for
+benchmarks, not for log parsing, not for reading many PDFs, and not for running
+several expensive models as a voting panel.
 
-### 5.4b Collaboration budget
+#### 5.4b Role defaults
+
+Defaults, not ceilings. Every entry may be escalated with a recorded escalation
+(§5.4e) and de-escalated when the actual subproblem is mechanical.
+
+| role | economical | **normal** | deep | regression |
+|---|---|---|---|---|
+| `literature` | tier 1 · `sonnet` | tier 1 · `sonnet` | tier 1 · `sonnet` | `sonnet` |
+| `theory` | tier 1 · `sonnet` | **tier 2 · `opus`** | **tier 3 · `best`** | `sonnet` |
+| `numerics` | tier 1 · `sonnet` | tier 1 · `sonnet` | tier 1 · `sonnet` | `sonnet` |
+| `red-team` | tier 2 · `opus` | tier 2 · `opus` | tier 2 · `opus` | `sonnet` |
+| lead | advisory tier 1 | advisory tier 2 | advisory tier 3 | advisory tier 1 |
+
+Escalation triggers per role are enumerated in `research/model_routing.yaml`
+under `roles.*.escalate_to_tier_2_for` / `escalate_to_tier_3_for`. In outline:
+
+- **literature** → Tier 2 for difficult prior-art synthesis, conflicting papers,
+  whether two constructions are genuinely equivalent, a subtle methodological
+  assumption, source-transfer questions needing scientific reasoning. → Tier 3
+  only rarely: a major synthesis across fields with strongly differing
+  terminology, or an obscure theoretical connection essential to a high-value
+  candidate. **Never** to read or download more PDFs.
+- **theory** → Tier 1 for routine algebra, verification of a straightforward
+  derivation, known formula substitution, mechanical symbolic work. → Tier 3
+  for first-principles derivation, new algorithm invention, analytic
+  phase-boundary work, hard field theory/RG, exact stochastic control,
+  unresolved conceptual contradictions, genuinely novel synthesis. **Theory has
+  comparatively easy access to Tier 3.**
+- **numerics** → Tier 2 for subtle estimator design, bias/variance reasoning,
+  experimental design, nontrivial inference, diagnosing a surprising result,
+  deciding whether a scaling is real or an artifact. → Tier 3 only for
+  inventing a genuinely new numerical method or a problem that resists ordinary
+  reasoning. **Never** to run benchmarks or parse logs.
+- **red-team** → Tier 3 when the candidate is potentially load-bearing for the
+  paper, when the affirmative team claims a major new theoretical or algorithmic
+  result, when a Tier-2 pass left an important disagreement unresolved, when the
+  candidate cost substantial compute and a false positive would be especially
+  costly, when it involves subtle exactness/bias claims, or when the result
+  could redirect a large production campaign. → Tier 1 for routine regression
+  red-team work.
+
+**The lead's row is advisory.** The lead is the main session and its model is
+the researcher's choice; the engine does not change it mid-session. If the
+session model is weaker than the synthesis warrants, **do not redesign
+orchestration to change it** — dispatch a Tier-3 advisor worker for that one
+high-value step and leave the lead where it is.
+
+#### 5.4c Heterogeneous by design
+
+One `/research` run is expected to look like:
+
+```
+lead synthesis        opus       theory derivation   best
+literature extraction sonnet     numerical profiling sonnet
+estimator analysis    opus       prototype execution sonnet
+red team (ordinary)   opus       deep final attack   best
+```
+
+A mechanical worker never inherits the lead's expensive model. A difficult
+worker is never downgraded because the lead happens to be on Sonnet. **Model
+choice is role- and subproblem-specific.**
+
+#### 5.4d No failure is required before escalating
+
+Any rule of the form *"escalate only after the cheaper model has failed"* is
+**withdrawn.** It bought a wasted pass and a wasted read of it. The test is:
+
+> Is there a plausible material gain from stronger reasoning **at this decision
+> point**?
+
+If yes, escalate. For a genuinely difficult problem, **start** at Tier 2 or
+Tier 3 rather than staging a throwaway Tier-1 pass first.
+
+#### 5.4e Escalation records are five lines, not an essay
+
+Before escalating above the role's posture default, record:
+
+```
+MODEL_ESCALATION:
+  from: sonnet
+  to: opus
+  role: theory
+  question: whether candidate C3 preserves the exact target measure
+  decision_at_stake: prototype / kill
+```
+
+After the stronger-model result, add one field:
+
+```
+  material_value: changed_conclusion | new_derivation | caught_error |
+                  confirmed_existing | no_material_gain
+```
+
+That is the whole procedure. No approval round-trip, no justification memo.
+Records live in `<TASK_DIR>/RESOURCE_USAGE.md` under **Model routing**, which is
+non-authoritative and is never scientific evidence. Their purpose is to let us
+score routing empirically after several real tasks.
+
+#### 5.4f Effort is not capability
+
+Where the runtime exposes effort, treat it as an independent axis. **Do not pair
+Tier 3 with maximum effort by reflex.** Use high effort when substantial context
+must be integrated, when a long derivation is required, when a high-stakes
+candidate needs adversarial checking, or when the task is genuinely open-ended.
+Routine questions asked of a strong model use normal effort.
+
+And the converse, which matters more: **a high-effort Tier-1 search is not a
+substitute for a Tier-2/3 reasoning step when the bottleneck is conceptual
+rather than informational.** More searching does not fix a wrong derivation.
+
+#### 5.4g Aliases and availability
+
+Use aliases — `sonnet`, `opus`, `best` — not pinned version IDs. Tier 3 routes
+to **`best`** specifically so the configuration stays correct where Fable is
+unavailable: `best` resolves to the strongest model this installation offers and
+degrades to an Opus-class model otherwise.
+
+A Tier-3 request **never crashes a run.** The resolution order is
+`best → fable → opus`; if the runtime rejects an alias the router steps down and
+logs the substitution, and the tier actually used is what gets recorded.
+
+**Two dispatch paths, one of which is narrower.** Verified against the installed
+CLI (2.1.227), whose alias set is `sonnet`, `opus`, `haiku`, `fable`, `best`
+(plus `[1m]` and `opusplan` variants):
+
+- **Agent frontmatter and workflow routing accept `best`.** `.claude/agents/*.md`
+  takes the alias string as written, and `.claude/workflows/research.js` routes
+  it. This is the normal path and it is what §5.4b describes.
+- **The Agent tool's own `model` parameter enumerates `sonnet | opus | haiku |
+  fable`** in this build — no `best`. If the lead dispatches a worker *directly*
+  rather than through the workflow, Tier 3 is requested as **`fable`**, and if
+  that is unavailable, as `opus`. Same tier, same record; only the spelling
+  differs, because that call site validates against a fixed enum.
+
+Neither path may pin a version ID. If a future build widens or narrows the enum,
+`validate_resource_policy.py` P15 is where the supported set is asserted.
+
+Requiring Fable *specifically* — appropriate for a reproducibility experiment
+that must pin the model family, not for ordinary research — is done with the
+explicit `fable` alias: `roleAlias` in the workflow args, `model: fable` in an
+agent definition, or `claude --model fable` for a session. Prefer `best` in
+engine routing.
+
+#### 5.4h Tier does not change the standard
+
+A stronger model earns no evidential discount. Tier-3 workers **may** invent —
+new hypotheses, new algorithm architectures, alternative formulations, new
+falsifiers, reinterpretations of negative results, cross-field combinations —
+and are not restricted to auditing weaker models' output. Everything they
+produce is still subject to the evidence rules, prediction-before-test, the red
+team, the claim-strength audit and Human Gate A. Independent first passes may
+deliberately run at *different* tiers (e.g. theory A on `best` via a
+first-principles route, theory B on `opus` via an independent route) provided
+the independence is **representational or methodological** — not merely two
+expensive models voting — and neither sees the other before first-pass freeze.
+
+#### 5.4i Posture
+
+A research question may declare a posture in its prompt:
+
+```
+MODEL_POSTURE: economical | normal | deep
+```
+
+- **economical** — mostly Tier 1; Tier 2 only for a real scientific bottleneck;
+  Tier 3 only with an explicit recorded escalation.
+- **normal** — adaptive routing as above. **`/research` defaults to this.**
+- **deep** — Tier 2 freely available; Tier 3 encouraged at major theory,
+  architecture and synthesis bottlenecks. Appropriate for e.g. analytic
+  phase-boundary derivation or fundamental sampler-architecture search.
+  **`deep` does not mean "make everything Tier 3"** — mechanical roles stay on
+  Tier 1 in a deep run, and a deep run with `literature` on `best` is a routing
+  bug.
+
+Historical/regression validation defaults to **economical** and additionally
+applies the §6 overrides.
+
+### 5.4j Collaboration budget
 
 At most **ONE** bounded cross-examination round per task, only after every
 first-pass report is frozen, only between the implicated affirmative roles, and
 only when the lead has recorded the dependency, the question and the expected
-decision value. A collaboration answer uses the **role's configured model**, not
-the lead's — a continuation does not inherit Opus. A response is not a retry and
-does not license a retry loop. The red team never participates.
+decision value. A collaboration answer uses the **role's routed model** for this
+run, not the lead's — a continuation does not inherit the lead's model, in
+either direction. A response is not a retry and does not license a retry loop.
+The red team never participates.
 
 ### 5.5 Agent count and role economy
 
@@ -287,12 +492,36 @@ After a `/research` run, write a small **non-authoritative**
 retries, approximate usage where exposed, local compute executed, and whether
 any worker was unnecessary in hindsight. **This is never scientific evidence.**
 
+### 5.11 Did the stronger model buy anything?
+
+`RESOURCE_USAGE.md` carries a **Model routing** section so that stronger-model
+spending can be scored after the fact rather than argued about in advance. Per
+run, record:
+
+- Tier-1 (`sonnet`), Tier-2 (`opus`) and Tier-3 (`best`) invocation counts;
+- the posture and how it was chosen;
+- each escalation (§5.4e) with its `decision_at_stake`;
+- each escalation's `material_value` — `changed_conclusion`, `new_derivation`,
+  `caught_error`, `confirmed_existing`, or `no_material_gain`;
+- any Tier-3 request that the runtime degraded, and to what.
+
+**Exact token accounting is not required** and should not be invented; Claude
+Code does not expose it reliably per subagent. Report what is exposed and leave
+the rest blank. The question this section answers is not "what did it cost" but
+**"did the stronger model buy scientific value"** — after several real tasks the
+`no_material_gain` rate is what tells us to tighten or loosen routing. A run of
+`confirmed_existing` results at Tier 3 is evidence the escalation triggers are
+too loose; a `caught_error` at Tier 3 typically repays a great deal of compute.
+
 ---
 
 ## 6. Historical / regression validation mode
 
-A reduced mode for exercising the machinery on a settled case. All workers use
-**sonnet**.
+A reduced mode for exercising the machinery on a settled case. Posture is
+**economical** and the §5.4b defaults are overridden: **all four workers use
+`sonnet`, and Tier 3 is not available.** Regression mode is the one place where
+"cheapest that suffices" is still the right rule — the answer is already known,
+so there is no discovery to buy.
 
 | worker | scope in this mode |
 |---|---|

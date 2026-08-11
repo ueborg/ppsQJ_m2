@@ -32,7 +32,8 @@ validation run.
 **Resource rules are in `research/RESOURCE_POLICY.md`** and bind this procedure:
 compute is local-only and read-only (§§1–2), local pilots need human approval
 (§3), **agents never submit HPC jobs at any stage** (§4), models are routed
-explicitly per role (§5.4), workers get compact context (§5.1), one retry and no
+**adaptively and explicitly per role and subproblem** across three tiers
+(§5.4, and §0.057 below), workers get compact context (§5.1), one retry and no
 generic fallback (§5.8), and you stop early when further work cannot change the
 decision (§5.9).
 
@@ -60,7 +61,7 @@ stage with `research/tools/task_phase.py`, never by hand:
 ```bash
 task_phase.py <TASK_DIR> init <TASK-ID>
 task_phase.py <TASK_DIR> close stage_1_problem      # BEFORE dispatching anyone
-task_phase.py <TASK_DIR> dispatch --worker theory=sonnet --skip numerics
+task_phase.py <TASK_DIR> dispatch --worker theory=opus --skip numerics
 task_phase.py <TASK_DIR> close stage_3_candidates   # freezes the falsification PLAN
 task_phase.py <TASK_DIR> close redteam_dispatched
 task_phase.py <TASK_DIR> close synthesis_closed
@@ -114,6 +115,90 @@ recorded in `COLLABORATION_LOG.yaml` as `FIRST_PASS` / `AFTER_CROSS_EXAMINATION`
 look consensual in hindsight is not.
 
 **The red team is never a participant** and never sees the round's transcript.
+
+**Independence survives heterogeneous tiers.** Two first passes may deliberately
+run at *different* capability tiers — theory A on `best` down a first-principles
+route, theory B on `opus` down an independent route — provided the independence
+is representational or methodological and not merely two expensive models voting.
+Neither sees the other before first-pass freeze. Never tell an investigator which
+tier its peers are on: that is a status cue, and it is the cheapest possible way
+to contaminate a first pass.
+
+## 0.057 Routing the run: three tiers, chosen per subproblem
+
+Full policy: `research/RESOURCE_POLICY.md` §5.4. Machine-readable table:
+`research/model_routing.yaml`. The principle you are applying:
+
+> Use the model with the highest expected scientific value for the decision
+> being made.
+
+Not *"the cheapest model unless a stronger one is clearly necessary"* — that
+rule is withdrawn. It spent researcher attention to save model budget, and the
+recent campaigns showed where that goes wrong: the expensive failures came from
+wrong specifications and proxy metrics that a stronger reasoning pass caught
+*before* compute, not from difficult implementation. A few strong passes at
+high-leverage decision points **save** total research resources.
+
+The opposite error is equally real and is the standing negative example: the
+2026-08-10 run put every worker on the strongest model and bought nothing.
+**Selective, not universal.**
+
+| tier | alias | what it is for |
+|---|---|---|
+| 1 | `sonnet` | execution: archaeology, search, provenance, routine extraction, logs, predefined analyses, profiling, implementation, prototypes, benchmarks, debugging, formatting, regression |
+| 2 | `opus` | difficult scientific inference: target-measure correctness, bias reasoning, estimator design, unexpected numerics, universality transfer, falsifier construction, experimental design, conflicting evidence, serious red-teaming |
+| 3 | `best` | the deepest bottlenecks: new algorithms from first principles, exact changes of measure, analytic phase boundaries, hard RG, Doob/value functions, stubborn theory–numerics contradictions, new estimators, the deepest attack on a load-bearing candidate |
+
+**Defaults you dispatch with**, per posture (`normal` unless the question says
+otherwise):
+
+| role | economical | normal | deep | regression |
+|---|---|---|---|---|
+| literature | sonnet | sonnet | sonnet | sonnet |
+| theory | sonnet | **opus** | **best** | sonnet |
+| numerics | sonnet | sonnet | sonnet | sonnet |
+| red-team | opus | opus | opus | sonnet |
+
+A `MODEL_POSTURE: economical | normal | deep` line in the research question sets
+the posture. `deep` is right for an analytic phase-boundary derivation or a
+fundamental sampler-architecture search. **`deep` never means "everything on
+`best`"** — literature and numerics stay on Tier 1 in a deep run.
+
+**Do not stage a throwaway cheap pass first.** No failed Tier-1 attempt is
+required before escalating (§5.4d). The only question is: *is there a plausible
+material gain from stronger reasoning at this decision point?*
+
+**Escalating costs you five lines**, passed to the workflow as `escalations` and
+copied into `RESOURCE_USAGE.md`:
+
+```
+MODEL_ESCALATION:
+  from: opus
+  to: best
+  role: theory
+  question: derive a controlled analytic small-zeta boundary theory
+  decision_at_stake: viability of candidate mechanism H2
+```
+
+After the result, add `material_value:` — `changed_conclusion`,
+`new_derivation`, `caught_error`, `confirmed_existing` or `no_material_gain`.
+That one word is what lets routing be tuned empirically after several tasks;
+without it we are back to arguing about model cost from intuition. The workflow
+**refuses** an upward route with no record and logs the refusal.
+
+**Effort is a separate axis** (§5.4f). Do not pair Tier 3 with maximum effort by
+reflex. And never let a high-effort Tier-1 search stand in for a Tier-2/3
+reasoning step when the bottleneck is conceptual — more searching does not fix a
+wrong derivation.
+
+**Your own model is the researcher's choice.** If the synthesis needs more than
+the session has, do not redesign orchestration to change it: dispatch a Tier-3
+advisor worker for that one step and leave the lead where it is.
+
+**Tier changes capability, never standards.** A Tier-3 worker may invent freely —
+new hypotheses, architectures, formulations, falsifiers — and its output still
+faces the same evidence rules, prediction-before-test, the red team, the
+claim-strength audit and Human Gate A.
 
 ## 0.06 Four evidence tiers
 
@@ -171,9 +256,15 @@ For the question at hand:
 5. **If a missing source prevents a defensible decision, stop and return
    `Infrastructure first`.** That is a successful outcome, not a failure.
 
-Record the result in `SOURCE_REGISTER.md` in the task directory: for each
-source, the ID, what was inspected, the date, exactly which claim it supports or
-fails to support, and any unresolved interpretation. Anything inspected during
+Record the **Stage-1 scope** in `SOURCE_REGISTER.md`: which sources are
+load-bearing, their inspection level *before* any worker ran, and why each
+matters. That file **freezes** at `stage_1_problem`.
+
+Sources you inspect **during** the run go in `SOURCE_INSPECTIONS.yaml`, which is
+**append-only and never frozen** — the ID, exactly which sections were read, the
+date, what it establishes, what it does **not**, and the verifier. Appending to
+the frozen scope instead trips `M5`, and routine work must never need an
+`amend`. Anything inspected during
 the run is **task-verified**, gets a `TV-*` entry in `TASK_EVIDENCE.yaml`, and
 is usable by the rest of the task — including the red team — without waiting for
 a merge.
@@ -548,3 +639,50 @@ cannot raise a claim's support level.
   (§3). Novelty is the researcher's call.
 - Invent a missing value. Record the gap and branch on explicit alternatives, or
   ask.
+
+---
+
+## Post-stress-test additions (2026-08-10)
+
+Six defects demonstrated by `TASK-2026-08-10-UNIVCLASS` were repaired in the
+engine. What changes for the lead:
+
+**Source scope and source acquisition are now different artifacts.**
+`SOURCE_REGISTER.md` freezes at Stage 1 and holds the *scope*.
+`SOURCE_INSPECTIONS.yaml` is append-only, never frozen, and holds what was
+actually read. `task_phase.py` refuses to freeze or amend an append-only
+artifact. Do **not** normalise `amend` for ordinary work.
+
+**`EXT-*` and `TV-*` both resolve.** External sources the red team inspected are
+admissible in-task. Declare them in `inputs_seen.external_sources`, not in
+`task_verified` — the namespaces stay separate because they carry different
+obligations, and a discovery-level source (`abstract_only`,
+`search_result_snippet`) may never be `used_as_support: true`.
+
+**The predecessor gate now reads nested structure.** `find_predecessors.py`
+walks lists and nested mappings and reports the matched path
+(`DEC-CITATION-001.items[0].action`), so a decision whose substance lives in an
+`items:` list can no longer hide behind a generic title. It still cannot see
+`theory/**`, `audit/**` or `history/**` — say so when you write
+`no predecessor found`.
+
+**Independence must be method-aware.** Before writing "independently verified",
+fill in `INDEPENDENCE_LEDGER.yaml`: both methods, both *source representations*,
+shared assumptions, varied assumptions, and a classification. Two checks over
+the same representation are not methodologically independent, however different
+the commands.
+
+**Synthesis writes `CLAIM_STRENGTH_AUDIT.yaml`.** One entry per load-bearing
+conclusion: what the evidence directly establishes, what the inference adds, the
+strongest justified wording, and the stronger wording explicitly rejected — plus
+the implication ladder. Do not promote microscopic inequivalence to a
+universality-class claim without declaring the step.
+
+**Follow-ups become child tasks.** A post-hoc analysis never re-enters a frozen
+`ANALYSIS_SPEC.yaml`. Use `research/tools/child_task.py propose`; the human
+approves and launches. **Never spawn a follow-up task during a run**, and never
+run the analysis while proposing it.
+
+**Comparisons declare matched conventions.** An analysis with `compares:` needs a
+`matched_observable_check` covering all nine dimensions. Two quantities are not
+matched because they share a field name, nor unmatched because they do not.

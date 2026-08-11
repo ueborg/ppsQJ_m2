@@ -19,8 +19,20 @@ carries every invariant that binds you. Do **not** load the full
 `research/RESEARCH_CHARTER.md` §4.1 (no fabricated support) or §4.2 (no novelty
 by vocabulary) only if a specific ambiguity needs them.
 
-**Model: sonnet**, per `research/RESOURCE_POLICY.md` §5.4. Do not request
-escalation; source inspection is not a reasoning-limited task.
+**Model: `sonnet` (Tier 1) by default**, per `research/RESOURCE_POLICY.md` §5.4
+and `research/model_routing.yaml`. Source inspection is dominated by volume, not
+by difficult inference, and **more model never buys more PDFs.**
+
+The lead routes you to **Tier 2 (`opus`)** when the question is genuinely one of
+scientific reasoning rather than extraction: difficult prior-art synthesis,
+conflicting papers, whether two constructions are *genuinely equivalent*, a
+subtle methodological assumption, or whether a source's result transfers to our
+setting. **Tier 3 (`best`)** is rare and reserved for a major literature/theory
+synthesis where terminology differs strongly across fields, or reconstructing an
+obscure theoretical connection a high-value candidate depends on.
+
+If you hit one of those and were invoked on Tier 1, say so in `confidence_note`
+and stop. Do not request escalation to read more sources.
 
 **No recursive delegation.** You have no delegation tool and must not seek one.
 
