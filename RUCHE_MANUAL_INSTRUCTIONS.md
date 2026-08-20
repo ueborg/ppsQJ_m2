@@ -12,6 +12,17 @@ Everything below was **prepared** locally and **executed by you**.
 
 ---
 
+## The production commit
+
+```
+5ce8502  Freeze the production QJ-PPS simulator behind one entry point
+```
+
+This is the commit the Ruche checkout must be moved to in Step 1, and the
+commit whose hash must match in Step 2.
+
+---
+
 ## Placeholders
 
 Fill these in for your account; they are not established in the repository.
@@ -22,7 +33,7 @@ Fill these in for your account; they are not established in the repository.
 | `<RUCHE_USER>` | your login | `uerc` |
 | `<RUCHE_CODE>` | git checkout on Ruche | `$HOME/ppsQJ_m2` |
 | `<RUCHE_RESULTS>` | result tree(s) | `/gpfs/workdir/<RUCHE_USER>/pps_qj` |
-| `<PRODUCTION_COMMIT>` | the commit frozen by this task | see `docs/PRODUCTION_ALGORITHM.md` |
+| `<PRODUCTION_COMMIT>` | the commit frozen by this task | `5ce8502` (full: see below) |
 | `<DATE>` | snapshot date | `2026-08-20` |
 
 ---
