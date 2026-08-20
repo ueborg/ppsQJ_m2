@@ -1,0 +1,87 @@
+# ===========================================================================
+# QJ-PPS production cell — machine-readable config template
+# ===========================================================================
+# Run with:
+#   python -m pps_qj.production.run --config configs/production/TEMPLATE.yaml
+#
+# Resolve and inspect WITHOUT running anything:
+#   python -m pps_qj.production.run --config <this file> --print-config
+#
+# Any field may be overridden on the command line, e.g. --zeta 0.5.
+#
+# The certified baseline is documented in docs/PRODUCTION_ALGORITHM.md. Every
+# departure from it is recorded in the output as
+# `algorithm.deviations_from_certified_baseline`, so an off-baseline run can
+# never later be mistaken for a baseline one.
+#
+# NOTE: PyYAML is optional. If the cluster venv lacks it, save the same keys as
+# JSON and pass that file instead — the loader accepts both.
+# ===========================================================================
+
+# --- physics ---------------------------------------------------------------
+# Cut B convention: alpha + w = 1 and lambda = alpha/(alpha + w),
+# so alpha = lam and w = 1 - lam. Both are derived; do not set them here.
+L: 64                 # chain length. MUST be divisible by 4 for CMI / B_L.
+zeta: 0.30            # partial post-selection parameter, in (0, 1]
+lam: 0.2793           # lambda
+T: 64.0               # total evolution time
+N_c: 350              # clone population size
+realizations: 5       # independent realisations of this cell
+seed: 640279300       # base seed; realisation r uses seed + r*999983
+
+# --- burn-in ---------------------------------------------------------------
+# Fraction of windows discarded before TIME-AVERAGED diagnostics
+# (S_mean, chi_k, ...). The t=T locators CMI and B_L are read from the final
+# population and are NOT affected by this.
+n_burnin_frac: 0.25
+
+# --- sampler / discretisation ---------------------------------------------
+# delta_tau = dtau_mult / (2 * alpha * (L - 1)).
+# 6.0 is the recorded production value of submit_clone_guided_prod.sh.
+# Raising it is a locally-valid but campaign-level negligible lever (~1.08x
+# production-weighted), and at mult = 192 a pre-registered kill criterion fired
+# (ess_frac_min 0.332 < 0.5 floor, S_mean shifted -2.96 sigma). Leave at 6.0.
+dtau_mult: 6.0
+
+# Guided reduced-rate proposal, intensity c*lambda with c = zeta, corrected by
+# the exact Radon-Nikodym compensator exp[-(1-zeta)*dLambda].
+# 'physical' selects the untilted proposal with zeta^n weights (same target
+# measure, much higher variance) — useful as a cross-check, not for production.
+proposal_scheme: guided_reduced_rate
+compensator: exact_radon_nikodym          # only implemented value
+resampling: systematic_fixed_population   # only implemented value
+
+# --- certified optimisations ----------------------------------------------
+# Low-rank projective-jump update: O(L^2) active-subspace update replacing the
+# per-jump O(L^3) eigendecomposition. Numerically identical to 'eigh' (~1e-13);
+# carries NO correctness debt; ~1.9-2.2x measured.
+jump_update_method: lowrank
+refresh_every: 100        # periodic full-eigh refresh bounding long-time drift
+
+# Record the running entropy every N windows. Consumes no randomness, so the
+# t=T locators are BITWISE identical to stride 1 on the same seed; only the
+# time-averaged diagnostics sample fewer windows. Worth 8-20% of runtime.
+entropy_stride: 4
+
+# Waiting-time solver. 'brentq' is the certified production solver.
+# 'newton' is FASTER (+1.2-1.3x) but is a STATISTICAL change (~1e-6 perturbation
+# of accepted waiting times) with NO production-scale paired-seed validation
+# artifact anywhere in research/state/. It is an optional candidate, not the
+# baseline. Do not switch without producing that artifact.
+solver_method: brentq
+eps_hazard: 1.0e-9
+
+# --- observables / output --------------------------------------------------
+# CMI is the primary transition locator (OBS-CMI-001).
+# B_L here is OBS-BLPROD-001 (average-of-products, ours) — NEVER compare it
+# against OBS-BLKMR-001 (product-of-averages, KMR's).
+# The four CMI subsystem entropies S_AB, S_BC, S_B, S_ABC are always stored
+# separately, because CMI is a four-term cancellation.
+observables: [CMI, B_L, entropy, activity]
+# Add 'renyi' and 'corr_decay' for the Renyi-2/3 and C(r) diagnostics.
+
+output_dir: outputs/production
+run_label: ""          # optional prefix on the run id
+n_workers: 1           # realisation-level parallelism; set to cpus-per-task
+
+notes: "template — copy and edit per cell"

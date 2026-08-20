@@ -1,0 +1,10 @@
+# Manually supplied HPC snapshots are machine-local data, not repository content.
+# They have no provenance record in research/state/ and must not be committed.
+ruche_snapshot_*
+RUCHE_DATA_INDEX.csv
+*.tar.gz
+*.tgz
+
+# Keep the directory itself, and its documentation, tracked.
+!README.md
+!.gitignore

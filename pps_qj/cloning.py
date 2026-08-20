@@ -162,6 +162,15 @@ class CloningResult:
     # at t = T.  In a healthy run this is ≳ 0.5·N_c; collapse to ~10–20 even
     # at large N_c indicates genealogical degeneracy and unreliable estimators.
     n_distinct_ancestors: int = -1
+    # Per-slot original-clone ancestor index at t = T, length N_c.  The full
+    # clone-family structure: np.bincount(ancestor_ids_final, minlength=N_c)
+    # gives each founder's surviving-descendant count, from which the
+    # genealogical ESS  (sum n_i)^2 / sum n_i^2  follows.  Empty if not
+    # recorded.  n_distinct_ancestors is the count of nonzero entries.
+    ancestor_ids_final: np.ndarray = field(default_factory=lambda: np.asarray([], dtype=np.intp))
+    # Number of resampling events actually applied over the run.  Zero when
+    # zeta == 1.0, where cloning.py skips resampling entirely.
+    n_resampling_events: int = 0
     # --- Renyi entropy diagnostics (snapshot at t = T, averaged over clones) ---
     # Populated only when run_cloning(...) is called with record_renyi=True.
     # S_renyi_dict[n] is the ensemble-averaged half-cut Renyi entropy of index n.
@@ -360,6 +369,7 @@ def run_cloning(
     # ancestor_ids[idxs].  At t=T, len(unique(ancestor_ids)) is the number
     # of original clones with surviving descendants.
     ancestor_ids = np.arange(N_c, dtype=np.intp)
+    n_resampling_events = 0
     n_collapses = 0
     n_js_fallbacks = 0
     final_weights = np.ones(N_c, dtype=np.float64)
@@ -509,6 +519,7 @@ def run_cloning(
         ess_history.append(ess_step)
 
         if zeta != 1.0:
+            n_resampling_events += 1
             idxs = _systematic_resample_idxs(weights, rng)
             covs = [covs[int(i)].copy() for i in idxs]
             orbs = [orbs[int(i)].copy() for i in idxs]
@@ -578,6 +589,7 @@ def run_cloning(
     else:
         min_ess_frac_pb = float("nan")
     n_distinct_ancestors = int(np.unique(ancestor_ids).size)
+    ancestor_ids_final = np.asarray(ancestor_ids, dtype=np.intp).copy()
 
     # --- Renyi entropies and correlation function from final population ---
     S2_mean_val = S3_mean_val = float("nan")
@@ -636,6 +648,8 @@ def run_cloning(
         ess_history=ess_arr,
         min_ess_frac_postburnin=min_ess_frac_pb,
         n_distinct_ancestors=n_distinct_ancestors,
+        ancestor_ids_final=ancestor_ids_final,
+        n_resampling_events=n_resampling_events,
         S_renyi_2_mean=S2_mean_val,
         S_renyi_3_mean=S3_mean_val,
         S_renyi_2_std=S2_std_val,

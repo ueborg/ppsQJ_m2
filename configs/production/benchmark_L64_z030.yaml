@@ -1,0 +1,61 @@
+# ===========================================================================
+# Ruche BENCHMARK cell — L = 64, zeta = 0.30
+# ===========================================================================
+# Purpose: measure real per-cell cost of the production commit ON RUCHE.
+#
+# This exists because the only cost model the project has is a laptop one.
+# TASK-2026-08-11-ALGRD's ~4560 core-hour projection is an Apple M3 +
+# Accelerate figure, and its own transferability section says the sub-cubic
+# scaling (A(L) ~ L^1.95, B(L) ~ L^2.4) is a small-matrix-efficiency artifact
+# that a server CPU will not reproduce. The recorded Mac->cluster ratio of
+# ~2.4x was measured at ONE point and must not be trusted per-L.
+#
+# No numerical grid may be frozen until cells like this one have been run
+# by hand on Ruche and their timings returned.
+#
+# Run manually (see RUCHE_MANUAL_INSTRUCTIONS.md):
+#   export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+#   python -m pps_qj.production.run \
+#       --config configs/production/benchmark_L64_z030.yaml \
+#       --output-dir /gpfs/workdir/$USER/pps_qj/bench_<DATE>
+#
+# The result .json carries runtime_seconds, cpu_time_seconds, the full
+# environment block (host, BLAS, thread pinning) and the genealogy
+# diagnostics. Copy the small .json sidecars back; leave the .npz on Ruche.
+#
+# This is a BENCHMARK, not a physics measurement: realizations is deliberately
+# low, so its CMI value has no scientific standing.
+# ===========================================================================
+
+L: 64
+zeta: 0.30
+lam: 0.2793           # near the recorded crossing at this zeta
+T: 64.0               # T = L; see NUMERICAL_CAMPAIGN_CHARTER.md R1 — whether
+                      # T/L = 1 suffices is OPEN (METH-TREQ-001 unsupported)
+N_c: 350
+realizations: 2       # benchmark only — NOT enough for a physics number
+seed: 640279300
+
+n_burnin_frac: 0.25
+dtau_mult: 6.0
+
+proposal_scheme: guided_reduced_rate
+compensator: exact_radon_nikodym
+resampling: systematic_fixed_population
+
+jump_update_method: lowrank
+refresh_every: 100
+entropy_stride: 4
+solver_method: brentq
+eps_hazard: 1.0e-9
+
+observables: [CMI, B_L, entropy, activity]
+output_dir: outputs/production/benchmark
+run_label: bench
+n_workers: 1          # keep at 1 so runtime_seconds is a clean per-cell cost
+
+notes: >
+  Ruche timing benchmark for the frozen production commit. Compare
+  runtime_seconds against the local figure for the same cell to obtain a
+  measured Mac->Ruche ratio at THIS L and zeta. Do not extrapolate the ratio
+  to other L without benchmarking those too.
