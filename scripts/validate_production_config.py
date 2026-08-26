@@ -90,7 +90,12 @@ def git_commit():
         import subprocess
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         h = subprocess.check_output(["git", "-C", root, "rev-parse", "HEAD"], text=True).strip()
-        dirty = subprocess.check_output(["git", "-C", root, "status", "--porcelain"], text=True).strip()
+        # --untracked-files=no: an untracked file (e.g. Ruche's stray 'import')
+        # is NOT a modification of the committed tree and must not mark every
+        # record git_dirty.  Only tracked-file changes break reproducibility.
+        dirty = subprocess.check_output(
+            ["git", "-C", root, "status", "--porcelain", "--untracked-files=no"],
+            text=True).strip()
         return h, bool(dirty)
     except Exception:
         return "unknown", None
