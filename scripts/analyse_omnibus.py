@@ -32,8 +32,11 @@ parameter locates the same lambda_c at every size), and it must reproduce the
 zeta = 1.00 anchor of 0.4364.
 """
 import os, json, glob, argparse, warnings
-import numpy as np, pandas as pd
+import numpy as np
 from scipy.optimize import least_squares
+
+# No pandas: the Ruche production env (pps_qj) carries numpy and scipy only,
+# and analysis must never require installing into it.
 warnings.filterwarnings("ignore")
 
 CROSS_L = ["CMI", "B_L", "S_AB", "I3", "MI_ends", "varN"]
@@ -48,7 +51,18 @@ def load(root):
                 rows.append(r)
         except Exception:
             pass
-    return pd.DataFrame(rows)
+    return rows
+
+
+def col(rows, key):
+    return np.array([r.get(key, np.nan) for r in rows], dtype=float)
+
+
+def where(rows, **kw):
+    out = rows
+    for k, v in kw.items():
+        out = [r for r in out if np.isclose(float(r[k]), float(v))]
+    return out
 
 
 def collapse(L, lam, y, w, deg=3, seedpts=7):
@@ -101,32 +115,34 @@ def main():
     a = p.parse_args()
     rng = np.random.default_rng(20260826)
     df = load(a.dir)
-    if df.empty:
+    if not df:
         print("no records"); return
+    zs = sorted({round(float(r["zeta"]), 6) for r in df})
     print("records: %d   zetas: %s   L: %s"
-          % (len(df), sorted(df.zeta.unique()), sorted(df.L.unique())))
+          % (len(df), zs, sorted({int(r["L"]) for r in df})))
 
-    for z in sorted(df.zeta.unique()):
-        s = df[np.isclose(df.zeta, z)]
-        Ls = sorted(s.L.unique()); lams = sorted(np.round(s["lambda"].unique(), 6))
+    for z in zs:
+        s = where(df, zeta=z)
+        Ls = sorted({int(r["L"]) for r in s})
+        lams = sorted({round(float(r["lambda"]), 6) for r in s})
         print("\n" + "=" * 96)
         print("zeta = %.2f   L = %s   nlam = %d" % (z, Ls, len(lams)))
         print("=" * 96)
 
-        cost_h = s.wall_traj_s.sum() / 3600.0
+        cost_h = float(np.nansum(col(s, "wall_traj_s"))) / 3600.0
         print("core-hours in this slice: %.2f\n" % cost_h)
 
         print("TRACK 1 -- cross-L locators, scored by the L-SCRAMBLE ratio")
         print(f"  {'obs':<10}{'lam_c':>9}{'68% CI':>19}{'width':>9}{'nu*':>7}"
               f"{'cost':>10}{'Lscram':>10}{'ratio':>8}")
         for obs in CROSS_L:
-            col = obs + "_mean"
-            if col not in s.columns:
+            key = obs + "_mean"
+            if key not in s[0]:
                 continue
             per = {}
             for Lv in Ls:
                 for lv in lams:
-                    v = s[(s.L == Lv) & (np.isclose(s["lambda"], lv))][col].to_numpy()
+                    v = col(where(s, L=Lv, **{"lambda": lv}), key)
                     if len(v) >= 3:
                         per[(Lv, lv)] = v
             if len(per) < 20:
@@ -164,8 +180,8 @@ def main():
               f"{'c at lam_hi':>13}")
         singles = []
         for Lv in Ls:
-            g = s[s.L == Lv]
-            vals = [g[np.isclose(g["lambda"], lv)]["c_eff_mean"].to_numpy() for lv in lams]
+            g = where(s, L=Lv)
+            vals = [col(where(g, **{"lambda": lv}), "c_eff_mean") for lv in lams]
             if any(len(v) < 3 for v in vals):
                 continue
             lamA = np.array(lams)
