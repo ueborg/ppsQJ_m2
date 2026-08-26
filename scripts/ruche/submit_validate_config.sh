@@ -69,8 +69,21 @@ CELLS="${CELLS:-}"
 NREAL="${NREAL:-40}"
 NC="${NC:-128}"
 
-NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
-SHARD="${SLURM_ARRAY_TASK_ID:-0}"
+# Ruche's Slurm does not set SLURM_ARRAY_TASK_COUNT.  Deriving NSHARDS from it
+# silently gave every array task NSHARDS=1, so all ten ran identical work from
+# index 0 and only the first 1/10 of the grid was ever produced (observed
+# 2026-08-26: 40 of 480 records, all arm A_production).  Derive from the array
+# bounds instead, and allow an explicit override.
+if [ -z "${NSHARDS:-}" ]; then
+  if [ -n "${SLURM_ARRAY_TASK_MAX:-}" ] && [ -n "${SLURM_ARRAY_TASK_MIN:-}" ]; then
+    NSHARDS=$(( SLURM_ARRAY_TASK_MAX - SLURM_ARRAY_TASK_MIN + 1 ))
+  else
+    NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
+  fi
+fi
+SHARD=$(( ${SLURM_ARRAY_TASK_ID:-0} - ${SLURM_ARRAY_TASK_MIN:-0} ))
+echo "SHARDING: shard $SHARD of $NSHARDS  (array id ${SLURM_ARRAY_TASK_ID:-none},"\
+     "min ${SLURM_ARRAY_TASK_MIN:-none}, max ${SLURM_ARRAY_TASK_MAX:-none})"
 NWORKERS="${SLURM_CPUS_PER_TASK:-1}"
 
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
