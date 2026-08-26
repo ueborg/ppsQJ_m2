@@ -216,7 +216,14 @@ def run_one(t):
 # Absolute lambda windows, NOT multiples of 0.5*sqrt(zeta).  Centred on the two
 # collapse anchors that survived the L-scramble control (0.2326 at zeta=0.30,
 # 0.4364 at zeta=1.00) and on the midpoint for the slice that did not (0.55).
-WINDOWS = {0.30: (0.16, 0.32), 0.55: (0.33, 0.55), 1.00: (0.35, 0.55)}
+# zeta=0.55 REPOSITIONED 2026-08-26 after the first attempt failed to bracket:
+# every locator crowded the lower edge (MI_ends and varN pinned exactly at
+# 0.3300, CMI 0.3424, c_eff 0.3507) and the c_eff slope profile was
+# + - - - - - - - - - -, i.e. one point on the positive side.  (0.22,0.44)
+# shares six of its eleven points with (0.33,0.55), so the completed cells at
+# 0.33, 0.352, 0.374, 0.396, 0.418 and 0.44 are reused by the checkpointing
+# and only 180 of 396 runs are new.
+WINDOWS = {0.30: (0.16, 0.32), 0.55: (0.22, 0.44), 1.00: (0.35, 0.55)}
 
 
 def main():

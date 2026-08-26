@@ -110,3 +110,63 @@ A valid Cut A calibration therefore needs a small NEW run with N_c and T/L held
 fixed across L: L in {32, 48, 64}, N_c = 128, T = L throughout, ~11 lambda
 points bracketing 0.5, one or two zeta. Cheap at these sizes. Worth doing before
 c_eff becomes the primary locator, not after.
+
+---
+
+# AMENDMENT 1 — 2026-08-26, after the first zeta = 0.55 attempt
+
+## Outcome: INCONCLUSIVE. The window did not bracket the transition.
+
+Against the criterion as written the run passes all four, but criterion 4 passes
+by 0.0007 and the pass is an artefact of how I wrote it.
+
+  1. crossing rate 0.913  >= 0.90                      pass
+  2. exactly one sign change                           pass
+  3. CI width 0.0332      <= 0.04                      pass
+  4. lambda_c 0.3507, edge 0.3300, gap 0.0207 >= 0.02  pass by 0.0007
+
+The slope profile was  + - - - - - - - - - -  : ONE of eleven lambda points on
+the positive side.  Criterion 2 is satisfied trivially when ten of eleven points
+share a sign.  Compare zeta = 1.00, where the profile ran + + + + + + + + - - -
+and the reversal was resolved from both sides.  Here the tail of the reversal
+was caught, not the reversal.  The 68 percent CI lower bound, 0.3445, is 0.0145
+from the edge, i.e. INSIDE the region criterion 4 was written to exclude.
+
+Corroborating: MI_ends and varN both pinned exactly at 0.3300, the lower edge.
+CMI gave 0.3424 and c_eff 0.3507.  Everything crowded the bottom of a window I
+chose as (0.33, 0.55) and chose too high.  c_eff* = 1.590 is therefore evaluated
+at the wrong lambda and is NOT comparable with the 1.035 from zeta = 1.00.
+
+## Criterion 4 is replaced, and the reason is a design flaw, not the result
+
+REPLACED BY: the crossing must have at least THREE sampled lambda points on each
+side of it.  Distance from the window edge is a poor proxy for a resolved
+reversal; number of points bracketing it is the direct statement of the thing
+criterion 4 was meant to enforce.  Under the replacement the first attempt fails
+cleanly, which is the correct verdict.
+
+Criteria 1, 2 and 3 are unchanged.  The new window was chosen from the LOCATOR
+VALUES (all below 0.36), not from the criterion outcome.
+
+## Action
+
+Rerun zeta = 0.55 on (0.22, 0.44).  Six of eleven lambda points are identical to
+the first attempt, so the completed cells are reused and only 180 of 396 runs
+are new, about 9 core-hours.
+
+## Two results that stand independently of the bracketing failure
+
+**The small-L ladder works.**  CMI's L-scramble ratio at zeta = 0.55 is 16.29 on
+L in {32,48,64}, against 2.4 on refine's L in {64..128} at the same zeta.  The
+lever arm is ln 2 in both cases, so the 6.8x gain is not from the lever; it is
+from smaller L having healthier genealogy and lower per-point noise.  B_L gives
+12.73 and varN 14.70.  This is the strongest evidence so far for the wide, low L
+ladder, and it is independent of which observable ends up being used.
+
+**B_L and c_eff are independent.**  They agreed to 0.0010 at zeta = 1.00
+(0.4897, 0.4907), which raised the concern that c_eff was tracking the same
+finite-L crossover as B_L.  At zeta = 0.55 they give 0.3819 and 0.3507, apart by
+0.0312.  The earlier near-agreement was accidental.  The concern is answered.
+
+The observable spread persists: interior locators span 0.3424 to 0.4295, a range
+of 0.087, essentially the 0.0825 seen at zeta = 1.00.
