@@ -85,7 +85,9 @@ def cmd_validation(a):
             for o in OBS:
                 m, lo, hi = boot_paired(diffs[o])
                 star = " " if (np.isfinite(lo) and lo <= 0 <= hi) else "*"
-                line += f"{m:>+10.5f}[{lo:>+8.5f},{hi:>+8.5f}]{star}"[:26].rjust(26)
+                # do NOT truncate: the star is the whole point of the column and
+                # a [:26] slice was silently cutting it off.
+                line += f"  {m:>+9.5f}[{lo:>+8.5f},{hi:>+8.5f}]{star}"
             line += f"{n:>5}" + f"{np.median(wr):>12.2f}"
             print(line)
         print("   (* = CI excludes zero, i.e. the configuration DOES shift the observable)")

@@ -96,7 +96,7 @@ def collapse(L, lam, y, w, deg=3, seedpts=7):
     return float(best.x[0]), float(1 / best.x[1]), float(2 * best.cost / max(len(y) - deg - 3, 1))
 
 
-def zero_cross(lam, y, rng, boot_vals=None):
+def zero_cross(lam, y, boot_vals=None):
     """lambda where y(lambda) crosses zero, monotone-decreasing convention."""
     v = y if boot_vals is None else boot_vals
     i = np.where(np.diff(np.sign(v)) != 0)[0]
