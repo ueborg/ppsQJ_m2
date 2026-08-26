@@ -55,7 +55,7 @@
 # =============================================================================
 #
 # PARTITIONS.  cpu_short rejected --time=02:00:00 on 2026-08-26
-# ('Requested time limit is invalid'), so its cap is below that.  cpu_med is
+# cap measured 2026-08-26: cpu_short 1:00:00, cpu_med 4:00:00, cpu_prod 6:00:00,
 # known-good (the July campaign used it at 04:00:00).  Check limits with
 #   sinfo -o "%20P %10l %10L %6D %C"
 # and prefer the shortest partition that actually accepts your --time.
