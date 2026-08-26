@@ -175,29 +175,63 @@ def main():
         print("  * nu is reported, not interpreted: it is underdetermined over any")
         print("    affordable L range (ln L and L^(1/nu) differ by 1.17 vs 1.20).")
 
-        print("\nTRACK 2 -- c_eff, zero crossing from a SINGLE L (no cross-L difference)")
-        print(f"  {'L':>6}{'lam_c':>9}{'68% CI':>19}{'width':>9}{'c at lam_lo':>13}"
-              f"{'c at lam_hi':>13}")
+        print("\nTRACK 2 -- c_eff, scale-invariant point where d c_eff / d ln L = 0")
+        print("  NOT a zero of c_eff.  In the area law c decays to zero only as L -> inf,")
+        print("  so at finite L there is no zero to cross and any threshold is arbitrary.")
+        print("  c_eff is a CROSS-L locator; what distinguishes it is that its L-trend")
+        print("  reverses sharply, which is the signal the other observables lack.")
+        print(f"  {'lam':>8}" + "".join(f"{'c(L=%d)' % L:>11}" for L in Ls)
+              + f"{'d c/d lnL':>12}")
         singles = []
+        lamA = np.array(lams)
+        per_c = {}
         for Lv in Ls:
             g = where(s, L=Lv)
-            vals = [col(where(g, **{"lambda": lv}), "c_eff_mean") for lv in lams]
-            if any(len(v) < 3 for v in vals):
-                continue
-            lamA = np.array(lams)
-            m = np.array([v.mean() for v in vals])
-            lc = zero_cross(lamA, m)
+            per_c[Lv] = [col(where(g, **{"lambda": lv}), "c_eff_mean") for lv in lams]
+        if all(len(v) >= 3 for Lv in Ls for v in per_c[Lv]):
+            lnL = np.log(np.array(Ls, dtype=float))
+
+            def slope_profile(boot):
+                out = []
+                for j in range(len(lams)):
+                    ys = []
+                    for Lv in Ls:
+                        v = per_c[Lv][j]
+                        ys.append(v[rng.integers(0, len(v), len(v))].mean() if boot
+                                  else v.mean())
+                    out.append(np.polyfit(lnL, np.array(ys), 1)[0])
+                return np.array(out)
+
+            b0 = slope_profile(False)
+            for j, lv in enumerate(lams):
+                print(f"  {lv:>8.4f}"
+                      + "".join(f"{per_c[Lv][j].mean():>11.4f}" for Lv in Ls)
+                      + f"{b0[j]:>12.4f}")
+            lc = zero_cross(lamA, b0)
             bs = []
             for _ in range(a.B):
-                mb = np.array([v[rng.integers(0, len(v), len(v))].mean() for v in vals])
-                x = zero_cross(lamA, mb)
+                x = zero_cross(lamA, slope_profile(True))
                 if np.isfinite(x):
                     bs.append(x)
             bs = np.array(bs)
-            q16, q84 = (np.percentile(bs, [16, 84]) if len(bs) > 30 else (np.nan, np.nan))
-            print(f"  {Lv:>6}{lc:>9.4f}{f'[{q16:.4f},{q84:.4f}]':>19}{q84-q16:>9.4f}"
-                  f"{m[0]:>13.4f}{m[-1]:>13.4f}")
-            singles.append((Lv, lc, q84 - q16))
+            if len(bs) > 30:
+                q16, q84 = np.percentile(bs, [16, 84])
+                cc = float(np.interp(lc, lamA, [np.mean([per_c[Lv][j].mean()
+                                                         for Lv in Ls])
+                                                for j in range(len(lams))]))
+                print(f"\n  scale-invariant point: lam_c = {lc:.4f} "
+                      f"[{q16:.4f},{q84:.4f}]  width {q84-q16:.4f}")
+                print(f"  c_eff there = {cc:.3f}   (a MIPT expects a universal value)")
+                print(f"  crossings found in {len(bs)} of {a.B} bootstrap resamples "
+                      f"({100*len(bs)/a.B:.0f} pct)")
+                print(f"  compare: CMI five-L collapse at zeta=1 gives width 0.0082,")
+                print(f"           CMI here gives 0.0097, MI_ends 0.0129, B_L 0.0059.")
+                singles = [(Ls[0], lc, q84 - q16)]
+            else:
+                print("\n  no stable crossing of d c/d lnL inside the window")
+        else:
+            print("  insufficient realisations per cell")
+
         if len(singles) >= 2:
             v = [x[1] for x in singles]
             print("\n  consistency across L: spread of lam_c = %.4f" % (max(v) - min(v)))
