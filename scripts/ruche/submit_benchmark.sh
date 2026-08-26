@@ -20,7 +20,7 @@
 # ENV:  OUT (required)   SWEEP (default all)   REPS (default 3)
 #
 # RUN THE CHEAP SWEEPS FIRST, they take minutes:
-#   sbatch -p cpu_short --time=00:40:00 \
+#   sbatch -p cpu_med --time=00:40:00 \
 #     --export=ALL,OUT=$WORKDIR/pps/bench/bench_L.json,SWEEP=L,REPS=3 \
 #     scripts/ruche/submit_benchmark.sh
 #
@@ -33,12 +33,19 @@
 #     scripts/ruche/submit_benchmark.sh
 #
 # T-LINEARITY licenses extrapolating the short sweeps to production T:
-#   sbatch -p cpu_short --time=01:00:00 \
+#   sbatch -p cpu_med --time=01:00:00 \
 #     --export=ALL,OUT=$WORKDIR/pps/bench/bench_T.json,SWEEP=T,REPS=3 \
 #     scripts/ruche/submit_benchmark.sh
 #
 # DRY RUN COSTS NOTHING, do it on the login node:
 #   python scripts/benchmark_scaling.py --out /tmp/b.json --sweep all --dry-run
+# =============================================================================
+#
+# PARTITIONS.  cpu_short rejected --time=02:00:00 on 2026-08-26
+# ('Requested time limit is invalid'), so its cap is below that.  cpu_med is
+# known-good (the July campaign used it at 04:00:00).  Check limits with
+#   sinfo -o "%20P %10l %10L %6D %C"
+# and prefer the shortest partition that actually accepts your --time.
 # =============================================================================
 
 set -euo pipefail

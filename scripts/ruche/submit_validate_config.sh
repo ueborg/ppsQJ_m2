@@ -32,7 +32,7 @@
 #   Rough cost: 6 arms x 2 cells x 40 real, L=32.  Arm B (dtau=2) is 6x the
 #   steps of arm A, so it dominates.  Order a few tens of core-hours.
 #
-#   sbatch -p cpu_short --time=02:00:00 --array=0-9 \
+#   sbatch -p cpu_med --time=02:00:00 --array=0-9 \
 #     --export=ALL,OUTDIR=$WORKDIR/pps/validate,\
 # ARMS="A_production,D_solver_only,C_recommended,B_certified,E_stride1,F_eigh",\
 # CELLS="32:0.2,32:0.9",NREAL=40,NC=128 \
@@ -52,6 +52,13 @@
 # DRY RUN FIRST, on the login node, costs nothing:
 #   python scripts/validate_production_config.py --outdir /tmp/v --dry-run \
 #     --arms A_production,B_certified --cells 32:0.2 --nreal 4
+# =============================================================================
+#
+# PARTITIONS.  cpu_short rejected --time=02:00:00 on 2026-08-26
+# ('Requested time limit is invalid'), so its cap is below that.  cpu_med is
+# known-good (the July campaign used it at 04:00:00).  Check limits with
+#   sinfo -o "%20P %10l %10L %6D %C"
+# and prefer the shortest partition that actually accepts your --time.
 # =============================================================================
 
 set -euo pipefail
