@@ -51,6 +51,21 @@ from pps_qj.cloning import (_spawn_rngs, _systematic_resample_idxs,
                             _batched_entanglement_entropy, CloningCollapse)
 from pps_qj.gaussian_backend import (build_gaussian_chain_model,
                                      gaussian_born_rule_trajectory)
+from omnibus_observables import _ent
+
+
+def _cmi_vals(covs, L):
+    """Per-clone CMI, identical block convention to omnibus observables()."""
+    hL = L // 2
+    out = np.empty(len(covs))
+    for i, G in enumerate(covs):
+        G = np.asarray(G, float)
+        S_AB = _ent(G[:L, :L])
+        S_BC = _ent(G[hL:hL + L, hL:hL + L])
+        S_B = _ent(G[hL:L, hL:L])
+        S_ABC = _ent(G[:3 * L // 2, :3 * L // 2])
+        out[i] = S_AB + S_BC - S_B - S_ABC
+    return out
 
 
 def _logmeanexp(x):
@@ -79,7 +94,7 @@ def run_adaptive(model, zeta, T_total, N_c, rng, delta_tau, mode="always",
     anc_recent = np.arange(N_c, dtype=np.intp)
     k_half = n_steps // 2
     n_events = 0
-    S_hist, ess_hist = [], []
+    S_hist, ess_hist, cmi_hist = [], [], []
     pc = zeta                                  # production proposal
 
     for k in range(n_steps):
@@ -112,6 +127,7 @@ def run_adaptive(model, zeta, T_total, N_c, rng, delta_tau, mode="always",
         if entropy_stride and (k % max(1, entropy_stride) == 0):
             S_vals = _batched_entanglement_entropy(covs, L // 2)
             S_hist.append(float(np.dot(w / sw, S_vals)))
+            cmi_hist.append(float(np.dot(w / sw, _cmi_vals(covs, L))))
 
         if k == k_half:
             anc_recent = np.arange(N_c, dtype=np.intp)
@@ -137,7 +153,12 @@ def run_adaptive(model, zeta, T_total, N_c, rng, delta_tau, mode="always",
         return float(c.sum() ** 2 / np.sum(c ** 2))
 
     nb = int(np.ceil((n_steps // 4) / max(1, entropy_stride)))
+    ch = np.asarray(cmi_hist)
+    n_rec = len(ch)
+    cmi_t50 = float(np.mean(ch[n_rec // 2:])) if n_rec >= 4 else float("nan")
+    cmi_t75 = float(np.mean(ch[(3 * n_rec) // 4:])) if n_rec >= 4 else float("nan")
     return dict(theta_hat=log_Z / T_total,
+                CMI_tavg50=cmi_t50, CMI_tavg75=cmi_t75,
                 S_mean=float(np.mean(S_hist[nb:])) if len(S_hist) > nb else float("nan"),
                 final_covs=covs, final_weights=w_fin,
                 n_resampling_events=n_events,
@@ -184,7 +205,7 @@ def study(args):
     modes = [("always", 0.0), ("ess", 0.9), ("ess", 0.5), ("never", 0.0)]
     out = []
     for (zeta, lam) in cells:
-        L, Nc, T = args.L, args.Nc, float(args.L)
+        L, Nc, T = args.L, args.Nc, float(args.Tmult) * float(args.L)
         dtau = 12.0 / (2.0 * lam * (L - 1))
         model = build_gaussian_chain_model(L, 1.0 - lam, lam)
         for mode, tau in modes:
@@ -215,6 +236,8 @@ def study(args):
                 for k in ("CMI", "B_L", "c_eff", "S_AB"):
                     v = np.array([p[k] for p in per], float)
                     rec[k] = float(np.dot(wv, v))
+                rec["CMI_tavg50"] = res["CMI_tavg50"]
+                rec["CMI_tavg75"] = res["CMI_tavg75"]
                 out.append(rec)
             done = [o for o in out if o["mode"] == tag and o["zeta"] == zeta
                     and o["status"] == "ok"]
@@ -238,6 +261,7 @@ if __name__ == "__main__":
     p.add_argument("--Nc", type=int, default=48)
     p.add_argument("--nreal", type=int, default=20)
     p.add_argument("--cells", default="0.10:0.14;0.20:0.21;0.55:0.35")
+    p.add_argument("--Tmult", type=float, default=1.0)
     p.add_argument("--out", default="/tmp/adaptive_study.json")
     a = p.parse_args()
     gate(a) if a.mode == "gate" else study(a)

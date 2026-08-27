@@ -49,6 +49,16 @@
 #   sbatch -p cpu_med --time=04:00:00 --array=0-6 --export=ALL \
 #     scripts/ruche/submit_adaptive_pilot.sh
 #
+# HORIZON ARM (run as a SECOND submission after the first): the Mac test on the
+# real model at zeta=0.20, L=16 vs 24, moved the tail-averaged crossing
+# 0.2254 -> 0.2149 -> 0.2094 for T = L, 2L, 4L (decelerating), and cut the sign
+# changes 2 -> 1 -> 1.  T=L is NOT equilibrated at low zeta.  Every record
+# already carries CMI (final snapshot), CMI_tavg50 and CMI_tavg75, so the same
+# JSONs answer readout AND horizon questions:
+#   export TMULT=2; export OUTDIR=$WORKDIR/pps/adaptive   # same dir, new files
+#   sbatch -p cpu_med --time=04:00:00 --array=0-2,4-6 --export=ALL \
+#     scripts/ruche/submit_adaptive_pilot.sh              # low-zeta tasks only
+#
 # ANALYSE: the per-task JSONs land in $OUTDIR; compare arm means (bias vs
 # never where its essF > 0.15), SEM ratios vs always, n_events, gess_root vs
 # gess_recent, and essF(never) vs L.  Acceptance for promoting the algorithm is
@@ -61,6 +71,7 @@ set -euo pipefail
 : "${OUTDIR:?OUTDIR is required}"
 NREAL="${NREAL:-24}"
 NC="${NC:-128}"
+TMULT="${TMULT:-1}"
 
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
@@ -76,7 +87,7 @@ case "$AID" in
   6) L=48; CELLS="0.20:0.21" ;;
   *) echo "no cell for array id $AID"; exit 1 ;;
 esac
-echo "ARRAY $AID -> L=$L CELLS=$CELLS NREAL=$NREAL NC=$NC"
+echo "ARRAY $AID -> L=$L CELLS=$CELLS NREAL=$NREAL NC=$NC TMULT=$TMULT"
 
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs "$OUTDIR"
@@ -88,5 +99,5 @@ conda activate "$WORKDIR/envs/pps_qj"
 echo "HOST=$(hostname)  COMMIT=$(git rev-parse HEAD)"
 
 python scripts/exp_adaptive_cloning.py --mode study \
-    --L "$L" --Nc "$NC" --nreal "$NREAL" --cells "$CELLS" \
-    --out "$OUTDIR/adaptive_L${L}_task${AID}.json"
+    --L "$L" --Nc "$NC" --nreal "$NREAL" --cells "$CELLS" --Tmult "$TMULT" \
+    --out "$OUTDIR/adaptive_L${L}_T${TMULT}_task${AID}.json"
