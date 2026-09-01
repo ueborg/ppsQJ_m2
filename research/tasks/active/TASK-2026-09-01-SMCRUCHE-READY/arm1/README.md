@@ -89,6 +89,8 @@ rung settles it.
 | `analyse_results.sh` | applies the frozen rules, pooling with local blocks |
 | `analyse_ruche.py` | the analysis itself |
 | `results/` | one JSON per completed task |
+| `../support/instrumented.py` | the **bundled, tracked** instrumentation — see below |
+| `../support/BUNDLE_MANIFEST.json` | its recorded SHA256, checked at every run |
 
 ## 6. Before you queue 112 tasks
 
@@ -116,3 +118,49 @@ The frozen rule, unchanged from SMCSTAT F1:
 
 Projected CI width at `R` = 48 over five rungs: ≈0.33, decisive either way
 against the [0.5, 1.5] criterion.
+
+## Deployment (repaired by TASK-2026-09-01-SMCRUCHE-PACKFIX)
+
+`[E]` **The first Ruche job failed with `ModuleNotFoundError: No module named
+'instrumented'`.** `run_cell.py` imported it from
+`research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis`, which is an **untracked**
+local research-task directory: present in the developer working tree, absent from
+every git clone. The earlier readiness verdict was validated in the working tree,
+so it never saw the failure.
+
+`[E]` **Fixed by bundling.** `instrumented.py` is now tracked at
+`../support/instrumented.py`, copied **byte-for-byte** (sha256
+`0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d`), and
+`run_cell.py` imports it from there. Its transitive import closure over that
+untracked directory is **empty** — it needs only numpy, dataclasses, time and the
+**tracked** `pps_qj` package. `run_cell.py` re-checks the SHA256 on every run and
+refuses to start on a mismatch, so the instrumentation cannot be silently
+swapped.
+
+`[E]` **`PPSQJ_REPO` is no longer required.** The repository root is derived from
+the package's own location; the variable still overrides it for an unusual layout.
+
+`[E]` **Partition.** `--partition=cpu_med`. The frozen wall request is
+`--time=04:00:00`; on Ruche `cpu_short` caps at 1 h, `cpu_med` at 4 h and `cpu_long`
+at 7 days. `cpu_med` is the smallest that accommodates it. **The wall request was
+not changed to suit the partition; the partition was chosen to suit it.** The
+first attempt had no `--partition` at all, so the scheduler defaulted to
+`cpu_short` and killed the job.
+
+`[E]` **Python.** `submit.slurm` resolves the interpreter explicitly from
+`PPSQJ_PYTHON`, defaulting to
+`/gpfs/workdir/ercetinut/envs/pps_qj/bin/python`, prepends its directory to
+`PATH`, and prints the resolved path and the numpy version before running. A
+batch job does not reliably inherit an interactive `PATH`. **There is no conda on
+Ruche and none is assumed.**
+
+`[E]` **PyYAML is optional.** The frozen analysis (`analyse_ruche.py`) imports no
+yaml at all and has been verified to run to completion with yaml hard-blocked.
+`run_preflight.sh` uses it only to pretty-print the question and decision rule,
+and falls back to a dependency-free reader when it is absent. **Nothing is ever
+installed from inside a job.**
+
+`[E]` **`run_preflight.sh` now fails (exit 1) if the package could not start**:
+missing bundle, SHA mismatch, unresolvable imports, a missing `--partition`, or a
+wall request the partition cannot hold. Verified by negative control on all of
+these.

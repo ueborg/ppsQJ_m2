@@ -21,9 +21,25 @@ for arm in ("ARM1", "ARM2"):
     sub = [r for r in rows if r["arm"] == arm]
     with open(os.path.join(d, "manifest.csv"), "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=fields); w.writeheader(); w.writerows(sub)
-    # shared executables, copied unchanged
-    for f in ("run_cell.py", "analyse_ruche.py"):
-        shutil.copy2(os.path.join(SRC, f), os.path.join(d, f))
+    # analyse_ruche.py is copied unchanged from the frozen SMCCERT package.
+    #
+    # run_cell.py is NOT copied. TASK-2026-09-01-SMCRUCHE-PACKFIX rewrote its
+    # import block to use the bundled, tracked support/instrumented.py instead of
+    # an untracked research-task directory. Copying the frozen version over it
+    # SILENTLY REVERTS that fix -- which is exactly what happened once, and was
+    # caught only because the file was missing from `git diff --cached`. So this
+    # script no longer touches it, and instead REFUSES if the fix is absent.
+    shutil.copy2(os.path.join(SRC, "analyse_ruche.py"), os.path.join(d, "analyse_ruche.py"))
+    rc = os.path.join(d, "run_cell.py")
+    if not os.path.isfile(rc):
+        sys.exit(f"{rc} is missing; it is maintained by TASK-2026-09-01-SMCRUCHE-PACKFIX "
+                 f"and is deliberately not regenerated here.")
+    body = open(rc).read()
+    for marker in ("SUPPORT = os.path.abspath", "INTEGRITY FAILURE"):
+        if marker not in body:
+            sys.exit(f"{rc} has lost the PACKFIX bundled-import block (missing {marker!r}).\n"
+                     f"  It would import `instrumented` from an UNTRACKED directory and fail "
+                     f"on any clean clone. Restore it before continuing.")
     print(f"{arm}: {len(sub)} rows -> {d}/manifest.csv")
 
 # ---- VERIFY: the split preserves every scientific value, row for row ---------

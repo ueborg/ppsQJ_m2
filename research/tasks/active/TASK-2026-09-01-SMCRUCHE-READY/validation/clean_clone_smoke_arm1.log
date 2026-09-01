@@ -1,0 +1,4 @@
+[env] python     /Users/catlover1337/Documents/ppsQJ_m2/.venv/bin/python3
+[env] instrumented /private/tmp/claude-501/-Users-catlover1337-Documents-ppsQJ-m2/302420ab-3316-4d00-8d26-342bf139e8f0/scratchpad/cleanclone/research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/support/instrumented.py
+[env] pps_qj     /private/tmp/claude-501/-Users-catlover1337-Documents-ppsQJ-m2/302420ab-3316-4d00-8d26-342bf139e8f0/scratchpad/cleanclone/pps_qj/__init__.py
+[ok] idx=0 L=96 N_c=128 wall=351.82s -> ./results/ARM1_00000.json

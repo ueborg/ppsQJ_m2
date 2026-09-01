@@ -11,7 +11,24 @@ Set these once per shell, everywhere below:
 ```bash
 export PPSQJ_REPO=$HOME/ppsQJ_m2                     # adjust to your Ruche path
 export ARMS=$PPSQJ_REPO/research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY
+export PPSQJ_PYTHON=$WORKDIR/envs/pps_qj/bin/python  # the validated interpreter
 ```
+
+**Updated by TASK-2026-09-01-SMCRUCHE-PACKFIX** after the first ARM 1 attempt
+failed. Three things changed and all are deployment-only:
+
+1. `instrumented.py` is now **bundled and tracked** under `support/`, so the
+   package works from a clean clone. The first attempt died with
+   `ModuleNotFoundError: No module named 'instrumented'` because it was imported
+   from an **untracked** research-task directory.
+2. `submit.slurm` now declares `--partition` explicitly. The first attempt had
+   none, so the scheduler chose `cpu_short` (MaxTime 1 h) against a 4 h request.
+3. `submit.slurm` resolves the Python interpreter explicitly from
+   `PPSQJ_PYTHON` rather than trusting `python3` on the batch `PATH`.
+
+`PPSQJ_REPO` is **no longer required** — the package derives the repository root
+from its own location — but setting it is harmless and makes step 7's pooling
+work.
 
 ---
 
@@ -22,8 +39,14 @@ ssh <you>@ruche.mesocentre.universite-paris-saclay.fr
 cd $HOME/ppsQJ_m2
 git fetch origin
 git checkout smccert-integration
-git log -5 --oneline          # expect e7cb73b at the tip
+git pull                      # IMPORTANT: pull the PACKFIX commit
+git log -3 --oneline
 git status                    # expect a clean tree
+
+# the bundled instrumentation MUST be present; this is what the first attempt lacked
+ls -l research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/support/instrumented.py
+sha256sum research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/support/instrumented.py
+#   expect 0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d
 ```
 
 If the branch is not on the remote yet, push it **from your laptop** — a research
@@ -44,25 +67,40 @@ rsync -av --exclude results/ --exclude __pycache__/ \
     <you>@ruche:$HOME/ppsQJ_m2/research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/
 ```
 
-`run_cell.py` imports
-`research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis/instrumented.py` and the
-`pps_qj` package, so **the repository must be present**, not only the arm folder.
+`run_cell.py` needs the **tracked** `support/instrumented.py` (bundled inside the
+package) and the **tracked** `pps_qj` package, so **the repository must be
+present**, not only an arm folder. It no longer needs any untracked
+research-task directory — that was the first attempt's failure.
 
 ## 2. Activate the environment
 
-```bash
-module purge
-module load anaconda3/2022.10/gcc-11.2.0     # or the site's current python module
-source $PPSQJ_REPO/.venv/bin/activate        # if the venv exists on Ruche
-python3 -c "import numpy, scipy; print(numpy.__version__, scipy.__version__)"
-python3 -c "import pps_qj; print(pps_qj.__file__)"
-```
-
-If `pps_qj` does not import, install it editable once:
+**There is no conda on Ruche.** The environment is a plain prefix on the work
+filesystem, activated through `PATH`:
 
 ```bash
-cd $PPSQJ_REPO && pip install -e .
+export PATH="$WORKDIR/envs/pps_qj/bin:$PATH"
+export PPSQJ_PYTHON=$WORKDIR/envs/pps_qj/bin/python
+
+"$PPSQJ_PYTHON" -c "import sys, numpy; print(sys.executable, numpy.__version__)"
+"$PPSQJ_PYTHON" -c "import pps_qj; print(pps_qj.__file__)"
 ```
+
+If `pps_qj` does not import, either install it editable once —
+
+```bash
+cd $PPSQJ_REPO && "$PPSQJ_PYTHON" -m pip install -e .
+```
+
+— or do nothing: `run_cell.py` puts the repository root on `sys.path` itself, so
+a plain clone works without installation.
+
+**PyYAML is not required.** The frozen analysis imports none, and the preflight
+falls back to a dependency-free reader. The login node reported
+`No module named 'yaml'`; that is fine and is now reported as such rather than as
+a degraded message. **Never install packages from inside a batch job.**
+
+The batch script does not depend on this interactive `PATH`: it resolves
+`PPSQJ_PYTHON` itself and prints what it resolved.
 
 ## 3. ARM 1 preflight
 
@@ -78,14 +116,24 @@ Confirm before going further:
 - `N_c ladder` 128, 256, 512 with `R` 32, 32, 48
 - `expected core-hours` ≈ **62.2**
 - `analysis-spec sha256` `ef3e20b18bcc508e…`
-- `PPSQJ_REPO` is **set** (the preflight says so explicitly)
+- `--partition` line reads **`cpu_med  MaxTime 4 h  vs requested 4 h`** with `OK`
+- the whole **RUNTIME SELF-CONTAINMENT** block is `OK`, including
+  `bundle sha256 … matches manifest` and `import instrumented+pps_qj+numpy`
+- the last line says **`PREFLIGHT PASSED`**
+
+`run_preflight.sh` now **exits 1** if any of that fails. If it does, stop — the
+job would die on the node exactly as the first attempt did.
 
 Then run exactly one task interactively before queueing 112:
 
 ```bash
-time python3 run_cell.py 0 ./results        # expect ~30-50 min, one JSON written
+time "$PPSQJ_PYTHON" run_cell.py 0 ./results   # expect ~30-50 min, one JSON written
 ls -la results/
 ```
+
+It prints the interpreter, the resolved `instrumented.py` and the resolved
+`pps_qj` before doing any work, so you can see it picked up the **bundled**
+copy under `support/` and not something else.
 
 If that single task takes wildly more than ~0.9 core-hours, **stop and re-cost**.
 The SMCSTAT campaign discovered a 2.45× cost error only after committing.
@@ -185,14 +233,19 @@ bash run_preflight.sh
 
 Confirm: `manifest rows` = **192**, `--array` = `0-191%64  OK`, `L` 128,
 `T` 128, `zeta` 0.35, `lambda` 0.3032, `N_c` 64/128/256 at `R` = 64 each,
-`expected core-hours` ≈ **194.1**, spec sha256 `3edf6ce746f676d0…`.
+`expected core-hours` ≈ **194.1**, spec sha256 `3edf6ce746f676d0…`,
+`--partition` = **`cpu_long  MaxTime 168 h  vs requested 8 h`**, and
+**`PREFLIGHT PASSED`**.
+
+ARM 2 uses `cpu_long` because its frozen `--time` is `08:00:00` and `cpu_med`
+caps at 4 h. The wall request was not reduced to fit a smaller partition.
 
 **Then run one task. This matters more here than for ARM 1**, because the
 `L` = 128 cost is *derived* from a 96→128 ratio of 2.250 and not measured — no
 `L` = 128 run exists anywhere in the programme:
 
 ```bash
-time python3 run_cell.py 0 ./results        # expect ~1-2.5 h
+time "$PPSQJ_PYTHON" run_cell.py 0 ./results   # expect ~1-2.5 h
 ```
 
 If it lands outside ~1–2.5 h, the 194 core-hour estimate is wrong. Re-cost before

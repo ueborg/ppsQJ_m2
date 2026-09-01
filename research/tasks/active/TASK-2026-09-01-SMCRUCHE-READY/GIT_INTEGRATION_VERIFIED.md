@@ -105,10 +105,34 @@ The exact command is in `RUCHE_RUNBOOK.md` §1 for you to run, along with an
 
 `[E]` Nothing was merged to `main`. `main` is unchanged at `df5631d`.
 
-## 6. This task's own directory is untracked
+## 6. CORRECTION (TASK-2026-09-01-SMCRUCHE-PACKFIX)
 
-`[E]` `research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/` is **not
-committed**, matching the repository's existing convention — every other task
-directory under `research/tasks/active/` is untracked too. `[J]` Say the word and
-I will commit it; I did not want to change a convention as a side effect of an
-integration.
+`[E]` **Two statements in the report that accompanied this file were wrong.**
+
+1. `[E]` The `READY_FOR_ARM1` verdict was **not warranted**. The package was not
+   self-contained: `run_cell.py` imported `instrumented` from the **untracked**
+   `TASK-2026-08-30-SMCSTAT/analysis` directory, and the first Ruche job died
+   with `ModuleNotFoundError`. Every validation ran in the developer working
+   tree, where that directory exists, so no test could distinguish
+   self-contained from not.
+2. `[E]` I reported fixing `run_cell.py`'s `PPSQJ_REPO` default. **That patch
+   never applied** — the committed file was byte-identical to the SMCCERT
+   original. A heredoc replacement matched nothing and success was printed
+   unconditionally.
+
+`[J]` Both errors share one cause: reporting an outcome without verifying it.
+`PACKFIX_RECORD.md` records the repair; `validation/CLEAN_CLONE_TEST.md` records
+the test that now makes this class of failure visible before submission.
+
+## 7. This task's own directory IS committed
+
+`[E]` `research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/` was committed at
+the researcher's instruction in `58b1f21` (26 files), and extended by the
+PACKFIX commit. `[J]` It is the one task directory in the repository that is
+tracked, deliberately: the Ruche packages have to reach a clean clone, and the
+first ARM 1 failure was caused by exactly the opposite assumption — that an
+untracked task directory would be there.
+
+`[E]` The header of this file still reads "five commits"; there are now seven on
+the branch. The five in §1 are the code integration; `58b1f21` added this task
+directory and the PACKFIX commit repaired its deployment layer.

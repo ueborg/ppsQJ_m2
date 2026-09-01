@@ -1,0 +1,27 @@
+{
+ "schema_version": 1,
+ "task": "TASK-2026-09-01-SMCRUCHE-PACKFIX",
+ "generated": "2026-09-01T14:03:28Z",
+ "why": "run_cell.py imported `instrumented` from research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis, which is an UNTRACKED local research-task directory and is therefore absent from any git clone. The first ARM 1 Ruche job failed with ModuleNotFoundError: No module named 'instrumented'. The transitive closure of that import over the untracked directory is exactly ONE file; it is bundled here byte-for-byte.",
+ "closure_method": "ast.parse of instrumented.py, walking Import/ImportFrom nodes and following any that resolve to a sibling module in the untracked analysis directory. Result: no sibling imports at all.",
+ "not_bundled_because_tracked": [
+  "pps_qj (55 tracked files, including gaussian_backend.py, cloning.py, parallel/worker_clone_pps.py)"
+ ],
+ "not_bundled_because_external": [
+  "numpy",
+  "dataclasses",
+  "time",
+  "__future__"
+ ],
+ "files": [
+  {
+   "bundled_as": "support/instrumented.py",
+   "original_path": "research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis/instrumented.py",
+   "sha256_source": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "sha256_bundled": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "bytes": 11396,
+   "byte_identical": true,
+   "note": "Copied verbatim. NOT rewritten, NOT reformatted, NOT re-implemented. This is the exact file that produced every frozen local SMCCERT result, and the file TASK-2026-08-30-SMCSTAT validated bitwise against the production path."
+  }
+ ]
+}

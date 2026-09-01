@@ -2,7 +2,7 @@
 """Preflight for a SMCCERT Ruche arm. Reads the manifest and the frozen spec and
 prints what is about to be asked for. IT NEVER SUBMITTED ANYTHING AND CANNOT:
 there is no sbatch call anywhere in this file or in run_preflight.sh."""
-import csv, os, re, sys, math, hashlib, collections, textwrap
+import csv, os, re, sys, math, json, hashlib, subprocess, collections, textwrap
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,6 +22,96 @@ def n_steps(L, T, lam, dtau_mult):
 def mem_mb(L, N_c):
     per_clone = (2 * L) ** 2 * 8 + (2 * L) * L * 16
     return 128.0 + 2.0 * N_c * per_clone / 1e6
+
+# ---------------------------------------------------------------------------
+# RUNTIME SELF-CONTAINMENT AND PARTITION CHECKS.
+# Added by TASK-2026-09-01-SMCRUCHE-PACKFIX.
+#
+# The previous preflight passed while the package was NOT self-contained,
+# because it ran in the developer working tree where the untracked SMCSTAT
+# task happened to exist. It reported readiness for a package that could not
+# start on a clean clone. These checks make that failure impossible to miss.
+# ---------------------------------------------------------------------------
+RUCHE_PARTITIONS = {            # MaxTime in hours, as reported by Ruche
+    "cpu_short": 1.0,
+    "cpu_med": 4.0,
+    "cpu_long": 7 * 24.0,
+}
+
+
+def runtime_checks(sb, slowest_h):
+    """Return (ok, lines). Anything that would stop run_cell.py starting."""
+    problems, lines = [], []
+    support = os.path.abspath(os.path.join(HERE, os.pardir, "support"))
+    repo = os.environ.get("PPSQJ_REPO") or os.path.abspath(
+        os.path.join(HERE, *([os.pardir] * 5)))
+
+    inst = os.path.join(support, "instrumented.py")
+    man = os.path.join(support, "BUNDLE_MANIFEST.json")
+    ppsqj = os.path.join(repo, "pps_qj", "__init__.py")
+    for label, path in (("bundled instrumented.py", inst),
+                        ("bundle manifest", man),
+                        ("pps_qj package", ppsqj)):
+        ok = os.path.isfile(path)
+        lines.append(f"    {'OK  ' if ok else 'FAIL'}  {label:<26} {path}")
+        if not ok:
+            problems.append(f"{label} missing at {path}")
+
+    if os.path.isfile(inst) and os.path.isfile(man):
+        rec = json.load(open(man))
+        for f in rec["files"]:
+            p = os.path.join(support, os.path.basename(f["bundled_as"]))
+            h = hashlib.sha256(open(p, "rb").read()).hexdigest()
+            ok = (h == f["sha256_bundled"])
+            lines.append(f"    {'OK  ' if ok else 'FAIL'}  bundle sha256              "
+                         f"{h[:16]}...  ({'matches' if ok else 'DOES NOT MATCH'} manifest)")
+            if not ok:
+                problems.append(f"bundled {p} does not match its recorded sha256")
+
+    # Actually import what run_cell.py imports, in a subprocess so a broken
+    # import cannot poison this process. This is the check that would have
+    # caught the ModuleNotFoundError before submission.
+    code = ("import sys,os;"
+            f"sys.path.insert(0,{repo!r});sys.path.insert(0,{support!r});"
+            "import instrumented, pps_qj, numpy;"
+            "print(instrumented.__file__);print(pps_qj.__file__);"
+            "print(numpy.__version__)")
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    ok = (r.returncode == 0)
+    lines.append(f"    {'OK  ' if ok else 'FAIL'}  import instrumented+pps_qj+numpy")
+    if ok:
+        for ln in r.stdout.strip().splitlines():
+            lines.append(f"          {ln}")
+    else:
+        lines.append(f"          {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else '?'}")
+        problems.append("run_cell.py's imports do not resolve")
+
+    part = sb.get("partition")
+    req_h = _hrs(sb.get("time"))
+    if not part:
+        problems.append("submit.slurm declares NO --partition; the scheduler will pick a "
+                        "default (cpu_short, MaxTime 1 h) and kill the job")
+        lines.append("    FAIL  --partition                 MISSING")
+    else:
+        maxh = RUCHE_PARTITIONS.get(part)
+        if maxh is None:
+            lines.append(f"    WARN  --partition                 {part} (unknown to this check)")
+        else:
+            ok = req_h <= maxh + 1e-9
+            lines.append(f"    {'OK  ' if ok else 'FAIL'}  --partition                 "
+                         f"{part}  MaxTime {maxh:g} h  vs requested {req_h:g} h")
+            if not ok:
+                problems.append(f"--time={sb.get('time')} exceeds partition {part} "
+                                f"MaxTime of {maxh:g} h")
+            smaller = [p for p, m in sorted(RUCHE_PARTITIONS.items(), key=lambda kv: kv[1])
+                       if m + 1e-9 >= req_h]
+            if smaller and smaller[0] != part:
+                lines.append(f"    NOTE  smallest partition that fits {sb.get('time')}: {smaller[0]}")
+    if req_h and slowest_h > req_h:
+        problems.append(f"the slowest estimated task ({slowest_h:.2f} h) exceeds "
+                        f"--time={sb.get('time')}")
+    return (not problems), lines, problems
+
 
 def _gb(v):
     try:
@@ -47,14 +137,46 @@ def main():
     for line in open(spec_path):
         if line.strip().startswith("question:"):
             question = "(see analysis_spec.yaml `question`)"
+    # PyYAML is OPTIONAL and is used ONLY to pretty-print these three fields.
+    # The FROZEN analysis (analyse_ruche.py) imports no yaml at all and has been
+    # verified to run to completion with yaml hard-blocked, so nothing scientific
+    # depends on it. When it is absent -- as on the Ruche login node, which
+    # reported "No module named 'yaml'" -- a dependency-free block scanner reads
+    # the same three fields, so the human still sees the question and the
+    # decision rule before submitting. Packages are NEVER installed from a job.
+    yaml_status = "PyYAML present"
     try:
         import yaml
         entry = yaml.safe_load(open(spec_path))["arms"][0]
         question = " ".join(entry["question"].split())
         rule = " ".join(entry["decision_rule"].split())
         primary = entry.get("primary_statistic", "")
-    except Exception as e:                       # yaml is optional on a login node
-        rule = primary = f"(PyYAML unavailable: {e})"
+    except Exception as e:
+        yaml_status = f"PyYAML absent ({e}); using the built-in fallback reader"
+        txt = open(spec_path).read()
+
+        def _field(name):
+            # `name: >` or `name: |` followed by an indented block, or a plain
+            # one-line scalar. Enough for these three fields and nothing else.
+            m = re.search(rf"^\s*{name}:\s*([>|][-+]?)?\s*$", txt, re.M)
+            if m:
+                out, indent = [], None
+                for ln in txt[m.end():].splitlines()[1:]:
+                    if not ln.strip():
+                        continue
+                    ind = len(ln) - len(ln.lstrip())
+                    if indent is None:
+                        indent = ind
+                    if ind < indent:
+                        break
+                    out.append(ln.strip())
+                return " ".join(out)
+            m = re.search(rf"^\s*{name}:\s*(\S.*?)\s*$", txt, re.M)
+            return m.group(1).strip("'\"") if m else ""
+
+        question = _field("question")
+        rule = _field("decision_rule")
+        primary = _field("primary_statistic")
 
     Ls  = sorted({int(r["L"]) for r in rows})
     Ts  = sorted({float(r["T"]) for r in rows})
@@ -124,6 +246,7 @@ def main():
                              f"{'' if _hrs(sb.get('time')) >= slowest/3600*2 else '   ** TIGHT **'}")
     p("output directory", os.path.join(HERE, "results"))
     p("analysis-spec sha256", spec_hash)
+    p("PyYAML", yaml_status)
     print("  " + "-" * 74)
     block("primary statistic", primary)
     block("decision rule", rule)
@@ -132,10 +255,22 @@ def main():
                 if f.endswith(".json")]) if os.path.isdir(os.path.join(HERE, "results")) else 0
     print(f"  results already present: {done} / {len(rows)}"
           f"{'   (a resubmission will SKIP these)' if done else ''}")
-    print(f"  PPSQJ_REPO = {os.environ.get('PPSQJ_REPO', '** NOT SET — run_cell.py will refuse **')}")
+    print(f"  PPSQJ_REPO = {os.environ.get('PPSQJ_REPO', '(unset — derived from the package location, which is fine)')}")
+    print("  " + "-" * 74)
+    print("  RUNTIME SELF-CONTAINMENT AND PARTITION")
+    ok, lines, problems = runtime_checks(sb, slowest / 3600.0)
+    for ln in lines:
+        print(ln)
     print("=" * 78)
-    print("  NOTHING WAS SUBMITTED. To submit, read RUCHE_RUNBOOK.md and type the")
-    print("  sbatch command yourself.")
+    if not ok:
+        print("  PREFLIGHT FAILED — this package would not start on this machine:")
+        for pr in problems:
+            print(f"    * {pr}")
+        print("=" * 78)
+        return 1
+    print("  PREFLIGHT PASSED. NOTHING WAS SUBMITTED. To submit, read")
+    print("  RUCHE_RUNBOOK.md and type the submission command yourself.")
+    print("=" * 78)
     return 0
 
 if __name__ == "__main__":
