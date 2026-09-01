@@ -1,0 +1,252 @@
+{
+ "schema_version": 1,
+ "generated_by": "TASK-2026-08-31-SMCCERT/analysis/emit_calibration.py",
+ "generated": "2026-08-31T07:42:59Z",
+ "observable": "OBS-CMI-001",
+ "estimator": "guided cloning through pps_qj, dtau_mult=6.0, proposal_c=zeta",
+ "bias_model": "E[Ihat(N_c)] = I_inf + B/N_c + o(1/N_c); OLS of rung means on 1/N_c",
+ "uncertainty": "non-parametric bootstrap over independent populations, B=4000, seed 20260831",
+ "minimum_detectable_effect_on_B": 3.5,
+ "provenance": "Every row is a MEASURED N_c ladder with a >=3-window scan. NOT canonical: research/state/** is unchanged. B is NOT interpolated between cells and NOT inferred from VIF - see excluded_and_why, and MATCHED_CELL_TESTS.md.",
+ "domain_of_validity": "Only the exact (L, T, zeta, lam, resample_scheme) tuples listed. Anything else is CALIBRATION_REQUIRED.",
+ "cells": [
+  {
+   "L": 64,
+   "T": 32.0,
+   "zeta": 0.3,
+   "lam": 0.2793,
+   "resample_scheme": "systematic",
+   "provenance": "POOLED: TASK-2026-08-30-SMCSTAT block A-HV (seeds 1010000+, R=48) and TASK-2026-08-31-SMCCERT block S-REP (seeds 6100000+, R=32, plus an N_c=512 rung). Identical cell, disjoint seeds. Their INDIVIDUAL fits on the shared 4-rung window are B=+8.899 [+6.773,+11.233] and B=+5.629 [+3.558,+7.641] - overlapping only in [6.77, 7.64], so the replication is consistent but only just. See BIAS_REPLICATION.md.",
+   "B": 7.689369119649642,
+   "B_ci": [
+    6.293659060900616,
+    9.078001049015894
+   ],
+   "B_se": 0.7106356664954995,
+   "I_inf": 0.38419775938375744,
+   "bias_at_128": 0.06007319624726283,
+   "bias_at_256": 0.030036598123631415,
+   "bias_at_512": 0.015018299061815708,
+   "ladder": [
+    32,
+    64,
+    128,
+    256,
+    512
+   ],
+   "R": 32,
+   "mde_B": 1.9897798661873984,
+   "window": "32+64+128+256+512",
+   "vif_min": 15.766244269645057,
+   "vif_max": 29.43940851548616,
+   "vif_measured": 21.974342803370234,
+   "tau2_measured": 0.04779905340066014,
+   "free_exponent_beta": 0.76,
+   "free_exponent_ci": [
+    0.38975000000000004,
+    1.17
+   ]
+  },
+  {
+   "L": 32,
+   "T": 32.0,
+   "zeta": 0.3,
+   "lam": 0.2793,
+   "resample_scheme": "systematic",
+   "provenance": "TASK-2026-08-31-SMCCERT block S-CRIT32",
+   "B": 2.3239531519371295,
+   "B_ci": [
+    1.1987956528450716,
+    3.466674449939965
+   ],
+   "B_se": 0.5774857242195306,
+   "I_inf": 0.534451152252542,
+   "bias_at_128": 0.018155883999508824,
+   "bias_at_256": 0.009077941999754412,
+   "bias_at_512": 0.004538970999877206,
+   "ladder": [
+    32,
+    64,
+    128,
+    256
+   ],
+   "R": 48,
+   "mde_B": 1.6169600278146856,
+   "window": "32+64+128+256",
+   "vif_min": 2.3545095124495314,
+   "vif_max": 5.860963134382376,
+   "vif_measured": 4.581527426892657,
+   "tau2_measured": 0.06406115931743625,
+   "free_exponent_beta": 1.5799999999999998,
+   "free_exponent_ci": [
+    0.38975000000000004,
+    2.5
+   ]
+  },
+  {
+   "L": 64,
+   "T": 32.0,
+   "zeta": 0.3,
+   "lam": 0.35,
+   "resample_scheme": "systematic",
+   "provenance": "TASK-2026-08-31-SMCCERT block S-OFF64",
+   "B": 2.4619019163781757,
+   "B_ci": [
+    1.0300102248797447,
+    3.9934398582328825
+   ],
+   "B_se": 0.7691385939596117,
+   "I_inf": 0.1530196371794329,
+   "bias_at_128": 0.019233608721704498,
+   "bias_at_256": 0.009616804360852249,
+   "bias_at_512": 0.004808402180426124,
+   "ladder": [
+    32,
+    64,
+    128,
+    256
+   ],
+   "R": 32,
+   "mde_B": 2.1535880630869126,
+   "window": "32+64+128+256",
+   "vif_min": 9.90167540109728,
+   "vif_max": 24.16286975613422,
+   "vif_measured": 16.48254793895031,
+   "tau2_measured": 0.018488857462747685,
+   "free_exponent_beta": 0.42,
+   "free_exponent_ci": [
+    0.2,
+    2.0902499999999997
+   ]
+  },
+  {
+   "L": 16,
+   "T": 32.0,
+   "zeta": 0.3,
+   "lam": 0.2793,
+   "resample_scheme": "systematic",
+   "provenance": "TASK-2026-08-31-SMCCERT block S-REF-G",
+   "B": 0.6590272379361454,
+   "B_ci": [
+    -0.04565300244907091,
+    1.4064942939048344
+   ],
+   "B_se": 0.36702848786947256,
+   "I_inf": 0.7305230033198307,
+   "bias_at_128": 0.005148650296376136,
+   "bias_at_256": 0.002574325148188068,
+   "bias_at_512": 0.001287162574094034,
+   "ladder": [
+    32,
+    64,
+    128,
+    256,
+    512
+   ],
+   "R": 24,
+   "mde_B": 1.0276797660345232,
+   "window": "32+64+128+256+512",
+   "vif_min": 1.4906252801969582,
+   "vif_max": 2.4802836248462192,
+   "vif_measured": 1.7741427518069417,
+   "tau2_measured": 0.053377992346643977,
+   "free_exponent_beta": 1.3199999999999998,
+   "free_exponent_ci": [
+    0.2,
+    2.5
+   ]
+  },
+  {
+   "L": 32,
+   "T": 32.0,
+   "zeta": 0.3,
+   "lam": 0.35,
+   "resample_scheme": "systematic",
+   "provenance": "TASK-2026-08-30-SMCSTAT block A-MV (inherited, frozen)",
+   "B": 0.09598902274945165,
+   "B_ci": [
+    -0.5994991611032703,
+    0.8612088831092855
+   ],
+   "B_se": 0.36841957367714573,
+   "I_inf": 0.33271604943557526,
+   "bias_at_128": 0.000749914240230091,
+   "bias_at_256": 0.0003749571201150455,
+   "bias_at_512": 0.00018747856005752275,
+   "ladder": [
+    32,
+    64,
+    128,
+    256
+   ],
+   "R": 48,
+   "mde_B": 1.031574806296008,
+   "window": "32+64+128+256",
+   "vif_min": 3.3154896374495704,
+   "vif_max": 4.091883759211378,
+   "vif_measured": 3.7683878655200034,
+   "tau2_measured": 0.03574758421487791,
+   "free_exponent_beta": 0.6099999999999999,
+   "free_exponent_ci": [
+    0.2,
+    2.5
+   ]
+  },
+  {
+   "L": 96,
+   "T": 96.0,
+   "zeta": 0.35,
+   "lam": 0.3032,
+   "resample_scheme": "systematic",
+   "provenance": "TASK-2026-08-30-SMCSTAT blocks A-P96 and A-BUD POOLED. The parent's own frozen experiments.py declares A-BUD 'NESTED with A-P96': identical cell, same seed stream, r=16..127 continuing A-P96's r=0..15. Pooling is the parent's declared design, not a post-hoc choice. R is UNEQUAL across rungs (128/64/16/16) and the frozen primary fit is unweighted OLS on the rung means.",
+   "B": 11.280994859117934,
+   "B_ci": [
+    8.803924811607878,
+    13.61736357454208
+   ],
+   "B_se": 1.2367603480590907,
+   "I_inf": 0.2813094391697202,
+   "bias_at_128": 0.08813277233685886,
+   "bias_at_256": 0.04406638616842943,
+   "bias_at_512": 0.022033193084214715,
+   "ladder": [
+    32,
+    64,
+    128,
+    256
+   ],
+   "R": 16,
+   "mde_B": 3.462928974565454,
+   "window": "32+64+128+256",
+   "vif_min": 48.70188766497101,
+   "vif_max": 121.17262177002713,
+   "vif_measured": 79.33202566013271,
+   "tau2_measured": 0.03870045337468106,
+   "free_exponent_beta": 0.8599999999999999,
+   "free_exponent_ci": [
+    0.24,
+    1.6499999999999997
+   ]
+  }
+ ],
+ "excluded_and_why": [
+  {
+   "block": "S-MULT",
+   "n_rungs": 4,
+   "mde_B": 5.85,
+   "reason": "achieved MDE|B|=5.85 exceeds the pre-registered 3.5; the design could not have resolved B here, so it does not enter the table"
+  },
+  {
+   "block": "S-HV96",
+   "n_rungs": 5,
+   "mde_B": 5.05,
+   "reason": "achieved MDE|B|=5.05 exceeds the pre-registered 3.5; the design could not have resolved B here, so it does not enter the table"
+  },
+  {
+   "block": "A-P96",
+   "n_rungs": 4,
+   "mde_B": 6.84,
+   "reason": "achieved MDE|B|=6.84 exceeds the pre-registered 3.5; the design could not have resolved B here, so it does not enter the table"
+  }
+ ]
+}
