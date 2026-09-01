@@ -365,6 +365,19 @@ class GaussianTrajectoryResult:
     jump_times: list[float]
     jump_channels: list[int]
     Lambda: float = 0.0   # integrated physical hazard over segment (guided cloning)
+    n_solver_fallbacks: int = 0
+    """Times the brentq waiting-time solve raised ValueError and the code fell
+    back to ``dt_star = 0.5 * T_rem`` (see the ``except ValueError`` below).
+
+    That fallback advances the state to an arbitrary time while still crediting
+    the weight with ``-log(U_eff)``, i.e. the exact integrated hazard at a root
+    that was NOT found. It is an uncontrolled approximation to the target
+    measure. It is presumably rare, but until this counter existed nothing in
+    the repository could say how rare, and a silent approximation to the target
+    is exactly the kind of defect this project has been bitten by before.
+    A run with a nonzero count is not automatically wrong; it is a run whose
+    deviation from the certified baseline is UNQUANTIFIED, and it must be
+    reported rather than pooled."""
 
 
 def gaussian_born_rule_trajectory(
@@ -441,6 +454,7 @@ def gaussian_born_rule_trajectory(
     jump_times: list[float] = []
     jump_channels: list[int] = []
     lambda_acc = 0.0           # integrated physical hazard (guided-cloning compensator)
+    _n_solver_fallbacks = 0    # uncontrolled brentq fallbacks; see the result field
     _inv_c = 1.0 / proposal_c
     _use_lowrank = (jump_update_method == "lowrank")
     _use_newton = (solver_method == "newton")
@@ -535,6 +549,9 @@ def gaussian_born_rule_trajectory(
                     full_output=False,
                 )
             except ValueError:
+                # UNCONTROLLED FALLBACK. See GaussianTrajectoryResult
+                # .n_solver_fallbacks. Counted, never silent.
+                _n_solver_fallbacks += 1
                 dt_star = 0.5 * T_rem
             exp_d_star = np.exp(evals * dt_star)
             orbs_tilde = V @ (exp_d_star[:, None] * coeffs)
@@ -575,6 +592,7 @@ def gaussian_born_rule_trajectory(
         jump_times=jump_times,
         jump_channels=jump_channels,
         Lambda=lambda_acc,
+        n_solver_fallbacks=_n_solver_fallbacks,
     )
 
 

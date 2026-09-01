@@ -171,6 +171,28 @@ class CloningResult:
     # Number of resampling events actually applied over the run.  Zero when
     # zeta == 1.0, where cloning.py skips resampling entirely.
     n_resampling_events: int = 0
+    # --- statistical diagnostics (TASK-2026-08-30-SMCSTAT) ------------------
+    ess_lineage_history: np.ndarray = field(default_factory=lambda: np.asarray([], dtype=np.float64))
+    """ESS of the LINEAGE-accumulated log weights, one entry per window.
+
+    Unlike ``ess_history`` (the instantaneous, single-window ESS) these weights
+    are never reset: they are permuted by each selection and keep accumulating.
+    The instantaneous ESS is near-saturated by construction under the guided
+    proposal - median 125 of 128 across the whole production corpus - and is
+    therefore blind to accumulated degeneracy, while ``n_distinct_ancestors``
+    is censored at 1 over the same range. This is the diagnostic that would
+    catch an under-resampling regression, which neither of the other two can."""
+    selection_history: np.ndarray = field(default_factory=lambda: np.asarray([], dtype=np.int32))
+    """(n_resampling_events, N_c) int32 selection maps, if requested.
+
+    Off by default. When on, this is the minimal object from which founder
+    counts, GESS, family sizes and the exact pairwise most-recent-common-
+    ancestor distribution are all recoverable after the fact."""
+    n_solver_fallbacks: int = 0
+    """Total firings of the uncontrolled brentq waiting-time fallback across all
+    clones and windows. See GaussianTrajectoryResult.n_solver_fallbacks. A
+    nonzero value does not make a run wrong; it makes its deviation from the
+    certified baseline unquantified, and it must be reported, not pooled."""
     # --- Renyi entropy diagnostics (snapshot at t = T, averaged over clones) ---
     # Populated only when run_cloning(...) is called with record_renyi=True.
     # S_renyi_dict[n] is the ensemble-averaged half-cut Renyi entropy of index n.
@@ -271,6 +293,7 @@ def run_cloning(
     refresh_every: int = 100,
     solver_method: str = "brentq",
     eps_hazard: float = 1e-9,
+    record_selection_history: bool = False,
 ) -> CloningResult:
     """Population-dynamics estimator of theta(zeta) and S_zeta.
 
@@ -369,6 +392,18 @@ def run_cloning(
     # ancestor_ids[idxs].  At t=T, len(unique(ancestor_ids)) is the number
     # of original clones with surviving descendants.
     ancestor_ids = np.arange(N_c, dtype=np.intp)
+    # --- statistical diagnostics (TASK-2026-08-30-SMCSTAT) --------------------
+    # log_w_lineage[i] accumulates the log weight along slot i's LINEAGE and is
+    # permuted, never reset, at each selection. Its ESS therefore measures how
+    # much work selection has actually done: under the production every-window
+    # cadence the *instantaneous* ESS is near-saturated by construction (the
+    # guided proposal makes log w = -(1-zeta) dLambda, a narrow distribution)
+    # and is blind to accumulated degeneracy, which is why n_distinct_ancestors
+    # sits at 1 while eff_sample_size reads 125/128.
+    log_w_lineage = np.zeros(N_c, dtype=np.float64)
+    ess_lineage_history: list[float] = []
+    selection_history: list[np.ndarray] = []
+    n_solver_fallbacks = 0
     n_resampling_events = 0
     n_collapses = 0
     n_js_fallbacks = 0
@@ -420,6 +455,7 @@ def run_cloning(
                 orbs[i]    = r.final_orbitals
                 n_jumps[i] = r.n_jumps
                 delta_Lambda[i] = r.Lambda
+                n_solver_fallbacks += int(getattr(r, "n_solver_fallbacks", 0))
         else:  # backend == "batched"
             cov_stack_in  = np.stack(covs, axis=0)
             orbs_stack_in = np.stack(orbs, axis=0)
@@ -518,12 +554,52 @@ def run_cloning(
         ess_step   = (w_sum_step ** 2) / w_sq_step if w_sq_step > 0.0 else 0.0
         ess_history.append(ess_step)
 
+        # --- lineage-accumulated weight ESS (never reset; permuted below) ---
+        # The per-window log weight is derived from `weights`, which EVERY
+        # branch above assigns, rather than from `log_w`, which only the
+        # 0 < zeta < 1 branch assigns.
+        #
+        # TASK-2026-08-31-SMCCERT: the original form was
+        #     _lw = log_w if 'log_w' in dir() else np.zeros(N_c)
+        # and it is silently wrong at zeta = 0.0, the fully post-selected
+        # no-click sector. There `log_w` is never bound, the guard falls through
+        # to zeros, and the lineage ESS reads exactly N_c at every window - a
+        # perfect all-clear - on runs that have genuinely collapsed. Measured:
+        # L=8, N_c=16, T=2, seed 11 gives lineage ESS 16.0000/16 at every window
+        # while n_distinct_ancestors = 4 and the instantaneous ESS is 12.0.
+        # A degeneracy diagnostic that reports no degeneracy in the most
+        # degenerate sector is worse than no diagnostic, because it is trusted.
+        if zeta == 1.0:
+            ess_lineage_history.append(float(N_c))
+        else:
+            with np.errstate(divide="ignore"):
+                _lw = np.log(np.asarray(weights, dtype=np.float64))
+            _lw = np.where(np.isfinite(_lw), _lw, -np.inf)
+            log_w_lineage = log_w_lineage + _lw
+            _mx = float(np.max(log_w_lineage))
+            if not np.isfinite(_mx):
+                # every lineage has zero weight: the population is dead
+                ess_lineage_history.append(0.0)
+            else:
+                _wc = np.exp(log_w_lineage - _mx)
+                _s1 = float(_wc.sum()); _s2 = float(np.sum(_wc ** 2))
+                ess_lineage_history.append((_s1 ** 2) / _s2 if _s2 > 0.0 else 0.0)
+
         if zeta != 1.0:
             n_resampling_events += 1
             idxs = _systematic_resample_idxs(weights, rng)
             covs = [covs[int(i)].copy() for i in idxs]
             orbs = [orbs[int(i)].copy() for i in idxs]
             ancestor_ids = ancestor_ids[idxs]
+            log_w_lineage = log_w_lineage[idxs]
+            if record_selection_history:
+                # N_c integers per window. This is the MINIMAL object from which
+                # founder counts, GESS, family-size distributions and - the part
+                # nothing else gives - the exact pairwise most-recent-common-
+                # ancestor distribution are all recoverable after the fact. The
+                # existing 20,355-run corpus cannot be re-diagnosed precisely
+                # because this was never kept.
+                selection_history.append(idxs.astype(np.int32).copy())
 
         if _k in snap_steps:
             snapshots.append(
@@ -650,6 +726,12 @@ def run_cloning(
         n_distinct_ancestors=n_distinct_ancestors,
         ancestor_ids_final=ancestor_ids_final,
         n_resampling_events=n_resampling_events,
+        ess_lineage_history=np.asarray(ess_lineage_history, dtype=np.float64),
+        selection_history=(
+            np.asarray(selection_history, dtype=np.int32)
+            if selection_history else np.asarray([], dtype=np.int32)
+        ),
+        n_solver_fallbacks=int(n_solver_fallbacks),
         S_renyi_2_mean=S2_mean_val,
         S_renyi_3_mean=S3_mean_val,
         S_renyi_2_std=S2_std_val,
