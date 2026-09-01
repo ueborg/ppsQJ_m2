@@ -1,0 +1,88 @@
+# FROZEN analysis spec for ARM1. Written BEFORE submission.
+# Do not change it after the data arrives.
+# Extracted verbatim from the SMCCERT package; see `provenance`.
+
+schema_version: 1
+task_id: TASK-2026-08-31-SMCCERT
+package: ruche_package
+observable: OBS-CMI-001
+estimator: 'guided cloning through pps_qj via TASK-2026-08-30-SMCSTAT/analysis/instrumented.py,
+  dtau_mult = 6.0, proposal_c = zeta, systematic resampling every window. That wrapper was
+  validated BITWISE against the production path by the parent.
+
+  '
+independent_statistical_unit: the independently seeded population realization
+bootstrap: non-parametric over independent populations, B = 4000, seed 20260831
+exponent_rule: 'Every exponent carries a >=3-window scan (full, drop-smallest, drop-largest
+  and every contiguous sub-window of length >= 3). A single-window exponent is not a measurement.
+
+  '
+exclusions:
+- 'A run with status != ''ok'': excluded, COUNTED, reported per cell. Above 5% of a cell''s
+  runs, the CELL is excluded.'
+- 'A clone whose observable is non-finite: excluded from that population''s mean, count reported.
+  Above 1% of a cell''s clones, the cell is reported SUSPECT.'
+- No exclusion on the value of an observable. No outlier rejection of populations.
+- brentq_fallbacks > 0 is reported, never excluded.
+stopping_criteria:
+- 'ARM1 and ARM2 are independent. If only one budget is available, run ARM1: it is the smaller
+  and it closes the open statistics question.'
+- Stop ARM2 if ARM1's gamma comes back KILLED. A KILLED gamma means N_eff saturates and the
+  programme needs a different sampler, which changes what an L=128 bias calibration is even
+  for.
+- Do not extend either arm in response to a result. A post-hoc analysis needs a separately
+  versioned spec written before it runs.
+- Hard stop at 280 core-hours (the two arms' estimate plus 10%). An overrun is reported, never
+  absorbed.
+analysis_command: "python3 analyse_ruche.py results \\\n    ../../TASK-2026-08-30-SMCSTAT/scratch/A-P96.jsonl\
+  \ \\\n    ../../TASK-2026-08-30-SMCSTAT/scratch/A-BUD.jsonl\n"
+arms:
+- id: ARM1
+  question: 'Does Var(Ihat) ~ N_c^-1 hold at measured VIF >= 40 AT PRODUCTION GEOMETRY (T
+    = L)? Three local attempts returned INCONCLUSIVE; the sharpest, S-HV96, gave gamma = +0.630
+    CI [+0.389, +0.856] and missed the pre-registered KILL by 0.003 at one CI endpoint.
+
+    '
+  cell:
+    L: 96
+    T: 96.0
+    zeta: 0.35
+    lam: 0.3032
+    resample_scheme: systematic
+  ladder:
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+  R_after_pooling:
+    32: 128
+    64: 64
+    128: 48
+    256: 48
+    512: 48
+  note: 'N_c = 32 and 64 already have R = 128 and 64 from the parent''s A-BUD; 128 and 256
+    have R = 16 from A-P96 and are extended to 48 here; 512 is new. ARM1''s seeds CONTINUE
+    the A-P96 stream (1040000 + 1000*N_c + r), so no completed run is repeated.
+
+    '
+  primary_statistic: gamma = -dlogVar/dlogN_c, weighted log-log regression
+  decision_rule: 'The parent''s frozen F1 rule, unchanged. SUPPORTED if the gamma CI contains
+    1 in the full window AND in at least one dropped-endpoint window. KILLED if it excludes
+    1 from below in the full AND drop-smallest windows. INCONCLUSIVE if the CI is not contained
+    in [0.5, 1.5], and INCONCLUSIVE DOMINATES SUPPORTED. GATED: if the median measured VIF
+    is < 40 the arm is reported as UNTESTED AT HIGH VIF whatever gamma comes out.
+
+    '
+  projected_resolution: 'CI width ~0.33 at R = 48 across five rungs, scaling S-HV96''s achieved
+    0.468 at R = 24. That is decisive either way against the [0.5, 1.5] criterion.
+
+    '
+  secondary: 'B from the same ladder, with its own >=3-window scan. At R = 48 the projected
+    MDE|B| is ~2.4, below the frozen 3.5, so ARM1 also upgrades the bias calibration at the
+    only T = L cell the programme has.
+
+    '
+provenance: Extracted VERBATIM from TASK-2026-08-31-SMCCERT/ruche_package/analysis_spec.yaml
+  (sha256:7fb6f9a611a1ed07...). Only the arms list was filtered to this arm. No decision rule,
+  threshold, ladder, R, seed or cell was altered.

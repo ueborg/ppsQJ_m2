@@ -1,0 +1,72 @@
+# FROZEN analysis spec for ARM2. Written BEFORE submission.
+# Do not change it after the data arrives.
+# Extracted verbatim from the SMCCERT package; see `provenance`.
+
+schema_version: 1
+task_id: TASK-2026-08-31-SMCCERT
+package: ruche_package
+observable: OBS-CMI-001
+estimator: 'guided cloning through pps_qj via TASK-2026-08-30-SMCSTAT/analysis/instrumented.py,
+  dtau_mult = 6.0, proposal_c = zeta, systematic resampling every window. That wrapper was
+  validated BITWISE against the production path by the parent.
+
+  '
+independent_statistical_unit: the independently seeded population realization
+bootstrap: non-parametric over independent populations, B = 4000, seed 20260831
+exponent_rule: 'Every exponent carries a >=3-window scan (full, drop-smallest, drop-largest
+  and every contiguous sub-window of length >= 3). A single-window exponent is not a measurement.
+
+  '
+exclusions:
+- 'A run with status != ''ok'': excluded, COUNTED, reported per cell. Above 5% of a cell''s
+  runs, the CELL is excluded.'
+- 'A clone whose observable is non-finite: excluded from that population''s mean, count reported.
+  Above 1% of a cell''s clones, the cell is reported SUSPECT.'
+- No exclusion on the value of an observable. No outlier rejection of populations.
+- brentq_fallbacks > 0 is reported, never excluded.
+stopping_criteria:
+- 'ARM1 and ARM2 are independent. If only one budget is available, run ARM1: it is the smaller
+  and it closes the open statistics question.'
+- Stop ARM2 if ARM1's gamma comes back KILLED. A KILLED gamma means N_eff saturates and the
+  programme needs a different sampler, which changes what an L=128 bias calibration is even
+  for.
+- Do not extend either arm in response to a result. A post-hoc analysis needs a separately
+  versioned spec written before it runs.
+- Hard stop at 280 core-hours (the two arms' estimate plus 10%). An overrun is reported, never
+  absorbed.
+analysis_command: "python3 analyse_ruche.py results \\\n    ../../TASK-2026-08-30-SMCSTAT/scratch/A-P96.jsonl\
+  \ \\\n    ../../TASK-2026-08-30-SMCSTAT/scratch/A-BUD.jsonl\n"
+arms:
+- id: ARM2
+  question: 'What is B at L = 128 at production geometry? Every L = 128 cell is currently
+    CALIBRATION_REQUIRED and no L = 128 run exists anywhere in the programme: A-P128 was cancelled
+    by the parent''s frozen stopping rule 3.
+
+    '
+  cell:
+    L: 128
+    T: 128.0
+    zeta: 0.35
+    lam: 0.3032
+    resample_scheme: systematic
+  ladder:
+  - 64
+  - 128
+  - 256
+  R: 64
+  primary_statistic: B in I(N_c) = I_inf + B/N_c, OLS of rung means on 1/N_c
+  decision_rule: 'CALIBRATED and admitted to tools/calibration/bias_calibration.json if the
+    achieved MDE|B| <= 3.5 - the same threshold pre-registered locally. If the achieved MDE|B|
+    exceeds 3.5 the cell is reported UNRESOLVED and does NOT enter the table, exactly as A-P96
+    and S-HV96 were excluded locally.
+
+    '
+  projected_resolution: MDE|B| ~ 3.4 at R = 64, scaling A-P96's 6.84 at R = 16
+  note: 'Three rungs is the minimum for a >=3-window scan. It buys ONE window, so the window-sensitivity
+    scan will be degenerate; that is a declared limitation of running ARM2 at three rungs
+    rather than four, and it is the price of 194 core-hours instead of 380.
+
+    '
+provenance: Extracted VERBATIM from TASK-2026-08-31-SMCCERT/ruche_package/analysis_spec.yaml
+  (sha256:7fb6f9a611a1ed07...). Only the arms list was filtered to this arm. No decision rule,
+  threshold, ladder, R, seed or cell was altered.
