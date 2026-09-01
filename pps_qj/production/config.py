@@ -88,6 +88,17 @@ class ProductionConfig:
 
     # --- observables / output -------------------------------------------
     observables: tuple = field(default_factory=lambda: tuple(_DEFAULT_OBSERVABLES))
+    record_selection_history: bool = False
+    """Store the per-window selection index maps (N_c int32 per resampling event).
+
+    OFF by default because the cost is real: ~1.7 MB per realisation at
+    L = 128, T = 128, N_c = 128. ON, it is the only object from which the
+    pairwise most-recent-common-ancestor distribution - and hence any
+    genealogical variance estimate - can be reconstructed after the fact. The
+    existing 20,355-run corpus cannot be re-diagnosed for any such question
+    precisely because nothing like this was kept. It records no randomness and
+    changes no result: paired-seed bitwise equality is asserted by
+    tests/test_statistical_diagnostics.py."""
     output_dir: str = "outputs/production"
     run_label: str = ""
     n_workers: int = 1

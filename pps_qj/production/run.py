@@ -83,6 +83,7 @@ def _run_one_realisation(payload: dict) -> dict:
             refresh_every=cfg.refresh_every,
             solver_method=cfg.solver_method,
             eps_hazard=cfg.eps_hazard,
+            record_selection_history=cfg.record_selection_history,
         )
 
         out: dict[str, Any] = {
@@ -108,7 +109,20 @@ def _run_one_realisation(payload: dict) -> dict:
             "ancestor_ids_final": np.asarray(
                 result.ancestor_ids_final, dtype=np.int64
             ),
+            # --- statistical diagnostics (TASK-2026-08-30-SMCSTAT) ---
+            "ess_lineage_history": np.asarray(
+                result.ess_lineage_history, dtype=np.float64
+            ),
+            "ess_lineage_final": (
+                float(result.ess_lineage_history[-1])
+                if np.size(result.ess_lineage_history) else float("nan")
+            ),
+            "n_solver_fallbacks": int(result.n_solver_fallbacks),
         }
+        if cfg.record_selection_history:
+            out["selection_history"] = np.asarray(
+                result.selection_history, dtype=np.int32
+            )
         if cfg.record_renyi:
             out.update(
                 S_renyi_2=float(result.S_renyi_2_mean),
@@ -131,6 +145,12 @@ def _run_one_realisation(payload: dict) -> dict:
                 out[f"{name}_mean"] = float(np.mean(arr[fin])) if fin.any() else float("nan")
                 out[f"{name}_std"] = float(np.std(arr[fin])) if fin.any() else float("nan")
                 out[f"{name}_n_finite"] = int(fin.sum())
+                # Store the PER-CLONE array, not only its mean and spread.
+                # Without it no one can recompute a variance decomposition,
+                # a genealogical variance estimate, or an N_eff after the fact
+                # - which is exactly why the historical corpus cannot be
+                # re-diagnosed. 6 * N_c float64 is ~6 kB at N_c = 128.
+                out[f"{name}_per_clone"] = arr
         out["wall_time"] = time.time() - t0
         out["cpu_time"] = time.process_time() - c0
         return out
@@ -205,6 +225,7 @@ _SCALAR_FIELDS = (
     "CMI_std", "B_L_std", "S_AB_std", "S_BC_std", "S_B_std", "S_ABC_std",
     "S_renyi_2", "S_renyi_3",
     "min_ess_frac_postburnin", "n_distinct_ancestors", "n_resampling_events",
+    "ess_lineage_final", "n_solver_fallbacks",
     "wall_time", "cpu_time",
 )
 
@@ -276,6 +297,68 @@ def _aggregate(cfg: ProductionConfig, results: list[dict]) -> tuple[dict, dict, 
         ],
         "warning": None,
     }
+    # ------------------------------------------------------------------
+    # UNAMBIGUOUS UNCERTAINTY FIELDS.
+    #
+    # The generic loop above produces two similarly named quantities that mean
+    # completely different things:
+    #     summary["CMI_std"]       = mean over realisations of the WITHIN-
+    #                                population across-CLONE spread
+    #     summary["CMI_mean_std"]  = spread ACROSS realisations of the
+    #                                population mean
+    # A reader reaching for "the std of CMI" will very reasonably take the
+    # first and divide by sqrt(N_c), which understates the uncertainty by
+    # sqrt(VIF) - up to a factor of ten in this project's own corpus. That is
+    # the OBS-BL-001 failure mode (one label, two quantities) in a new place,
+    # so the correct quantities are also emitted under names that cannot be
+    # confused, and the naive one is emitted too, explicitly labelled wrong.
+    #
+    # The interval is STUDENT-t, not normal-z and not a percentile bootstrap
+    # over realisations: measured coverage at nominal 0.95 over 1,696 corpus
+    # cells is 0.926-0.940 for t, 0.786-0.912 for z, and 0.716-0.894 for the
+    # bootstrap, which is WORSE THAN t at every R <= 10.
+    from math import sqrt as _sqrt
+    try:
+        from scipy.stats import t as _tdist
+        _tcrit = lambda n: float(_tdist.ppf(0.975, n - 1)) if n > 1 else float("nan")
+    except Exception:                                    # pragma: no cover
+        _tcrit = lambda n: float("nan")
+    for _obs in ("CMI", "B_L", "S_AB", "S_BC", "S_B", "S_ABC"):
+        _key = f"{_obs}_mean"
+        if _key not in arrays:
+            continue
+        _n = int(summary.get(f"{_key}_n_valid", 0))
+        _sem = summary.get(f"{_key}_err", float("nan"))
+        summary[f"{_obs}_across_population_sem"] = _sem
+        summary[f"{_obs}_across_population_std"] = summary.get(f"{_key}_std", float("nan"))
+        summary[f"{_obs}_within_population_clone_std"] = summary.get(
+            f"{_obs}_std", float("nan"))
+        summary[f"{_obs}_t_crit_95"] = _tcrit(_n)
+        summary[f"{_obs}_ci95_halfwidth"] = (
+            _tcrit(_n) * _sem if np.isfinite(_sem) else float("nan"))
+        _naive = summary.get(f"{_obs}_std", float("nan"))
+        summary[f"{_obs}_naive_clone_sem_DO_NOT_USE"] = (
+            float(_naive / _sqrt(cfg.N_c * max(_n, 1)))
+            if np.isfinite(_naive) else float("nan"))
+        _corr = summary[f"{_obs}_naive_clone_sem_DO_NOT_USE"]
+        summary[f"{_obs}_variance_inflation_factor"] = (
+            float((_sem / _corr) ** 2) if (np.isfinite(_sem) and _corr) else float("nan"))
+
+    genealogy["ess_lineage_final_mean"] = _nanstat(arrays["ess_lineage_final"])[0]
+    genealogy["ess_lineage_frac_final_mean"] = (
+        genealogy["ess_lineage_final_mean"] / cfg.N_c if cfg.N_c else float("nan"))
+    _fb = float(np.nansum(arrays["n_solver_fallbacks"]))
+    genealogy["n_solver_fallbacks_total"] = _fb
+    if _fb > 0:
+        genealogy["warning"] = (
+            (genealogy.get("warning") or "")
+            + f" UNCONTROLLED SOLVER FALLBACK fired {int(_fb)} times: the "
+              f"brentq waiting-time solve failed and the state advanced to "
+              f"0.5*T_rem while the weight was still credited with the exact "
+              f"hazard at a root that was not found. This run's deviation from "
+              f"the target measure is UNQUANTIFIED; report it, do not pool it."
+        ).strip()
+
     gfm = genealogy["gess_frac_mean"]
     if np.isfinite(gfm) and gfm < 0.05:
         genealogy["warning"] = (
@@ -387,6 +470,28 @@ def run_production_cell(cfg: ProductionConfig) -> dict[str, Any]:
         for k, v in summary.items()
     }
 
+    # --- per-clone terminal observables and per-window lineage ESS ---------
+    # Stacked (realizations, N_c) and (realizations, n_windows). These are the
+    # objects that make a run RE-DIAGNOSABLE later: without the per-clone array
+    # nobody can recompute a variance decomposition, an N_eff, or a genealogical
+    # variance estimate. Their absence is exactly why the 20,355-run historical
+    # corpus cannot answer any such question today.
+    perclone: dict[str, np.ndarray] = {}
+    for _name in ("CMI", "B_L", "S_AB", "S_BC", "S_B", "S_ABC"):
+        _k = f"{_name}_per_clone"
+        _rows = [res[_k] for res in results if res.get("ok") and _k in res]
+        if _rows and all(len(x) == len(_rows[0]) for x in _rows):
+            perclone[_k] = np.asarray(_rows, dtype=np.float64)
+    _lin = [res["ess_lineage_history"] for res in results
+            if res.get("ok") and "ess_lineage_history" in res]
+    if _lin and all(len(x) == len(_lin[0]) for x in _lin):
+        perclone["ess_lineage_history"] = np.asarray(_lin, dtype=np.float64)
+    if cfg.record_selection_history:
+        _sel = [res["selection_history"] for res in results
+                if res.get("ok") and "selection_history" in res]
+        if _sel and all(x.shape == _sel[0].shape for x in _sel):
+            perclone["selection_history"] = np.asarray(_sel, dtype=np.int32)
+
     npz_path = out_dir / f"{run_id}.npz"
     json_path = out_dir / f"{run_id}.json"
 
@@ -396,6 +501,7 @@ def run_production_cell(cfg: ProductionConfig) -> dict[str, Any]:
         npz_path,
         provenance_json=np.array(json.dumps(prov, default=str)),
         **{f"real_{k}": v for k, v in arrays.items()},
+        **{f"clone_{k}": v for k, v in perclone.items()},
         **{f"summary_{k}": np.float64(v) for k, v in summary.items()},
     )
     json_path.write_text(json.dumps(prov, indent=2, default=str))
