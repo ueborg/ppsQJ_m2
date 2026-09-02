@@ -1,0 +1,608 @@
+# FROZEN analysis spec — TASK-2026-09-02-MOCK-PRODUCTION
+#
+# Written BEFORE submission and BEFORE any new datum exists. Do not change it
+# after data arrives. A post-hoc analysis needs a separately versioned spec
+# written before IT runs, in a child task, never by editing this file.
+#
+# The ONE exception, and it is not an exception to the freeze: the three
+# lambda cells at (L=64, T=64, N_c=1024, lambda in {0.2932, 0.3032, 0.3132})
+# ALREADY EXIST. They were returned by TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA
+# ARM B and are frozen byte-for-byte into frozen_inputs/armB_populations.csv.
+# Every rule below was written knowing those three numbers. That is declared
+# here rather than hidden, and it is why no success criterion below is stated
+# in terms of the VALUE of CMI at those three lambdas.
+
+schema_version: 1
+task_id: TASK-2026-09-02-MOCK-PRODUCTION
+task_class: numerical preparation child task
+parent: TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA
+predecessors_inspected:
+  - TASK-2026-08-30-GENCOL
+  - TASK-2026-08-30-SMCSTAT
+  - TASK-2026-08-31-SMCCERT
+  - TASK-2026-09-01-SMCRUCHE-READY
+  - TASK-2026-09-01-SMCRUCHE-PACKFIX
+  - TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA
+  - TASK-2026-09-02-FINITE-NC-THEORY
+
+observable: OBS-CMI-001
+
+estimator: >
+  Guided cloning through the tracked pps_qj production package via the bundled
+  support/instrumented.py (sha256
+  0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d), which
+  TASK-2026-08-30-SMCSTAT validated BITWISE against the production path and
+  which is byte-identical to the file that produced the reused ARM-B data.
+  dtau_mult = 6.0, proposal_c = zeta, systematic resampling every window.
+  Nothing in the sampler, the proposal dynamics, the compensator, the
+  resampling algorithm, the observable definition, the dtau convention, the
+  Gaussian evolution or the CMI definition is changed by this task. The brief
+  says "Do not change the sampler" and nothing here does. If a change ever
+  appears necessary, STOP and raise it separately; it is out of scope.
+
+independent_statistical_unit: >
+  The independently seeded population realization. Clone-level spread is NEVER
+  an estimator of the uncertainty of a cloning population mean; it is reported
+  only as the VIF/N_eff diagnostic. This is the parent programme's single
+  loudest recorded lesson and it is enforced in every script here.
+
+bootstrap:
+  method: non-parametric over independent populations, resampled within each cell
+  B: 10000
+  seed: 20260902
+
+# ---------------------------------------------------------------------------
+# FROZEN DESIGN CONSTANTS
+# ---------------------------------------------------------------------------
+cell:
+  zeta: 0.35
+  dtau_mult: 6.0
+  resample_scheme: systematic
+  T_equals_L: true
+
+lambda_grid:
+  n_points: 13
+  delta_lambda: 0.010
+  values: [0.2332, 0.2432, 0.2532, 0.2632, 0.2732, 0.2832, 0.2932,
+           0.3032, 0.3132, 0.3232, 0.3332, 0.3432, 0.3532]
+  identical_across_L: true
+  contains_reused_ARM_B_points: [0.2932, 0.3032, 0.3132]
+  rationale_file: LAMBDA_GRID_DECISION.md
+  frozen_note: >
+    Frozen as of this file, before any new result exists. shared/preflight.py
+    refuses any manifest whose lambdas are off this grid, so the choice cannot
+    drift after the fact.
+
+system_sizes: [32, 48, 64]
+L80_status: REJECTED — see L80_RUNTIME_GATE.md. Not prepared, not packaged.
+
+populations:
+  main_N_c: 1024
+  main_R: 24
+  shape_check_N_c: 2048
+  shape_check_R: 24
+  companion_N_c: 128
+  companion_R: 48
+  reused_ARM_B: {L: 64, N_c: 1024, R: 96, lambdas: [0.2932, 0.3032, 0.3132]}
+  rationale_file: POWER_AND_R_DECISION.md
+
+# ---------------------------------------------------------------------------
+# EXCLUSIONS — inherited verbatim from the parent spec. Not re-tuned.
+# ---------------------------------------------------------------------------
+exclusions:
+  - "A run with status != 'ok': excluded, COUNTED, reported per cell. Above 5 %
+     of a cell's runs, the CELL is excluded."
+  - "A clone whose observable is non-finite: excluded from that population's
+     mean, count reported. Above 1 % of a cell's clones, the cell is reported
+     SUSPECT."
+  - "No exclusion on the value of an observable. No outlier rejection of
+     populations. No smoothing, no regularisation, no fitting-away and no
+     discarding of a point because it looks jagged."
+  - "brentq_fallbacks > 0 is reported, never excluded."
+
+heteroscedasticity_rule: >
+  Every statistic that combines points across lambda is computed with PER-POINT
+  standard errors and never with a pooled one. Under the matched-R amendment
+  below the primary analysis is uniformly R = 24, so those per-point errors are
+  now equal by construction; the rule is kept because it still binds the
+  SECONDARY full-R views, where R is 24, 48 or 96 depending on the cell.
+
+# ---------------------------------------------------------------------------
+# MATCHED-R AMENDMENT. Issued by the researcher before commit and before any
+# campaign datum exists. Full statement and the demonstration that it changes a
+# verdict: MATCHED_R_AMENDMENT.md
+# ---------------------------------------------------------------------------
+matched_R:
+  block_size: 24
+  primary_block: A
+  ordering: >
+    Populations within a cell are sorted by SEED, ascending, in load(), before
+    any statistic is computed. Blocks are consecutive disjoint slices of that
+    ordering. Block membership is therefore DETERMINISTIC and OBSERVABLE-BLIND:
+    permuting the CMI values within a cell cannot move a population between
+    blocks. Asserted, not assumed, by tools/test_matched_r.py, which requires
+    byte-identical membership across five CMI assignments including an
+    adversarial one and requires invariance to file-read order.
+  splits:
+    reused_ARM_B: "R=96 -> blocks A B C D, 24 each"
+    companion_N_c_128: "R=48 -> blocks A B, 24 each"
+    everything_else: "R=24 -> block A only"
+  why: >
+    Roughness, adjacent-increment significance, second differences, split-half
+    stability, crossing counts and crossing uniqueness all compare a curve's
+    point-to-point scatter against its own error bars, and those error bars
+    scale as 1/sqrt(R). Comparing N_c=1024 at R=24 against N_c=128 at R=48
+    would let "the N_c=1024 curve is cleaner" be partly a statement about R.
+    On the synthetic end-to-end dataset this is not hypothetical: M3 returns
+    INCONCLUSIVE (5 vs 7 raw sign changes) under unequal R and KILLED (5 vs 5)
+    at matched R.
+  hierarchy:
+    PRIMARY:
+      - "N_c=128 R=24 versus N_c=1024 R=24, matched"
+      - "authority for M1, M2, M3, M4, M5 and every 'cleaner curve' statement"
+    SECONDARY:
+      - "N_c=128 full R=48 — mean displacement only"
+      - "reused ARM-B full R=96 — mean displacement only"
+      - "disjoint replicate blocks B/C/D — sensitivity only"
+      - "R=12 historical-precision subsets — mimicking the old corpus only"
+    rule: >
+      No SECONDARY view may carry a curve-quality, roughness, crossing-count or
+      reproducibility claim. For MEAN finite-N_c displacement BOTH the matched
+      R=24 result and the highest-precision available result are reported, with
+      the unequal-R status named in the output line itself.
+  replicate_blocks: >
+    Blocks B/C/D at the three reused cells are SENSITIVITY analyses, never an
+    opportunity to choose the nicest-looking subset. Section E2 reports, per
+    block: means, SEMs, adjacent increments, the second difference over the
+    reused triple, and the effect on the whole L=64 curve's median r,
+    roughness, chi2/dof and cross-L raw sign-change counts. Block A is primary
+    because it is deterministic and observable-blind, NOT because it is best.
+    A conclusion that depends materially on the block IS the finding and is
+    reported as such.
+  bias_warning: >
+    Larger R is NOT smaller finite-N_c bias. More independent populations reduce
+    the UNCERTAINTY on a displacement; they do not reduce the displacement.
+    TASK-2026-08-31-SMCCERT killed the claim that the displacement follows a
+    controlled 1/N_c law and nothing here revives it.
+  compute_unchanged: >
+    This is an ANALYSIS rule. The lambda grid, zeta, T=L, dtau_mult, L values,
+    N_c values, R values, seeds, manifests, array ranges, partitions and the
+    sampler are all unchanged by it, and were re-verified byte-identical
+    afterwards.
+
+# ---------------------------------------------------------------------------
+# SECTION 10 — QUANTITATIVE CURVE QUALITY. Computed for every L, at every N_c
+# class that has a complete curve.
+# ---------------------------------------------------------------------------
+curve_quality:
+  Q1_adjacent_increments: "d_i = I(lam_{i+1}) - I(lam_i), i = 1..12."
+  Q2_increment_uncertainty: >
+    SEM(d_i) = sqrt(SEM_i^2 + SEM_{i+1}^2). Valid because every lambda has its
+    own disjoint seed lane, so the point estimates are statistically independent.
+    r_i = |d_i| / SEM(d_i) is the standardized increment.
+  Q3_second_differences: >
+    q_i = I_{i+1} - 2 I_i + I_{i-1}, i = 2..12, with
+    SEM(q_i) = sqrt(SEM_{i-1}^2 + 4 SEM_i^2 + SEM_{i+1}^2).
+  Q4_bootstrap_roughness: >
+    ROUGH = mean over i of (q_i / SEM(q_i))^2, with a bootstrap CI over
+    independent populations. Reported alongside chi2/dof of the 13 points
+    against their best-fitting WEIGHTED QUADRATIC in lambda -- the same
+    statistic, on the same observable, that gives 0.60-1.38 on the historical
+    dtau_mult=12 corpus at L = 64..128 (LAMBDA_GRID_DECISION.md of the parent
+    task). The quadratic is a YARDSTICK, never a replacement for the points and
+    never plotted in place of them.
+  Q5_split_half: >
+    Per cell, split the R independent populations into two disjoint halves by a
+    deterministic permutation (seed 20260902) and form m_A - m_B with its own
+    joint across-population error s_AB. Also form the two complete half-curves
+    per L and compare them point by point.
+  Q6_leave_half_out: >
+    20 frozen random half-partitions (seeds 20260902..20260921). For each, the
+    full curve and the full crossing analysis are recomputed. Report the spread
+    of the crossing locations and the maximum per-point deviation in units of
+    that point's SEM.
+  Q7_max_population_outlier: >
+    Per cell, z_max = max_i |m_i - mean| / sd over the R populations, against
+    z_R = Phi^-1(1 - 0.01/(2R)) (z_24 = 2.81, z_48 = 3.03, z_96 = 3.29). Also
+    the shift in the cell mean caused by deleting the single most extreme
+    population, in units of that cell's SEM.
+  Q8_crossings: "see crossing_protocol below."
+  prohibited:
+    - "No smoothing of any kind: no moving average, spline, LOESS or kernel."
+    - "No imposed monotonicity. A non-monotone triple is a result, not an error."
+    - "No post-hoc removal of a lambda point, at any stage, for any reason."
+
+# ---------------------------------------------------------------------------
+# SECTION 11 — CROSSING PROTOCOL. The intended production logic, exercised here
+# on mock data. CMI is the locator.
+# ---------------------------------------------------------------------------
+crossing_protocol:
+  locator: CMI
+  pairs: [[32, 48], [32, 64], [48, 64]]
+  applied_to: "each N_c class separately (1024, and 128 if the companion runs)"
+  definitions:
+    D: "D(lam) = I_{L2}(lam) - I_{L1}(lam), SEM_D = sqrt(SEM_1^2 + SEM_2^2)."
+    raw_sign_change: "adjacent grid pair (i, i+1) with D_i * D_{i+1} < 0."
+    resolved_sign_change: >
+      a raw sign change in which BOTH |D_i|/SEM_D_i >= 2 and
+      |D_{i+1}|/SEM_D_{i+1} >= 2. The distinction matters: a curve that merely
+      wanders across zero inside its own error bars produces raw sign changes
+      without producing locators.
+    crossing_lambda: "linear interpolation of D between the bracketing points."
+  reported_per_pair:
+    - number of raw sign changes
+    - number of resolved sign changes
+    - crossing lambda(s)
+    - crossing uncertainty
+    - unique or not
+    - endpoint-induced or not
+    - stable to realization bootstrap or not
+    - stable to deleting one lambda point or not
+  rules:
+    uncertainty: >
+      Non-parametric bootstrap over independent populations, B = 10000, seed
+      20260902, reporting the 2.5/97.5 percentiles of the interpolated crossing.
+      Replicates with zero crossings or with more than one are COUNTED AND
+      REPORTED, never silently discarded, and their fraction is part of the
+      uniqueness verdict.
+    unique: >
+      exactly one raw sign change in the full-data curve AND at least 95 % of
+      bootstrap replicates give exactly one.
+    endpoint_induced: >
+      the sign change involves grid point 1 or 13, OR the interpolated crossing
+      lies within delta_lambda/2 of either endpoint. An endpoint-induced
+      crossing is reported as a crossing and is NEVER counted as a located one.
+    stable_to_bootstrap: "95 % bootstrap interval width <= 2 * delta_lambda = 0.020."
+    stable_to_point_deletion: >
+      recompute with each of the 13 lambda points deleted in turn; stable if all
+      13 jackknife crossings fall inside the full-data 95 % bootstrap interval.
+      This is a STABILITY DIAGNOSTIC. It is not licence to delete a point.
+  hard_limit: >
+    The output of this section is LOCATOR QUALITY, not lambda_c(zeta). No
+    crossing found here may be reported as the physical phase boundary, at any
+    L, in any wording, however stable it turns out to be. See
+    prohibited_conclusions.
+
+# ---------------------------------------------------------------------------
+# SECTION 12 — HIGH-N_c versus LOW-N_c COMPARISON
+# ---------------------------------------------------------------------------
+nc_comparison:
+  exact_common_cells: >
+    Two cells are EXACTLY COMMON when (L, T, zeta, lambda, dtau_mult,
+    resample_scheme) match and only N_c differs. Under that definition:
+      - MOCK N_c=1024 vs MOCK-companion N_c=128: 39 exact common cells
+        (13 lambdas x 3 L), which is why the companion arm exists.
+      - MOCK vs the historical corpus: ZERO exact common cells, at any L, any
+        lambda. The corpus is dtau_mult = 12.0 throughout and this campaign is
+        the certified 6.0. See REUSE_AND_DEDUP_AUDIT.md.
+    Every quantitative difference is computed on exact common cells only.
+    Anything involving the historical corpus is labelled DESCRIPTIVE in the
+    output itself, not merely in the prose around it.
+  displacement_decomposition: >
+    PRIMARY at matched R = 24 on both sides (block A of each). The SECONDARY
+    highest-precision mean displacement (R=96/24 against R=48) is reported
+    alongside it, labelled UNEQUAL R, and carries no shape classification
+    authority.
+    Delta(lam) = I_{N_c=1024}(lam) - I_{N_c=128}(lam) on the 13 common lambdas,
+    per L, with SEM(Delta) = sqrt(SEM_1024^2 + SEM_128^2). Fit
+    Delta = a + b (lam - lam_bar) + c (lam - lam_bar)^2, weighted by SEM(Delta).
+    Classification, per L, reported separately and never aggregated:
+      - "predominantly a vertical shift": constant-only model has chi2/dof <= 1.5
+      - "slope change": adding the linear term drops chi2 by > 9 and the
+        quadratic term adds < 9
+      - "curvature change": the quadratic term adds > 9
+      - "irregular pointwise displacement": the full quadratic still leaves
+        chi2/dof > 2
+  questions:
+    - "How much does each CMI curve move between N_c=128 and N_c=1024?"
+    - "Is the change a shift, a slope change, a curvature change, or irregular?"
+    - "Does the number of cross-L crossings decrease?"
+    - "Does the independent-population uncertainty explain the old jaggedness?"
+    - "Were any previous apparent features artifacts of finite N_c?"
+    - "Does the high-N_c scan materially alter any old transition locator?"
+  jaggedness_question_rule: >
+    Question 4 is answered by chi2/dof of each curve against its own weighted
+    quadratic. If the N_c=128 curve's chi2/dof is within [0.5, 1.5] then its
+    apparent jaggedness IS explained by the independent-population uncertainty,
+    and that is the answer whichever way the N_c=1024 curve comes out.
+  locator_alteration_rule: >
+    Question 6 compares crossing lambdas between N_c classes at matched L-pairs.
+    "Materially altered" means the two 95 % bootstrap intervals are disjoint.
+    A shifted locator is reported as a shifted LOCATOR, never as a shifted
+    phase boundary.
+
+# ---------------------------------------------------------------------------
+# SECTION 9 — FIGURES. Validation figures, NOT manuscript figures.
+# ---------------------------------------------------------------------------
+figures:
+  A:
+    what: "CMI(lambda) for L = 32, 48, 64 at N_c = 1024, with across-population error bars."
+    rules: "No smoothing. No connecting fit. Points and error bars, joined by straight segments only."
+  B:
+    what: >
+      The same curves from the low-N_c data, shown side by side with A. PRIMARY
+      panel: the matched N_c = 128 companion arm (identical grid, identical
+      dtau_mult, exact common cells). SECONDARY panel: the historical
+      dtau_mult = 12 corpus at L = 64 only, which is the only L it shares with
+      this campaign, drawn on its own lambda grid and labelled DESCRIPTIVE.
+    rules: "The corpus panel carries the dtau_mult = 12 label inside the axes, not in a caption."
+  C:
+    what: "I_{N_c=1024}(lambda) - I_{N_c=128}(lambda) versus lambda, per L, on exact common cells only."
+    rules: >
+      Drawn only where an exact common cell exists. If the companion arm is not
+      run, this figure is emitted EMPTY with the reason printed on it, and is
+      never filled by interpolating the historical corpus.
+  D:
+    what: "L = 64, N_c = 1024 versus N_c = 2048 at the three common lambdas, and Delta_N(lambda) beneath."
+    rules: "Three points. No line of best fit through three points is drawn or reported as a law."
+  prohibited: >
+    Do not interpolate unmatched historical cells and then treat the
+    interpolation as measured evidence. Any interpolated curve that appears in
+    any figure is drawn dashed and labelled DESCRIPTIVE inside the axes.
+
+# ---------------------------------------------------------------------------
+# SECTION 13 — SUCCESS CRITERIA. Pre-registered. Each returns exactly one of
+# SUPPORTED / KILLED / INCONCLUSIVE.
+# ---------------------------------------------------------------------------
+success_criteria:
+  M1:
+    statement: >
+      Each L produces a reproducible CMI(lambda) curve with no isolated
+      population driving a point.
+    statistic: "Q5 split-half, Q7 outlier and leave-one-population-out, per (L, lambda), on the PRIMARY matched R=24 block A."
+    supported: >
+      At every (L, lambda) of all three N_c=1024 curves: |m_A - m_B| <= 2.5 s_AB,
+      z_max <= z_R, and deleting the most extreme population shifts the cell mean
+      by <= 1 SEM.
+    killed: >
+      The split-half test fails at two or more lambdas within any single L, OR
+      the leave-one-out test fails at any lambda.
+    inconclusive: "Anything else, including isolated single-lambda failures."
+  M2:
+    statement: >
+      The chosen lambda spacing resolves physical changes without being
+      unnecessarily fine.
+    statistic: "r_i = |d_i| / SEM(d_i) over the 12 adjacent increments, per L, on the PRIMARY matched R=24 block A."
+    supported: "median_i r_i in [2, 20] at every L AND r_i >= 2 for at least 9 of the 12 increments at every L."
+    killed: "median_i r_i < 2 at any L (spacing finer than the achievable resolution), OR median_i r_i > 20 at all three L (unnecessarily coarse)."
+    inconclusive: "Anything else."
+    projected: >
+      From the measured ARM-B variances and the corpus local slope, r is
+      projected at 4.0 (low-lambda end) to 6.5 (high-lambda end) at L = 64,
+      R = 24, and higher at the three reused R = 96 points. See
+      POWER_AND_R_DECISION.md. The projection is recorded so that a large
+      disagreement is itself reportable.
+  M3:
+    statement: "Cross-L locator structure is materially cleaner than in the old N_c=128 scan."
+    statistic: >
+      The crossing protocol run on the N_c=1024 curves and on the matched
+      N_c=128 companion curves, on the identical grid AND AT THE IDENTICAL
+      MATCHED R = 24 (block A on both sides). This is the amendment's primary
+      case: without it, a lower sign-change count at one N_c could be bought
+      by that side simply having more independent populations. The verdict
+      string printed by the analysis carries the words "at MATCHED R = 24 on
+      both sides" so the qualifier travels with the number.
+    supported: >
+      For every L-pair, the raw sign-change count at N_c=1024 does not exceed
+      that at N_c=128; summed over the three pairs it is at most half of it; and
+      at least one pair yields a unique, non-endpoint-induced,
+      bootstrap-stable crossing at N_c=1024.
+    killed: "The summed raw sign-change count at N_c=1024 is greater than or equal to that at N_c=128."
+    inconclusive: "Anything else, INCLUDING the case where the companion arm was not run, in which case M3 has no matched comparator and INCONCLUSIVE is the honest verdict rather than a comparison against dtau_mult = 12 data."
+  M4:
+    statement: "Independent split-half analyses return compatible local curves and crossings."
+    statistic: "Q5 whole-curve split-half and Q6 leave-half-out, plus the crossing protocol run on each half — all on the PRIMARY matched R=24 block A."
+    supported: >
+      max over (L, lambda) of |I_A - I_B| / s_AB <= 3.0, AND for every L-pair in
+      which both halves give a unique crossing, |lam_A - lam_B| <= 2 sqrt(u_A^2 + u_B^2).
+    killed: "The per-point condition fails."
+    inconclusive: "The per-point condition holds but the crossing condition fails or is undefined because a half gives no unique crossing."
+  M5:
+    statement: >
+      The N_c=2048 L=64 shape check determines whether the finite-population
+      correction varies substantially with lambda.
+    statistic: >
+      Delta_N(lam) = I_2048(lam) - I_1024(lam) at the three central lambdas;
+      chi2 of the three against a constant on 2 dof, bootstrapped over
+      independent populations; and the 95 % bound on |slope| * delta_lambda.
+      PRIMARY at matched R = 24 on both sides: the N_c=1024 centre is cut from
+      its R=96 to block A rather than being allowed to be four times as precise
+      as the N_c=2048 arm it is subtracted from. The A/B/C verdict is taken
+      from that matched analysis ONLY. The mean displacement is ALSO reported
+      at the highest precision available (R_1024 = 96 against R_2048 = 24),
+      with the unequal R named in the output line, because a mean is not a
+      cleanliness statistic. More R does not remove finite-N_c bias.
+    verdicts:
+      A: "approximately a common shift across lambda: p > 0.32 AND the 95 % bound on |slope|*delta_lambda <= tau_shape."
+      B: "appreciably lambda-dependent: p < 0.05."
+      C: "unresolved: anything else."
+    tau_shape: >
+      0.2 * (median |d_i| at L = 64, N_c = 1024). A lambda-dependence smaller
+      than a fifth of one grid step cannot appreciably change the curve's shape.
+      Computed from the returned data, not assumed.
+    supported: "the arm returns verdict A or B, i.e. the question is decided."
+    killed: "the arm cannot be evaluated at all (cell excluded or data missing)."
+    inconclusive: "verdict C."
+    note: >
+      Delta_N is measured at three lambdas. No 1/N_c law is fitted, no universal
+      finite-population bias law is inferred, and Delta_N is not extrapolated to
+      N_c = infinity. TASK-2026-08-31-SMCCERT killed that claim.
+  M6:
+    statement: "No smoothing or post-hoc point removal is required to obtain the result."
+    statistic: "The analysis script's own audit fields: smoothing_applied, value_based_exclusions, lambda_points_removed."
+    supported: "all three are false / 0 / 0, and every verdict above was reached from the unmodified points."
+    killed: "any stated result required removing a lambda point or smoothing the curve."
+    inconclusive: "not reachable; this criterion is procedural and binary by construction."
+    note: >
+      This is a discipline check and it is expected to pass. It is
+      pre-registered anyway, because the failure it guards against is one that
+      is invisible in the output if it is not recorded at the time.
+  M7:
+    statement: >
+      The mock production settings are computationally realistic for later
+      larger-L work, or the task clearly establishes why they are not.
+    statistic: >
+      Re-derive the L-scaling exponent from the FOUR measured Ruche rates that
+      will then exist (L = 32, 48, 64, 128) and predict a full 13-point,
+      N_c=1024, R=24 scan at L = 96 and L = 128: core-hours and elapsed at a
+      concurrency cap of 64.
+    supported: >
+      The re-derived model reproduces each of the four measured rates to within
+      15 %, AND the predicted L = 96 campaign has elapsed <= 24 h at %64.
+    killed: "The predicted L = 96 campaign has elapsed > 72 h at %64, i.e. this configuration does not scale to the next rung."
+    inconclusive: "Anything else, including a model that cannot reproduce its own measured anchors to 15 %."
+
+# ---------------------------------------------------------------------------
+# WHAT MAY NOT BE CONCLUDED
+# ---------------------------------------------------------------------------
+prohibited_conclusions:
+  - >
+    NOTHING HERE BEARS ON THE PHASE BOUNDARY. No crossing found in this task may
+    be reported as lambda_c(zeta = 0.35), as a finite-size estimate of it, or as
+    input to a boundary law. The system sizes are 32, 48 and 64; the programme's
+    own corpus starts at 64. This is an ALGORITHM-VALIDATION experiment and the
+    output is locator quality.
+  - >
+    No global phase-boundary law is fitted. No sqrt(zeta) law, no finite-zeta
+    exponent, no y_zeta, no Delta. The lambda range was chosen from the measured
+    local behaviour of the existing zeta = 0.35 corpus and explicitly NOT from a
+    presumed critical law -- LAMBDA_GRID_DECISION.md.
+  - >
+    No universal 1/N_c finite-population BIAS law. TASK-2026-08-31-SMCCERT
+    killed that claim. Delta_N is reported at three lambdas as a measured
+    difference and is never extrapolated to N_c = infinity or used to define
+    "converged".
+  - >
+    No universal N_c(L, zeta, lambda) law. Three L and one zeta cannot support
+    one.
+  - >
+    No conversion of VIF or N_c into a bias rule. VIF is a variance diagnostic
+    and does not reliably predict bias.
+  - >
+    More R cannot repair finite-N_c bias. N_c must first be large enough for the
+    interacting-particle approximation to be trustworthy; only then does raising
+    R reduce residual uncertainty.
+  - "Monotonicity in lambda is NOT imposed. The physics is not invoked to require it."
+  - >
+    The historical dtau_mult = 12 corpus is never pooled with, averaged into, or
+    interpolated onto this campaign's cells for any quantitative statement.
+
+# ---------------------------------------------------------------------------
+# ARMS
+# ---------------------------------------------------------------------------
+arms:
+  - id: M32
+    package: mockL32
+    group: main
+    question: >
+      What does the full 13-point CMI(lambda) scan look like at L = 32, T = 32,
+      zeta = 0.35 with a production-scale population N_c = 1024 and R = 24
+      independent populations per lambda?
+    cell: {L: 32, T: 32.0, N_c: 1024}
+    R: 24
+    primary_statistic: >
+      The 13 across-population means with their across-population SEMs, and the
+      12 adjacent increments d_i with SEM(d_i).
+    decision_rule: "Feeds M1, M2, M3, M4 and M6. Section 10 curve quality and section 11 crossings."
+  - id: M48
+    package: mockL48
+    group: main
+    question: "The same 13-point scan at L = 48, T = 48."
+    cell: {L: 48, T: 48.0, N_c: 1024}
+    R: 24
+    primary_statistic: "as M32"
+    decision_rule: "as M32"
+  - id: M64
+    package: mockL64
+    group: main
+    question: >
+      The same 13-point scan at L = 64, T = 64, using the TEN lambdas not
+      already covered by TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA ARM B. The three
+      remaining points are reused at R = 96 from frozen_inputs and are not
+      recomputed.
+    cell: {L: 64, T: 64.0, N_c: 1024}
+    R: 24
+    primary_statistic: "as M32, with per-point SEMs that differ between the R=24 and R=96 lambdas."
+    decision_rule: "as M32, under the heteroscedasticity rule above."
+  - id: M64H
+    package: mockL64nc2048
+    group: main
+    question: >
+      At L = 64 and the three central lambdas, how large is
+      Delta_N(lambda) = I_{N_c=2048} - I_{N_c=1024}, and is it approximately a
+      common shift across lambda, appreciably lambda-dependent, or unresolved?
+    cell: {L: 64, T: 64.0, N_c: 2048, lam: [0.2932, 0.3032, 0.3132]}
+    R: 24
+    primary_statistic: "Delta_N at each of the three lambdas, with a bootstrap CI over independent populations."
+    decision_rule: "M5. Verdicts A / B / C only. No 1/N_c law is fitted."
+  - id: C32
+    package: mockNC128L32
+    group: companion
+    question: >
+      The identical 13-point grid at L = 32 with N_c = 128 and R = 48, so that
+      the N_c=1024 curve has a matched low-population comparator differing in
+      NOTHING but N_c.
+    cell: {L: 32, T: 32.0, N_c: 128}
+    R: 48
+    primary_statistic: "as M32; and Delta(lambda) = I_1024 - I_128 on the 13 exact common cells."
+    decision_rule: "Feeds M3 and the whole of section 12."
+  - id: C48
+    package: mockNC128L48
+    group: companion
+    question: "The matched N_c = 128 comparator at L = 48."
+    cell: {L: 48, T: 48.0, N_c: 128}
+    R: 48
+    primary_statistic: "as C32"
+    decision_rule: "as C32"
+  - id: C64
+    package: mockNC128L64
+    group: companion
+    question: >
+      The matched N_c = 128 comparator at L = 64. This is also the only cell
+      class sharing L and N_c with the historical corpus, so it separates the
+      dtau_mult = 12 vs 6 discretisation systematic from the population-size
+      effect.
+    cell: {L: 64, T: 64.0, N_c: 128}
+    R: 48
+    primary_statistic: "as C32"
+    decision_rule: "as C32"
+
+# ---------------------------------------------------------------------------
+stopping_criteria:
+  - "Do not extend any arm in response to a result."
+  - "Do not add a lambda point in response to a result. A denser or wider grid is a child task with its own frozen spec."
+  - >
+    Recommended total is 378.8 core-hours across the seven arms (530.3
+    pessimistic), of which 297.5 are the four main arms and 81.3 the three
+    companion arms. That is 31 % of the parent HIGHRUNG-LAMBDA campaign's 1213
+    core-hours. It is still a HUMAN budget decision, not an agent one, and an
+    overrun is reported rather than absorbed.
+  - >
+    The L = 128, N_c = 2048 rung already prepared as
+    TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA/armA2048_optional is NOT part of this
+    campaign and is NOT duplicated here. It is handed to the human as a separate
+    recommended submission with its own re-measured cost: see
+    L128_NC2048_HANDOFF.md.
+
+analysis_command: |
+  # per arm, on Ruche or after transfer back
+  bash mockL32/analyse_results.sh
+  bash mockL48/analyse_results.sh
+  bash mockL64/analyse_results.sh
+  bash mockL64nc2048/analyse_results.sh
+  bash mockNC128L32/analyse_results.sh
+  bash mockNC128L48/analyse_results.sh
+  bash mockNC128L64/analyse_results.sh
+  # combined + figures, on the Mac
+  .venv/bin/python3 research/tasks/active/TASK-2026-09-02-MOCK-PRODUCTION/analysis/mock_production_analysis.py
+
+provenance: >
+  The reused ARM-B populations are frozen into
+  frozen_inputs/armB_populations.csv (288 rows, sha256
+  9e37733e26e61c42f32f3cc548a806a55beb40bb1aa8b8ee3286c3784ec8328e) and
+  reproduce the published ARM-B per-cell block digit for digit; see
+  INPUTS_LEDGER.md. The historical corpus slice is frozen into
+  frozen_inputs/historical_corpus_zeta035.csv (1200 rows, sha256
+  f7598a121c99506021634fb4a6024ab28fb06550e82cb5332b22b666719e811a) and is
+  DESCRIPTIVE ONLY. No predecessor task archive was modified. research/state/**
+  was not touched.
