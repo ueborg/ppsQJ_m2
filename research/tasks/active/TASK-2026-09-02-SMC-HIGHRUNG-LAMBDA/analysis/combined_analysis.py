@@ -252,6 +252,12 @@ def stencil(pops, L, nc, R_expect, rng):
     srng = np.random.default_rng(SEED)
     for lam in (LAM_M, LAM_0, LAM_P):
         m = pts[lam]["m"]
+        if m.size < 4:
+            # each half needs >= 2 populations. Unreachable at the budgeted
+            # R (32-96); S1 must FAIL rather than silently pass if it happens.
+            s1[lam] = dict(diff=float("nan"), sem=float("nan"),
+                           z=float("inf"), ok=False)
+            continue
         idx = srng.permutation(m.size)
         h = m.size // 2
         a, b = m[idx[:h]], m[idx[h:2 * h]]

@@ -66,10 +66,17 @@ for k in sorted(cells):
     # split-half over independent populations: two disjoint halves of the R
     # replicates must agree within their own joint error. This is a
     # reproducibility check, not a convergence claim.
-    idx = rng.permutation(m.size)
-    a, b = m[idx[:m.size // 2]], m[idx[m.size // 2:2 * (m.size // 2)]]
-    dsplit = float(a.mean() - b.mean())
-    sd = math.sqrt(a.var(ddof=1) / a.size + b.var(ddof=1) / b.size)
+    if m.size >= 4:
+        idx = rng.permutation(m.size)
+        a, b = m[idx[:m.size // 2]], m[idx[m.size // 2:2 * (m.size // 2)]]
+        dsplit = float(a.mean() - b.mean())
+        sd = math.sqrt(a.var(ddof=1) / a.size + b.var(ddof=1) / b.size)
+    else:
+        # each half needs >= 2 populations for its own variance to exist. Every
+        # production cell here has R >= 32, so this branch is only reachable in
+        # a smoke run -- but returning NaN silently would look like a diagnostic
+        # result rather than an unmet precondition.
+        dsplit, sd = float("nan"), float("nan")
 
     print(f"\n[L={k[0]} T={k[1]:g} zeta={k[2]:g} lambda={k[3]:g} N_c={nc}]")
     print(f"  R (independent populations)   {m.size}")
@@ -92,8 +99,11 @@ for k in sorted(cells):
     print(f"     information ceiling — this is a diagnostic, not a verdict)")
     print(f"  wall_s                        med {np.nanmedian(wall):.1f} "
           f"min {np.nanmin(wall):.1f} max {np.nanmax(wall):.1f}")
-    print(f"  split-half difference         {dsplit:+.5f} +- {sd:.5f} "
-          f"({abs(dsplit) / sd if sd > 0 else float('nan'):.2f} sigma)")
+    if math.isnan(sd):
+        print(f"  split-half difference         not computed (R = {m.size} < 4)")
+    else:
+        print(f"  split-half difference         {dsplit:+.5f} +- {sd:.5f} "
+              f"({abs(dsplit) / sd if sd > 0 else float('inf'):.2f} sigma)")
     out.append(dict(L=k[0], T=k[1], zeta=k[2], lam=k[3], N_c=nc, R=int(m.size),
                     mean=float(m.mean()), sem=sem, var_across=V,
                     within_mean=s2m, vif=vif, n_eff=neff,
