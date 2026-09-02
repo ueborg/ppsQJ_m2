@@ -1,0 +1,105 @@
+[
+ {
+  "name": "armA512",
+  "arm": "A512",
+  "tasks": 48,
+  "L": 128,
+  "N_c": 512,
+  "R": 48,
+  "lams": [
+   0.3032
+  ],
+  "slowest_h": 5.029,
+  "pess_h": 7.041,
+  "core_h": 241.4,
+  "pess_core_h": 338.0,
+  "mem_mb": 1202,
+  "partition": "cpu_long",
+  "time": "12:00:00",
+  "mem_req": "3G",
+  "recommend": true
+ },
+ {
+  "name": "armA1024",
+  "arm": "A1024",
+  "tasks": 32,
+  "L": 128,
+  "N_c": 1024,
+  "R": 32,
+  "lams": [
+   0.3032
+  ],
+  "slowest_h": 10.058,
+  "pess_h": 14.081,
+  "core_h": 321.9,
+  "pess_core_h": 450.6,
+  "mem_mb": 2275,
+  "partition": "cpu_long",
+  "time": "24:00:00",
+  "mem_req": "5G",
+  "recommend": true
+ },
+ {
+  "name": "armB",
+  "arm": "B",
+  "tasks": 288,
+  "L": 64,
+  "N_c": 1024,
+  "R": 96,
+  "lams": [
+   0.2932,
+   0.3032,
+   0.3132
+  ],
+  "slowest_h": 0.599,
+  "pess_h": 0.838,
+  "core_h": 167.1,
+  "pess_core_h": 234.0,
+  "mem_mb": 665,
+  "partition": "cpu_med",
+  "time": "03:00:00",
+  "mem_req": "2G",
+  "recommend": true
+ },
+ {
+  "name": "armC",
+  "arm": "C",
+  "tasks": 96,
+  "L": 128,
+  "N_c": 512,
+  "R": 48,
+  "lams": [
+   0.2932,
+   0.3132
+  ],
+  "slowest_h": 5.197,
+  "pess_h": 7.276,
+  "core_h": 482.9,
+  "pess_core_h": 676.1,
+  "mem_mb": 1202,
+  "partition": "cpu_long",
+  "time": "12:00:00",
+  "mem_req": "3G",
+  "recommend": true
+ },
+ {
+  "name": "armA2048_optional",
+  "arm": "A2048",
+  "tasks": 16,
+  "L": 128,
+  "N_c": 2048,
+  "R": 16,
+  "lams": [
+   0.3032
+  ],
+  "slowest_h": 20.116,
+  "pess_h": 28.163,
+  "core_h": 321.9,
+  "pess_core_h": 450.6,
+  "mem_mb": 4423,
+  "partition": "cpu_long",
+  "time": "48:00:00",
+  "mem_req": "9G",
+  "recommend": false
+ }
+]

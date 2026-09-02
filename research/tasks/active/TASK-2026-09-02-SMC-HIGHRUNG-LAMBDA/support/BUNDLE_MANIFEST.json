@@ -1,0 +1,28 @@
+{
+ "schema_version": 1,
+ "task": "TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA",
+ "generated": "2026-09-02T00:00:00Z",
+ "why": "Each Ruche package in this project must be runnable from a tracked-only clean checkout with no dependency on any other task directory. This task therefore carries its OWN byte-identical copy of the certified instrumentation rather than reaching sideways into TASK-2026-09-01-SMCRUCHE-READY/support/. That predecessor copy IS tracked, so a cross-task path would work today, but it would make this package's correctness depend on a sibling task nobody is maintaining. Self-containment is cheaper than that coupling.",
+ "closure_method": "Inherited verbatim from TASK-2026-09-01-SMCRUCHE-PACKFIX, which computed it by ast.parse of instrumented.py, walking Import/ImportFrom nodes and following any resolving to a sibling module in the (untracked) SMCSTAT analysis directory. Result: no sibling imports at all. Re-verified here: the file's import closure over non-stdlib, non-numpy, non-pps_qj modules is EMPTY.",
+ "not_bundled_because_tracked": [
+  "pps_qj (the production package, tracked in this repository)"
+ ],
+ "not_bundled_because_external": [
+  "numpy",
+  "dataclasses",
+  "time",
+  "__future__"
+ ],
+ "files": [
+  {
+   "bundled_as": "support/instrumented.py",
+   "original_path": "research/tasks/active/TASK-2026-09-01-SMCRUCHE-READY/support/instrumented.py",
+   "ultimate_origin": "research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis/instrumented.py (UNTRACKED; never depended on at runtime)",
+   "sha256_source": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "sha256_bundled": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "bytes": 11396,
+   "byte_identical": true,
+   "note": "Copied verbatim. NOT rewritten, NOT reformatted, NOT re-implemented. This is the exact file that produced every frozen ARM1/ARM2 result and that TASK-2026-08-30-SMCSTAT validated bitwise against the production path. Its dtau_mult default is the certified 6.0, never the corpus 12.0."
+  }
+ ]
+}

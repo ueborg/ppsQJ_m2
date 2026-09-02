@@ -1,0 +1,282 @@
+# FROZEN analysis spec — TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA
+#
+# Written BEFORE submission and BEFORE any new datum exists. Do not change it
+# after data arrives. A post-hoc analysis needs a separately versioned spec
+# written before IT runs.
+#
+# Freeze this file with:
+#   research/tools/task_phase.py <TASK_DIR> close 1
+
+schema_version: 1
+task_id: TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA
+parents:
+  - TASK-2026-08-30-SMCSTAT
+  - TASK-2026-08-31-SMCCERT
+  - TASK-2026-09-01-SMCRUCHE-READY
+  - TASK-2026-09-01-SMCRUCHE-PACKFIX
+observable: OBS-CMI-001
+estimator: >
+  Guided cloning through the tracked pps_qj production package via the bundled
+  support/instrumented.py (sha256 0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d),
+  which TASK-2026-08-30-SMCSTAT validated BITWISE against the production path.
+  dtau_mult = 6.0, proposal_c = zeta, systematic resampling every window.
+  Nothing in the sampler, the proposal dynamics, the compensator, the resampling
+  algorithm, the observable definition, the dtau convention, the Gaussian
+  evolution or the CMI definition is changed by this task. If any such change
+  ever appears necessary, STOP and raise it as a separate scientific/software
+  change; it is out of scope here.
+
+independent_statistical_unit: >
+  The independently seeded population realization. Clone-level spread is NEVER
+  an estimator of the uncertainty of a cloning population mean; it is reported
+  only as the VIF/N_eff diagnostic. This is the parent programme's single
+  loudest recorded lesson and it is enforced in every script here.
+
+bootstrap: non-parametric over independent populations, B = 10000, seed 20260902
+
+# ---------------------------------------------------------------------------
+# FROZEN DESIGN CONSTANTS
+# ---------------------------------------------------------------------------
+cell:
+  zeta: 0.35
+  dtau_mult: 6.0
+  resample_scheme: systematic
+
+lambda_stencil:
+  lam_minus: 0.2932
+  lam_0: 0.3032
+  lam_plus: 0.3132
+  delta_lambda: 0.010
+  symmetric: true
+  rationale_file: LAMBDA_SPACING_DECISION.md
+
+# ---------------------------------------------------------------------------
+# EXCLUSIONS — inherited verbatim from the parent spec. Not re-tuned.
+# ---------------------------------------------------------------------------
+exclusions:
+  - "A run with status != 'ok': excluded, COUNTED, reported per cell. Above 5 %
+     of a cell's runs, the CELL is excluded."
+  - "A clone whose observable is non-finite: excluded from that population's
+     mean, count reported. Above 1 % of a cell's clones, the cell is reported
+     SUSPECT."
+  - "No exclusion on the value of an observable. No outlier rejection of
+     populations. No smoothing, no regularisation, no fitting-away and no
+     discarding of a point because it looks jagged."
+  - "brentq_fallbacks > 0 is reported, never excluded."
+
+# ---------------------------------------------------------------------------
+# PRACTICAL TOLERANCES — tied to the plotting resolution, fixed in advance
+# ---------------------------------------------------------------------------
+tolerances:
+  tau_step:
+    value: 0.0732
+    definition: >
+      One lambda-grid step in CMI at L = 128: |dI/dlambda| * delta_lambda =
+      7.321 * 0.010. A residual finite-N_c displacement of this size would move
+      a point by a full grid spacing and make CMI(lambda) uninterpretable.
+    achievable: true
+    note: "Requires SEM(Delta) <= 0.0374; the design delivers 0.0231."
+  tau_plot:
+    value: 0.0146
+    definition: >
+      0.2 of a lambda-grid step, i.e. a residual displacement that moves a point
+      by less than a fifth of the grid spacing. This is the tolerance the FINAL
+      production CMI(lambda) plots actually want.
+    achievable: false
+    note: >
+      HONEST PRE-REGISTRATION: this campaign CANNOT certify |Delta| < tau_plot.
+      It needs SEM(Delta) <= 0.0075, i.e. R ~ 436 per rung at L = 128 against
+      the 32-48 budgeted here, roughly a 10x cost. Reporting the gap is a
+      deliverable; claiming the tolerance was met would not be.
+
+# ---------------------------------------------------------------------------
+# F1-F7 — FROZEN FALSIFICATION TARGETS. Each has support, kill and
+# inconclusive criteria. Full statement and power: FALSIFICATION_PLAN.md
+# ---------------------------------------------------------------------------
+falsification_targets:
+  F1:
+    statement: "At L = 128, mean CMI continues to move materially between N_c = 256 and 512."
+    statistic: "Delta_256->512 = I(512) - I(256), bootstrap over independent populations."
+    projected_SEM: 0.0231
+    support: "95 % CI of Delta excludes 0 AND |Delta_hat| >= tau_step."
+    kill: "95 % CI of Delta lies entirely inside +-tau_step AND excludes nothing larger."
+    inconclusive: "Anything else, including a CI that excludes 0 with |Delta_hat| < tau_step."
+  F2:
+    statement: "At L = 128, mean CMI continues to move materially between N_c = 512 and 1024."
+    statistic: "Delta_512->1024, bootstrap over independent populations."
+    projected_SEM: 0.0225
+    support: "95 % CI excludes 0 AND |Delta_hat| >= tau_step."
+    kill: "95 % CI lies entirely inside +-tau_step."
+    inconclusive: "Anything else."
+  F3:
+    statement: "Variance continues to decrease usefully with increasing N_c at L = 128."
+    statistic: "gamma = -dlogVar/dlogN_c over the >=3-rung window scan (64,128,256,512,1024)."
+    support: "Bootstrap 95 % CI of gamma on the full window contained in [0.5, 1.5]."
+    kill: "Upper bound of the gamma CI < 0.5 on the full AND drop-smallest windows."
+    inconclusive: "Anything else. The exponent is NOT required to equal 1."
+    note: >
+      gamma is a VARIANCE diagnostic. It has no authority over F1/F2, which are
+      MEAN convergence. A SUPPORTED gamma never licenses a stabilization claim.
+  F4:
+    statement: >
+      A high-N_c, low-L three-point lambda stencil gives a reproducible local
+      CMI(lambda) curve.
+    statistic: "The ARM B smoothness criterion S1-S4 in SMOOTHNESS_CRITERION.md."
+    support: "All four of S1-S4 pass."
+    kill: "S1 fails (split-half replicates disagree beyond their joint error) or S4 fails."
+    inconclusive: "S1 and S4 pass but S2 or S3 is undetermined at the achieved SEM."
+  F5:
+    statement: "The same neighbouring-lambda spacing remains usable at L = 128."
+    statistic: "The same S1-S4, evaluated on ARM C plus armA512's central point."
+    support: "All four of S1-S4 pass at L = 128."
+    kill: "S1 fails at L = 128."
+    inconclusive: "Otherwise."
+  F6:
+    statement: >
+      The lambda spacing chosen for the pilot is neither obviously too coarse
+      nor buried below the achievable statistical resolution.
+    statistic: "r = |d| / SEM(d), the adjacent-increment signal-to-noise, per L."
+    support: "2 <= r <= 20 at BOTH L classes."
+    kill: "r < 2 at either L (buried: too fine) or r > 20 at both (too coarse)."
+    inconclusive: "r outside the band at exactly one L."
+    projected: "r ~ 7.3 at L = 64 and ~ 3.3 at L = 128."
+  F7:
+    statement: >
+      Any apparent local jaggedness survives an independent-population bootstrap
+      and is therefore NOT explained by sampling noise alone.
+    statistic: >
+      chi-square of the three stencil points against the best-fitting straight
+      line in lambda, on 1 dof, with the bootstrap null built by resampling
+      independent populations.
+    support: "Bootstrap p < 0.05 — the jaggedness is real and not sampling noise."
+    kill: "Bootstrap p > 0.32 (within 1 sigma of the smooth-line null)."
+    inconclusive: "0.05 <= p <= 0.32."
+    prior_note: >
+      A quadratic fit to the EXISTING dtau_mult=12 corpus at zeta = 0.35 over
+      lambda in [0.25, 0.37] returns chi2/dof of 1.15, 0.95, 0.78, 1.38 and 0.60
+      at L = 64, 80, 96, 112 and 128. The historical jaggedness is therefore
+      ALREADY consistent with sampling noise. F7 is expected to come back
+      KILLED, and that is a real, reportable, negative result.
+
+# ---------------------------------------------------------------------------
+# WHAT MAY NOT BE CONCLUDED
+# ---------------------------------------------------------------------------
+prohibited_conclusions:
+  - >
+    No universal 1/N_c finite-population BIAS law. TASK-2026-08-31-SMCCERT
+    killed that claim. I(N_c) = I_inf + B/N_c may be reported as a DESCRIPTIVE
+    fit and may never be used as ground truth, as an extrapolation to N_c = inf,
+    or as the definition of "converged". Convergence is tested by direct
+    rung-to-rung differences only.
+  - >
+    No conversion of VIF or N_c into a bias rule. VIF is a variance diagnostic
+    and does not reliably predict bias.
+  - >
+    No universal N_c(L, zeta, lambda) law. Three cells cannot support one, and
+    the per-L-class recommendation must be confined to the three verdicts in
+    section 11D of the task brief.
+  - >
+    Nothing here bears on the phase boundary, lambda_c(zeta) or any critical
+    exponent. The historical sqrt(zeta)-centred scan was used ONLY to estimate a
+    local slope and curvature for choosing delta_lambda, and NEVER as evidence
+    for a boundary law or shape.
+  - >
+    More R cannot repair finite-N_c bias. N_c must first be large enough for the
+    interacting-particle approximation to be trustworthy; only then does raising
+    R reduce residual uncertainty.
+  - "Monotonicity in lambda is NOT imposed. The physics is not invoked to require it."
+
+# ---------------------------------------------------------------------------
+# ARMS
+# ---------------------------------------------------------------------------
+arms:
+  - id: A512
+    package: armA512
+    question: >
+      At L = 128, T = 128, zeta = 0.35, lambda = 0.3032, does the mean CMI stop
+      moving between N_c = 256 and N_c = 512? This is the first rung beyond the
+      completed ARM2 ladder. Its populations are ALSO the central point of the
+      ARM C lambda stencil and are not recomputed there.
+    cell: {L: 128, T: 128.0, N_c: 512, lam: 0.3032}
+    R: 48
+    primary_statistic: "Delta_256->512 of the mean, across independent populations"
+    decision_rule: "F1 above. tau_step = 0.0732. gamma feeds F3 only, never F1."
+  - id: A1024
+    package: armA1024
+    question: >
+      At the same cell, does the mean CMI stop moving between N_c = 512 and
+      N_c = 1024? The rung-to-rung pair (F1, F2) is what distinguishes
+      stabilization from continued drift; a 1/N_c fit does not.
+    cell: {L: 128, T: 128.0, N_c: 1024, lam: 0.3032}
+    R: 32
+    primary_statistic: "Delta_512->1024 of the mean, across independent populations"
+    decision_rule: "F2 above."
+  - id: B
+    package: armB
+    question: >
+      If we pay for a sufficiently large population at a cheaper L, does
+      CMI(lambda) become a statistically coherent local curve?
+    cell: {L: 64, T: 64.0, N_c: 1024, lam: [0.2932, 0.3032, 0.3132]}
+    R: 96
+    primary_statistic: >
+      d_minus = I_0 - I_minus, d_plus = I_plus - I_0, and the second finite
+      difference q = I_plus - 2 I_0 + I_minus, each with a bootstrap CI over
+      independent populations.
+    decision_rule: "F4, F6 and F7 above, via S1-S4 in SMOOTHNESS_CRITERION.md."
+  - id: C
+    package: armC
+    question: >
+      Does the same lambda spacing still trace a coherent local curve at
+      L = 128, where the finite-N_c drift is largest? NEIGHBOURING lambdas only;
+      the central point is armA512's.
+    cell: {L: 128, T: 128.0, N_c: 512, lam: [0.2932, 0.3132]}
+    R: 48
+    primary_statistic: "as ARM B"
+    decision_rule: "F5, F6 and F7 above."
+    parallelism_note: >
+      ARM C is submitted in PARALLEL with ARM A and ARM B and is therefore NOT
+      logically conditional on ARM B passing. This is a deliberate trade: it
+      sacrifices the cheaper sequential gate (in which a failed ARM B would have
+      saved ARM C's ~483 core-hours) in exchange for wall-clock time. The
+      researcher asked for wall-clock. If ARM B comes back with S1 failing, ARM
+      C's cost was spent to learn the same thing at high L, which is not
+      worthless but is not what a gated design would have paid.
+  - id: A2048
+    package: armA2048_optional
+    question: "Same as A1024, one further doubling."
+    cell: {L: 128, T: 128.0, N_c: 2048, lam: 0.3032}
+    R: 16
+    primary_statistic: "Delta_1024->2048"
+    decision_rule: "F2 extended. See NC2048_AUDIT.md."
+    status: >
+      PREPARED BUT NOT RECOMMENDED TONIGHT. A single task is ~20.1 h predicted
+      and ~28.2 h pessimistic, so it cannot complete overnight; and whether it
+      is worth running at all is precisely what Delta_512->1024 answers by
+      morning. Submit it tomorrow if F2 comes back SUPPORTED.
+
+# ---------------------------------------------------------------------------
+stopping_criteria:
+  - "Do not extend any arm in response to a result."
+  - >
+    Recommended overnight total is 1213 core-hours (1699 pessimistic) across
+    armA512, armA1024, armB and armC. This is ~4.3x the parent SMCCERT
+    campaign's 280 core-hour cap and is therefore a HUMAN budget decision, not
+    an agent one. An overrun is reported, never absorbed.
+  - >
+    armA2048_optional adds 322 core-hours (451 pessimistic) and is excluded
+    from the recommended total.
+
+analysis_command: |
+  # per arm, on Ruche or after rsync back
+  bash armA512/analyse_results.sh
+  bash armA1024/analyse_results.sh
+  bash armB/analyse_results.sh
+  bash armC/analyse_results.sh
+  # combined, on the Mac
+  .venv/bin/python3 research/tasks/active/TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA/analysis/combined_analysis.py
+
+provenance: >
+  Predecessor population data is frozen into frozen_inputs/predecessor_populations.csv
+  with a per-file sha256, and reproduces the published ARM1 and ARM2 final
+  analyses digit for digit (see VALIDATION.md). The predecessor task archives
+  were not modified. research/state/** was not touched.
