@@ -334,4 +334,3 @@ the R shown, never a within-population clone spread.
 | 256 | 64 | 0.29932 | 0.01679 | -0.04822 | 0.02739 | 1643 | 9052.2 | 09-01-SMCRUCHE-READY/arm2 | yes |
 | 512 | 48 | 0.25109 | 0.02164 | -0.06021 | 0.02343 | 1643 | 19698.0 | 09-02-SMC-HIGHRUNG-LAMBDA/armA512 | yes |
 | 1024 | 32 | 0.19088 | 0.00898 |  |  | 1643 | 46937.0 | 09-02-SMC-HIGHRUNG-LAMBDA/armA1024 | yes |
-
