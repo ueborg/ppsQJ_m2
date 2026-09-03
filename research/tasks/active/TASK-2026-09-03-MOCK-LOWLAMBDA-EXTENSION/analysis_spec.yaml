@@ -1,0 +1,283 @@
+# =====================================================================
+# analysis_spec.yaml — TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION
+#
+# THE FROZEN ANALYSIS. Everything below is decided BEFORE the four new
+# lambdas are computed. Nothing in it may be chosen after the data arrive.
+#
+# `analysis/lowlambda_analysis.py` is the ONLY place these rules are
+# evaluated. `shared/preflight.py` prints this file's sha256 in every arm;
+# if it stops matching `../INPUTS_LEDGER.md`, the spec has been edited and
+# the run should stop.
+# =====================================================================
+
+task: TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION
+parent: TASK-2026-09-02-MOCK-PRODUCTION
+kind: numerical child task
+terminal_state: READY_FOR_HUMAN_SUBMISSION
+
+what_this_task_is: >
+  Locator and algorithm validation. It extends an already-measured family of
+  CMI(lambda) curves downward in lambda so that the cross-L crossing structure
+  can be tested for interiority. It is NOT a measurement of lambda_c(zeta) and
+  it fits no phase-boundary law.
+
+# ---------------------------------------------------------------------
+# the physical design
+# ---------------------------------------------------------------------
+design:
+  zeta: 0.35
+  N_c: 1024
+  R: 24                       # independent populations per (L, lambda) cell
+  dtau_mult: 6.0              # the CERTIFIED production value, never 12.0
+  resample_scheme: systematic
+  T: L                        # T equals L at every rung
+  L: [32, 48, 64]
+  grid:
+    delta_lambda: 0.010
+    n_points: 17
+    lambdas: [0.1932, 0.2032, 0.2132, 0.2232, 0.2332, 0.2432, 0.2532,
+              0.2632, 0.2732, 0.2832, 0.2932, 0.3032, 0.3132, 0.3232,
+              0.3332, 0.3432, 0.3532]
+    new_indices: [0, 1, 2, 3]         # computed by THIS task
+    reused_indices: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    join_lambda: 0.2332               # first reused point
+  identity_constraint: >
+    grid.lambdas[4:] is bitwise the predecessor's own frozen 13-point grid,
+    and the sampler is byte-identical (sha256 0a33c403...). The seventeen
+    points are therefore one measurement, not two that agree.
+
+# ---------------------------------------------------------------------
+# matched R
+# ---------------------------------------------------------------------
+matched_R:
+  block: 24
+  rule: >
+    Every primary statistic is computed at a MATCHED R = 24 independent
+    populations per (L, lambda) cell. Cells holding more are cut into
+    consecutive disjoint blocks of 24 in SEED order -- deterministic and
+    observable-blind -- and block A is always primary. This is the
+    predecessor's rule, unchanged, and it is what makes the reused half of the
+    grid commensurable with the new half.
+  cells_over_R24:
+    - "L=64, lambda in {0.2932, 0.3032, 0.3132}: R=96 (reused ARM-B), cut A/B/C/D"
+  full_R_status: >
+    SECONDARY. Higher-precision means only. Carries no curve-quality, join or
+    crossing authority.
+  uncertainty: >
+    Every error bar anywhere in this task is ACROSS INDEPENDENT POPULATIONS.
+    Within-clone spread appears only as VIF / N_eff and is NEVER a standard
+    error. This is the parent programme's headline recorded lesson.
+
+# ---------------------------------------------------------------------
+# prohibitions — frozen, and audited by the analysis itself
+# ---------------------------------------------------------------------
+prohibited:
+  - no smoothing of any kind
+  - no interpolation replacing a measured point
+  - no value-based exclusion of any population or lambda point
+  - no imposed monotonicity
+  - no removal of a lambda point to make a crossing appear or disappear
+  - no special fit across the join at lambda = 0.2332
+  - no fitting of a phase-boundary law or a critical exponent
+  - no further automatic extension of the grid, whatever the outcome
+audit_fields_written_to_results:
+  smoothing_applied: false
+  value_based_exclusions: 0
+  lambda_points_removed: 0
+  special_join_fit: false
+  grid_extended_again: false
+
+# ---------------------------------------------------------------------
+# the arms
+# ---------------------------------------------------------------------
+arms:
+  - id: X32
+    package: lowlamL32
+    question: >
+      Do the four new low-lambda points at L=32, N_c=1024, R=24 join the
+      predecessor's measured 13-point curve continuously, and does the extended
+      curve remain statistically smooth?
+    primary_statistic: >
+      Per-lambda mean CMI over 24 independent populations, with the
+      across-population SEM; adjacent increments d and their SEM; second finite
+      differences q and their SEM.
+    decision_rule: >
+      The join is reported by J1-J3 of SUCCESS_CRITERIA.md. No statistic here
+      may be replaced by a fit, and the weighted quadratic is a yardstick only.
+  - id: X48
+    package: lowlamL48
+    question: >
+      The same question at L = 48.
+    primary_statistic: >
+      As X32, at L = 48.
+    decision_rule: >
+      As X32.
+  - id: X64
+    package: lowlamL64
+    question: >
+      The same question at L = 64, where the predecessor's own curve was the
+      noisiest of the three and where the only raw crossing was found.
+    primary_statistic: >
+      As X32, at L = 64.
+    decision_rule: >
+      As X32.
+
+# ---------------------------------------------------------------------
+# curve quality — re-run on the FULL 17-point grid
+# ---------------------------------------------------------------------
+curve_quality:
+  statistics:
+    - mean and across-population SEM at every lambda
+    - VIF = Var_across * N_c / mean within-clone variance   # DIAGNOSTIC ONLY
+    - N_eff = mean within-clone variance / Var_across       # DIAGNOSTIC ONLY
+    - adjacent increments d_i = m_{i+1} - m_i
+    - SEM(d_i) = sqrt(s_i^2 + s_{i+1}^2)
+    - standardized increment r_i = |d_i| / SEM(d_i)
+    - second finite differences q_i = m_{i+1} - 2 m_i + m_{i-1}
+    - SEM(q_i) = sqrt(s_{i-1}^2 + 4 s_i^2 + s_{i+1}^2)
+    - roughness = mean over interior points of (q_i / SEM(q_i))^2
+    - bootstrap 95% CI on roughness, 10000 resamples of populations
+    - split-half stability per cell
+    - leave-one-out stability per cell
+    - maximum standardized population outlier per cell
+    - weighted quadratic chi2/dof                            # YARDSTICK ONLY
+  yardstick_note: >
+    The weighted polynomial is a comparator for how much of the point-to-point
+    structure the error bars already explain. It is never plotted in place of
+    the measured points and never replaces a measured value.
+  vif_note: >
+    VIF is a variance diagnostic. It does not reliably predict bias, and a
+    collapsed genealogy does not imply an information ceiling.
+
+# ---------------------------------------------------------------------
+# the join test — the new question this task adds
+# ---------------------------------------------------------------------
+join_test:
+  purpose: >
+    Test whether the four new points join the thirteen old ones continuously,
+    WITHOUT introducing any special treatment of the join.
+  J1_local_roughness:
+    definition: >
+      Exactly two second-difference triples STRADDLE the join, i.e. contain
+      both a newly measured and an already-measured lambda: the triple centred
+      at 0.2232 (0.2132, 0.2232, 0.2332) and the triple centred at 0.2332
+      (0.2232, 0.2332, 0.2432). Let z_i = q_i / SEM(q_i) and
+      T_join = max(|z| over those two). Bootstrap the populations 10000 times
+      and record M*, the maximum |z| over ALL 15 interior triples of the
+      resampled curve. The join is compared against the curve's OWN expected
+      worst roughness, not against zero.
+    statistic: "T_join = max(|z_q| at the two straddling triples)"
+    null: "M* = max |z_q| over all interior triples, bootstrap over populations"
+    p: "p_join = fraction of resamples with M* >= T_join"
+    pass: "p_join >= 0.05, i.e. T_join <= the 95th percentile of M*"
+    fail: "p_join < 0.05"
+    why_not_three: >
+      The triple centred at 0.2132 lies entirely on the new side of the join
+      and tests the new points' internal smoothness, not the join. It is
+      reported with the rest of the curve and is not part of J1.
+  J2_out_of_sample:
+    definition: >
+      Fit a weighted quadratic to the FIVE lowest already-measured points
+      (0.2332 - 0.2732) only. Extrapolate to each of the four new lambdas.
+      Compare the measured value to the extrapolation in units of the combined
+      uncertainty, where the fit's own prediction variance is propagated from
+      the weighted least-squares covariance and added to the measurement SEM.
+    pass: "all four |z| <= 3"
+    fail: "any |z| > 3"
+    note: >
+      This is a genuine out-of-sample check: the fit never sees a new point.
+      It is a DIAGNOSTIC of continuity. A failure does not license discarding
+      a new point -- it licenses saying the join is not smooth.
+  J3_step:
+    definition: >
+      The increment straddling the join, d(0.2232 -> 0.2332), against the local
+      linear trend estimated from the three increments on each side.
+    pass: "|residual| <= 3 * SEM"
+    fail: otherwise
+  prohibited_here: >
+    No fit is applied ACROSS the join to smooth it, and no new point may be
+    dropped because it fails a join test.
+
+# ---------------------------------------------------------------------
+# the crossing protocol — the falsification target
+# ---------------------------------------------------------------------
+crossings:
+  pairs: [[32, 48], [32, 64], [48, 64]]
+  D_definition: "D(lambda) = I_{L_large}(lambda) - I_{L_small}(lambda)"
+  bootstrap: 10000 resamples of independent populations within each cell
+  reported_per_pair:
+    - raw sign changes
+    - resolved sign changes (both bracketing |D| >= 2 SEM)
+    - crossing lambda(s), linearly interpolated between bracketing points
+    - bootstrap crossing-count histogram (never discarded)
+    - bootstrap 95% interval on the crossing location
+    - fraction of bootstrap curves with exactly one crossing
+    - endpoint-induced status
+    - stability to deleting one lambda point (jackknife over all 17)
+    - split-half crossing stability
+  interiority:                   # PRE-REGISTERED, the point of this task
+    definition: >
+      A crossing is INTERIOR if and only if ALL of:
+        I1  the raw crossing lies in interval index i with 1 <= i <= 14, i.e.
+            not in the first interval [0.1932, 0.2032] and not in the last
+            [0.3432, 0.3532];
+        I2  it survives DELETING THE FIRST LAMBDA POINT (0.1932) -- a crossing
+            that needs the new lower endpoint to exist has simply moved the
+            boundary, not become interior;
+        I3  the bootstrap 95% interval lies inside (0.1932 + 0.005,
+            0.3532 - 0.005), i.e. clear of both endpoints by half a grid step.
+    I2_is_the_pre_registered_one: >
+      "An interior crossing must not depend on the first lambda point." This is
+      frozen here before the data exist. I2 is evaluated by re-running the
+      whole crossing machinery on the 16-point grid with 0.1932 removed, and
+      requiring a raw crossing to survive at a location inside the full grid's
+      bootstrap interval.
+  outcome_classes:
+    INTERIOR: I1 and I2 and I3 all hold
+    STILL_BOUNDARY: >
+      a crossing exists but fails I1, I2 or I3 -- the locator has moved with
+      the boundary rather than been bracketed by it
+    BELOW_GRID: >
+      no sign change anywhere on the 17 points and the bootstrap mass piles at
+      the lower end -- the crossing, if any, is at lambda <= 0.1932
+    NONE: no crossing and no boundary accumulation
+  standing_prohibition: >
+    Whatever class results, the grid is NOT extended again automatically.
+    BELOW_GRID is a reportable negative result, not a trigger.
+  what_a_crossing_is_not: >
+    CMI is the locator. No crossing reported by this task is lambda_c(zeta),
+    a finite-size estimate of it, or a point on a phase boundary. L = 32, 48
+    and 64 are at or below the programme's own corpus floor.
+
+# ---------------------------------------------------------------------
+# figures
+# ---------------------------------------------------------------------
+figures:
+  A: >
+    The full 17-point CMI(lambda) curves for L = 32, 48, 64, raw measured
+    points with across-population error bars. No smoothing, no fitted line.
+  B: >
+    Cross-L differences I48-I32, I64-I32, I64-I48 over the full grid, with the
+    zero line and per-point error bars.
+  C: >
+    Zoom of the low-lambda region showing whether the crossings are bracketed,
+    with the bootstrap intervals drawn.
+  provenance_marking: >
+    Predecessor and newly measured points are distinguished only SUBTLY -- a
+    faint background band over the new region and a note in the caption. They
+    are one dataset scientifically and the figure must not suggest otherwise.
+
+# ---------------------------------------------------------------------
+# scope of any conclusion
+# ---------------------------------------------------------------------
+scope_lock:
+  permitted_if_supported: >
+    "For zeta = 0.35, L <= 64 and N_c = 1024, the measured unsmoothed CMI
+    curves are statistically smooth over lambda = 0.1932-0.3532."
+  bound_to: [zeta = 0.35, L <= 64, N_c = 1024, this guided-cloning configuration]
+  may_not_imply:
+    - N_c = 1024 is adequate at L = 96 or L = 128
+    - N_c = 1024 is adequate at lower zeta
+    - there is a global N_c(L, zeta) law
+    - the measured crossing is the thermodynamic critical point
+    - anything about lambda_c(zeta) or any exponent

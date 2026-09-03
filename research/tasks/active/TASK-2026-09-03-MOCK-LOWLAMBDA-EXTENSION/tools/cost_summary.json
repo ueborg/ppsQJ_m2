@@ -1,0 +1,193 @@
+{
+ "grid": [
+  0.1932,
+  0.2032,
+  0.2132,
+  0.2232,
+  0.2332,
+  0.2432,
+  0.2532,
+  0.2632,
+  0.2732,
+  0.2832,
+  0.2932,
+  0.3032,
+  0.3132,
+  0.3232,
+  0.3332,
+  0.3432,
+  0.3532
+ ],
+ "new_lambdas": [
+  0.1932,
+  0.2032,
+  0.2132,
+  0.2232
+ ],
+ "new_idx": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "partition": "cpu_med",
+ "concurrency": 64,
+ "arms": [
+  {
+   "name": "lowlamL32",
+   "arm": "X32",
+   "tasks": 96,
+   "L": 32,
+   "N_c": 1024,
+   "R": 24,
+   "n_lambda": 4,
+   "lams": [
+    0.1932,
+    0.2032,
+    0.2132,
+    0.2232
+   ],
+   "n_steps": [
+    64,
+    68,
+    71,
+    74
+   ],
+   "wall_s_affine": [
+    120.6,
+    123.9,
+    126.3,
+    128.8
+   ],
+   "wall_s_maxrate": [
+    123.7,
+    131.5,
+    137.3,
+    143.1
+   ],
+   "wall_s_adopted": [
+    123.7,
+    131.5,
+    137.3,
+    143.1
+   ],
+   "slowest_h": 0.0397,
+   "pess_slowest_h": 0.0556,
+   "core_h": 3.57,
+   "pess_core_h": 5.0,
+   "elapsed_h": 0.079,
+   "pess_elapsed_h": 0.111,
+   "concurrency": 64,
+   "mem_mb": 262,
+   "partition": "cpu_med",
+   "time": "00:20:00",
+   "mem_req": "1G",
+   "seed_lo": 32000000,
+   "seed_hi": 32003023
+  },
+  {
+   "name": "lowlamL48",
+   "arm": "X48",
+   "tasks": 96,
+   "L": 48,
+   "N_c": 1024,
+   "R": 24,
+   "n_lambda": 4,
+   "lams": [
+    0.1932,
+    0.2032,
+    0.2132,
+    0.2232
+   ],
+   "n_steps": [
+    146,
+    153,
+    161,
+    168
+   ],
+   "wall_s_affine": [
+    518.0,
+    529.2,
+    541.9,
+    553.0
+   ],
+   "wall_s_maxrate": [
+    501.4,
+    525.5,
+    553.0,
+    577.0
+   ],
+   "wall_s_adopted": [
+    518.0,
+    529.2,
+    553.0,
+    577.0
+   ],
+   "slowest_h": 0.1603,
+   "pess_slowest_h": 0.2244,
+   "core_h": 14.51,
+   "pess_core_h": 20.32,
+   "elapsed_h": 0.321,
+   "pess_elapsed_h": 0.449,
+   "concurrency": 64,
+   "mem_mb": 430,
+   "partition": "cpu_med",
+   "time": "00:45:00",
+   "mem_req": "1G",
+   "seed_lo": 32100000,
+   "seed_hi": 32103023
+  },
+  {
+   "name": "lowlamL64",
+   "arm": "X64",
+   "tasks": 96,
+   "L": 64,
+   "N_c": 1024,
+   "R": 24,
+   "n_lambda": 4,
+   "lams": [
+    0.1932,
+    0.2032,
+    0.2132,
+    0.2232
+   ],
+   "n_steps": [
+    260,
+    274,
+    287,
+    300
+   ],
+   "wall_s_affine": [
+    1558.4,
+    1596.5,
+    1631.9,
+    1667.3
+   ],
+   "wall_s_maxrate": [
+    1471.5,
+    1550.7,
+    1624.3,
+    1697.9
+   ],
+   "wall_s_adopted": [
+    1558.4,
+    1596.5,
+    1631.9,
+    1697.9
+   ],
+   "slowest_h": 0.4716,
+   "pess_slowest_h": 0.6603,
+   "core_h": 43.23,
+   "pess_core_h": 60.52,
+   "elapsed_h": 0.943,
+   "pess_elapsed_h": 1.321,
+   "concurrency": 64,
+   "mem_mb": 665,
+   "partition": "cpu_med",
+   "time": "02:00:00",
+   "mem_req": "2G",
+   "seed_lo": 32200000,
+   "seed_hi": 32203023
+  }
+ ]
+}
