@@ -1,0 +1,28 @@
+{
+ "schema_version": 1,
+ "task": "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION",
+ "generated": "2026-09-03T00:00:00Z",
+ "why": "This task extends TASK-2026-09-02-MOCK-PRODUCTION's measured curves to lower lambda and then analyses the OLD and NEW points as one 17-point grid. That is only legitimate if the new populations come out of the SAME sampler, byte for byte, as the old ones. The bundle is therefore not merely a self-containment device here -- it is the evidence for poolability. It is also required for self-containment for the ordinary reason: every Ruche package in this project must run from a tracked-only clean checkout with no dependency on any sibling task directory.",
+ "closure_method": "Not recomputed. Established by sha256 identity with TASK-2026-09-02-MOCK-PRODUCTION/support/instrumented.py, which inherited it from TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA and ultimately from TASK-2026-09-01-SMCRUCHE-PACKFIX, where it was computed by ast.parse of instrumented.py, walking Import/ImportFrom nodes and following any resolving to a sibling module in the (untracked) SMCSTAT analysis directory. Result: no sibling imports at all. Identical bytes have identical import closure; that is a stronger claim than re-deriving it, not a weaker one.",
+ "not_bundled_because_tracked": [
+  "pps_qj (the production package, tracked in this repository)"
+ ],
+ "not_bundled_because_external": [
+  "numpy",
+  "dataclasses",
+  "time",
+  "__future__"
+ ],
+ "files": [
+  {
+   "bundled_as": "support/instrumented.py",
+   "original_path": "research/tasks/active/TASK-2026-09-02-MOCK-PRODUCTION/support/instrumented.py",
+   "ultimate_origin": "research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis/instrumented.py (UNTRACKED; never depended on at runtime)",
+   "sha256_source": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "sha256_bundled": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "bytes": 11396,
+   "byte_identical": true,
+   "note": "Copied verbatim with cp(1) and verified with cmp(1). NOT rewritten, NOT reformatted, NOT re-implemented. This is the exact file that produced every population in frozen_inputs/predecessor_nc1024_populations.csv. The identical sha256 is what licenses plotting the four new lambdas on the same axes as the thirteen old ones and computing a single crossing over all seventeen: the two halves of the grid are the same measurement, not two measurements that happen to agree."
+  }
+ ]
+}

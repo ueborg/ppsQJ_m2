@@ -1,0 +1,1162 @@
+{
+ "128|128|0.35|0.3032|6|systematic": {
+  "1024": {
+   "R": 32,
+   "arms": [
+    "armA1024"
+   ],
+   "mean": 0.1908822601511092,
+   "n_steps": 1643,
+   "ok": true,
+   "seed_hi": 30200031,
+   "seed_lo": 30200000,
+   "sem": 0.008980270781413344,
+   "tasks": [
+    "TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA"
+   ],
+   "wall_max": 47546.2,
+   "wall_med": 46936.979999999996
+  },
+  "128": {
+   "R": 64,
+   "arms": [
+    "arm2"
+   ],
+   "mean": 0.42058605318744746,
+   "n_steps": 1643,
+   "ok": true,
+   "seed_hi": 20256063,
+   "seed_lo": 20256000,
+   "sem": 0.023543121362581278,
+   "tasks": [
+    "TASK-2026-09-01-SMCRUCHE-READY"
+   ],
+   "wall_max": 6032.25,
+   "wall_med": 5637.18
+  },
+  "256": {
+   "R": 64,
+   "arms": [
+    "arm2"
+   ],
+   "mean": 0.29931783769664877,
+   "n_steps": 1643,
+   "ok": true,
+   "seed_hi": 20384063,
+   "seed_lo": 20384000,
+   "sem": 0.016793150941569062,
+   "tasks": [
+    "TASK-2026-09-01-SMCRUCHE-READY"
+   ],
+   "wall_max": 10093.6,
+   "wall_med": 9052.195
+  },
+  "512": {
+   "R": 48,
+   "arms": [
+    "armA512"
+   ],
+   "mean": 0.25109495298253803,
+   "n_steps": 1643,
+   "ok": true,
+   "seed_hi": 30100047,
+   "seed_lo": 30100000,
+   "sem": 0.02164257929170549,
+   "tasks": [
+    "TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA"
+   ],
+   "wall_max": 21098.11,
+   "wall_med": 19697.985
+  },
+  "64": {
+   "R": 64,
+   "arms": [
+    "arm2"
+   ],
+   "mean": 0.5195702954208805,
+   "n_steps": 1643,
+   "ok": true,
+   "seed_hi": 20192063,
+   "seed_lo": 20192000,
+   "sem": 0.024940921381486816,
+   "tasks": [
+    "TASK-2026-09-01-SMCRUCHE-READY"
+   ],
+   "wall_max": 3102.59,
+   "wall_med": 2857.635
+  }
+ },
+ "32|32|0.35|0.1932|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL32"
+   ],
+   "mean": 1.0211161107598303,
+   "n_steps": 64,
+   "ok": true,
+   "seed_hi": 32000023,
+   "seed_lo": 32000000,
+   "sem": 0.006291289772742501,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 125.97,
+   "wall_med": 115.185
+  }
+ },
+ "32|32|0.35|0.2032|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL32"
+   ],
+   "mean": 0.9737859154550085,
+   "n_steps": 68,
+   "ok": true,
+   "seed_hi": 32001023,
+   "seed_lo": 32001000,
+   "sem": 0.0042818921852662084,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 122.03,
+   "wall_med": 119.75999999999999
+  }
+ },
+ "32|32|0.35|0.2132|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL32"
+   ],
+   "mean": 0.9212023512531793,
+   "n_steps": 71,
+   "ok": true,
+   "seed_hi": 32002023,
+   "seed_lo": 32002000,
+   "sem": 0.005907250583168043,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 126.81,
+   "wall_med": 122.815
+  }
+ },
+ "32|32|0.35|0.2232|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL32"
+   ],
+   "mean": 0.8714456135176295,
+   "n_steps": 74,
+   "ok": true,
+   "seed_hi": 32003023,
+   "seed_lo": 32003000,
+   "sem": 0.004378827718971035,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 127.35,
+   "wall_med": 120.58500000000001
+  }
+ },
+ "32|32|0.35|0.2332|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.8192350581158805,
+   "n_steps": 78,
+   "ok": true,
+   "seed_hi": 31000023,
+   "seed_lo": 31000000,
+   "sem": 0.006127023797659719,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 143.04,
+   "wall_med": 136.9
+  }
+ },
+ "32|32|0.35|0.2432|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.76383967689313,
+   "n_steps": 81,
+   "ok": true,
+   "seed_hi": 31001023,
+   "seed_lo": 31001000,
+   "sem": 0.004655331136382643,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 156.61,
+   "wall_med": 141.865
+  }
+ },
+ "32|32|0.35|0.2532|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.7127854318874899,
+   "n_steps": 84,
+   "ok": true,
+   "seed_hi": 31002023,
+   "seed_lo": 31002000,
+   "sem": 0.0038862460519014912,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 135.09,
+   "wall_med": 127.86
+  }
+ },
+ "32|32|0.35|0.2632|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.6750373017499708,
+   "n_steps": 88,
+   "ok": true,
+   "seed_hi": 31003023,
+   "seed_lo": 31003000,
+   "sem": 0.0053128604634765176,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 133.67,
+   "wall_med": 131.25
+  }
+ },
+ "32|32|0.35|0.2732|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.6276273602649938,
+   "n_steps": 91,
+   "ok": true,
+   "seed_hi": 31004023,
+   "seed_lo": 31004000,
+   "sem": 0.0027439607695395733,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 152.73,
+   "wall_med": 137.89499999999998
+  }
+ },
+ "32|32|0.35|0.2832|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.5888907033216486,
+   "n_steps": 94,
+   "ok": true,
+   "seed_hi": 31005023,
+   "seed_lo": 31005000,
+   "sem": 0.004346962243741746,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 163.65,
+   "wall_med": 150.39499999999998
+  }
+ },
+ "32|32|0.35|0.2932|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.5465829646490672,
+   "n_steps": 97,
+   "ok": true,
+   "seed_hi": 31006023,
+   "seed_lo": 31006000,
+   "sem": 0.002816640311882974,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 156.93,
+   "wall_med": 153.42000000000002
+  }
+ },
+ "32|32|0.35|0.3032|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.5110258939145629,
+   "n_steps": 101,
+   "ok": true,
+   "seed_hi": 31007023,
+   "seed_lo": 31007000,
+   "sem": 0.0029541905381617003,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 170.69,
+   "wall_med": 152.54000000000002
+  }
+ },
+ "32|32|0.35|0.3132|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.4696557559676805,
+   "n_steps": 104,
+   "ok": true,
+   "seed_hi": 31008023,
+   "seed_lo": 31008000,
+   "sem": 0.002988821865537784,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 162.73,
+   "wall_med": 159.22500000000002
+  }
+ },
+ "32|32|0.35|0.3232|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.4407055826569699,
+   "n_steps": 107,
+   "ok": true,
+   "seed_hi": 31009023,
+   "seed_lo": 31009000,
+   "sem": 0.002971882339517443,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 175.91,
+   "wall_med": 155.32999999999998
+  }
+ },
+ "32|32|0.35|0.3332|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.41616874049123653,
+   "n_steps": 111,
+   "ok": true,
+   "seed_hi": 31010023,
+   "seed_lo": 31010000,
+   "sem": 0.0022348298671665467,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 165.36,
+   "wall_med": 161.765
+  }
+ },
+ "32|32|0.35|0.3432|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.38227075716999753,
+   "n_steps": 114,
+   "ok": true,
+   "seed_hi": 31011023,
+   "seed_lo": 31011000,
+   "sem": 0.0026463680168834305,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 175.13,
+   "wall_med": 158.85500000000002
+  }
+ },
+ "32|32|0.35|0.3532|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL32"
+   ],
+   "mean": 0.3571710011992221,
+   "n_steps": 117,
+   "ok": true,
+   "seed_hi": 31012023,
+   "seed_lo": 31012000,
+   "sem": 0.002563027146029877,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 163.44,
+   "wall_med": 158.45999999999998
+  }
+ },
+ "48|48|0.35|0.1932|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL48"
+   ],
+   "mean": 1.033607205706991,
+   "n_steps": 146,
+   "ok": true,
+   "seed_hi": 32100023,
+   "seed_lo": 32100000,
+   "sem": 0.010988183908856012,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 516.86,
+   "wall_med": 485.89
+  }
+ },
+ "48|48|0.35|0.2032|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL48"
+   ],
+   "mean": 0.9691667612316248,
+   "n_steps": 153,
+   "ok": true,
+   "seed_hi": 32101023,
+   "seed_lo": 32101000,
+   "sem": 0.010192430967619452,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 519.8,
+   "wall_med": 511.685
+  }
+ },
+ "48|48|0.35|0.2132|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL48"
+   ],
+   "mean": 0.8925375487898223,
+   "n_steps": 161,
+   "ok": true,
+   "seed_hi": 32102023,
+   "seed_lo": 32102000,
+   "sem": 0.010110610449196662,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 524.78,
+   "wall_med": 510.59000000000003
+  }
+ },
+ "48|48|0.35|0.2232|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL48"
+   ],
+   "mean": 0.8457812628265846,
+   "n_steps": 168,
+   "ok": true,
+   "seed_hi": 32103023,
+   "seed_lo": 32103000,
+   "sem": 0.007499630404890031,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 535.05,
+   "wall_med": 489.645
+  }
+ },
+ "48|48|0.35|0.2332|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.7990117242575188,
+   "n_steps": 176,
+   "ok": true,
+   "seed_hi": 31100023,
+   "seed_lo": 31100000,
+   "sem": 0.008783640795289439,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 604.47,
+   "wall_med": 561.405
+  }
+ },
+ "48|48|0.35|0.2432|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.7378885803435765,
+   "n_steps": 183,
+   "ok": true,
+   "seed_hi": 31101023,
+   "seed_lo": 31101000,
+   "sem": 0.007354327398348879,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 615.41,
+   "wall_med": 578.685
+  }
+ },
+ "48|48|0.35|0.2532|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.678603314111727,
+   "n_steps": 191,
+   "ok": true,
+   "seed_hi": 31102023,
+   "seed_lo": 31102000,
+   "sem": 0.006332599867841177,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 618.68,
+   "wall_med": 593.24
+  }
+ },
+ "48|48|0.35|0.2632|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.643983413563873,
+   "n_steps": 198,
+   "ok": true,
+   "seed_hi": 31103023,
+   "seed_lo": 31103000,
+   "sem": 0.004537217350097956,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 617.5,
+   "wall_med": 607.985
+  }
+ },
+ "48|48|0.35|0.2732|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.6044309626967209,
+   "n_steps": 206,
+   "ok": true,
+   "seed_hi": 31104023,
+   "seed_lo": 31104000,
+   "sem": 0.005898611701120851,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 659.71,
+   "wall_med": 607.26
+  }
+ },
+ "48|48|0.35|0.2832|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.5704622646753124,
+   "n_steps": 213,
+   "ok": true,
+   "seed_hi": 31105023,
+   "seed_lo": 31105000,
+   "sem": 0.00564443154986234,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 680.74,
+   "wall_med": 617.785
+  }
+ },
+ "48|48|0.35|0.2932|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.5123308806255488,
+   "n_steps": 221,
+   "ok": true,
+   "seed_hi": 31106023,
+   "seed_lo": 31106000,
+   "sem": 0.005274172750026233,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 678.81,
+   "wall_med": 649.96
+  }
+ },
+ "48|48|0.35|0.3032|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.4619324116133526,
+   "n_steps": 229,
+   "ok": true,
+   "seed_hi": 31107023,
+   "seed_lo": 31107000,
+   "sem": 0.004149367121928779,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 702.21,
+   "wall_med": 616.335
+  }
+ },
+ "48|48|0.35|0.3132|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.41622163148201985,
+   "n_steps": 236,
+   "ok": true,
+   "seed_hi": 31108023,
+   "seed_lo": 31108000,
+   "sem": 0.003925905111023788,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 717.58,
+   "wall_med": 680.13
+  }
+ },
+ "48|48|0.35|0.3232|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.377783818590628,
+   "n_steps": 244,
+   "ok": true,
+   "seed_hi": 31109023,
+   "seed_lo": 31109000,
+   "sem": 0.004200748965748092,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 726.15,
+   "wall_med": 684.51
+  }
+ },
+ "48|48|0.35|0.3332|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.3297743801005819,
+   "n_steps": 251,
+   "ok": true,
+   "seed_hi": 31110023,
+   "seed_lo": 31110000,
+   "sem": 0.003867831635172649,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 743.13,
+   "wall_med": 693.7850000000001
+  }
+ },
+ "48|48|0.35|0.3432|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.28359372540198025,
+   "n_steps": 259,
+   "ok": true,
+   "seed_hi": 31111023,
+   "seed_lo": 31111000,
+   "sem": 0.003686109530251214,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 744.38,
+   "wall_med": 697.105
+  }
+ },
+ "48|48|0.35|0.3532|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL48"
+   ],
+   "mean": 0.2486345635533232,
+   "n_steps": 266,
+   "ok": true,
+   "seed_hi": 31112023,
+   "seed_lo": 31112000,
+   "sem": 0.002750522229437316,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 746.89,
+   "wall_med": 710.0
+  }
+ },
+ "64|64|0.35|0.1932|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL64"
+   ],
+   "mean": 1.090175390207441,
+   "n_steps": 260,
+   "ok": true,
+   "seed_hi": 32200023,
+   "seed_lo": 32200000,
+   "sem": 0.016320203737599098,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 1535.97,
+   "wall_med": 1477.4299999999998
+  }
+ },
+ "64|64|0.35|0.2032|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL64"
+   ],
+   "mean": 0.9965061767824857,
+   "n_steps": 274,
+   "ok": true,
+   "seed_hi": 32201023,
+   "seed_lo": 32201000,
+   "sem": 0.015958037598798953,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 1605.2,
+   "wall_med": 1536.2150000000001
+  }
+ },
+ "64|64|0.35|0.2132|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL64"
+   ],
+   "mean": 0.9518015576326183,
+   "n_steps": 287,
+   "ok": true,
+   "seed_hi": 32202023,
+   "seed_lo": 32202000,
+   "sem": 0.013761314266059229,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 1604.23,
+   "wall_med": 1524.0900000000001
+  }
+ },
+ "64|64|0.35|0.2232|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "lowlamL64"
+   ],
+   "mean": 0.8959215971002065,
+   "n_steps": 300,
+   "ok": true,
+   "seed_hi": 32203023,
+   "seed_lo": 32203000,
+   "sem": 0.010860941762572577,
+   "tasks": [
+    "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION"
+   ],
+   "wall_max": 1581.83,
+   "wall_med": 1525.49
+  }
+ },
+ "64|64|0.35|0.2332|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.8140608645087056,
+   "n_steps": 314,
+   "ok": true,
+   "seed_hi": 31200023,
+   "seed_lo": 31200000,
+   "sem": 0.01644464739296469,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 1757.74,
+   "wall_med": 1632.455
+  }
+ },
+ "64|64|0.35|0.2432|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.7124213635613705,
+   "n_steps": 327,
+   "ok": true,
+   "seed_hi": 31201023,
+   "seed_lo": 31201000,
+   "sem": 0.012236945573784921,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 1847.11,
+   "wall_med": 1743.3899999999999
+  }
+ },
+ "64|64|0.35|0.2532|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.643810184948887,
+   "n_steps": 341,
+   "ok": true,
+   "seed_hi": 31202023,
+   "seed_lo": 31202000,
+   "sem": 0.01244432483213291,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 1929.89,
+   "wall_med": 1897.7150000000001
+  }
+ },
+ "64|64|0.35|0.2632|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.5673048457314966,
+   "n_steps": 354,
+   "ok": true,
+   "seed_hi": 31203023,
+   "seed_lo": 31203000,
+   "sem": 0.009586190015361446,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 1844.67,
+   "wall_med": 1791.385
+  }
+ },
+ "64|64|0.35|0.2732|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.5141926482019746,
+   "n_steps": 368,
+   "ok": true,
+   "seed_hi": 31204023,
+   "seed_lo": 31204000,
+   "sem": 0.007398024400470112,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 1905.3,
+   "wall_med": 1780.395
+  }
+ },
+ "64|64|0.35|0.2832|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.4478210173267869,
+   "n_steps": 381,
+   "ok": true,
+   "seed_hi": 31205023,
+   "seed_lo": 31205000,
+   "sem": 0.007476333874265283,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 1914.0,
+   "wall_med": 1865.655
+  }
+ },
+ "64|64|0.35|0.2932|6|systematic": {
+  "1024": {
+   "R": 96,
+   "arms": [
+    "armB"
+   ],
+   "mean": 0.4030707368177638,
+   "n_steps": 395,
+   "ok": true,
+   "seed_hi": 30300095,
+   "seed_lo": 30300000,
+   "sem": 0.003733894480423273,
+   "tasks": [
+    "TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA"
+   ],
+   "wall_max": 2036.53,
+   "wall_med": 1854.55
+  },
+  "2048": {
+   "R": 24,
+   "arms": [
+    "mockL64nc2048"
+   ],
+   "mean": 0.3932998596119946,
+   "n_steps": 395,
+   "ok": true,
+   "seed_hi": 31306023,
+   "seed_lo": 31306000,
+   "sem": 0.005489612058294748,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 4105.85,
+   "wall_med": 3948.795
+  }
+ },
+ "64|64|0.35|0.3032|6|systematic": {
+  "1024": {
+   "R": 96,
+   "arms": [
+    "armB"
+   ],
+   "mean": 0.3531634115390746,
+   "n_steps": 408,
+   "ok": true,
+   "seed_hi": 30301095,
+   "seed_lo": 30301000,
+   "sem": 0.002908900408192646,
+   "tasks": [
+    "TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA"
+   ],
+   "wall_max": 2165.61,
+   "wall_med": 2051.545
+  },
+  "2048": {
+   "R": 24,
+   "arms": [
+    "mockL64nc2048"
+   ],
+   "mean": 0.35551356440648313,
+   "n_steps": 408,
+   "ok": true,
+   "seed_hi": 31307023,
+   "seed_lo": 31307000,
+   "sem": 0.004402368307164735,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 4079.49,
+   "wall_med": 4026.2
+  }
+ },
+ "64|64|0.35|0.3132|6|systematic": {
+  "1024": {
+   "R": 96,
+   "arms": [
+    "armB"
+   ],
+   "mean": 0.3161226911103236,
+   "n_steps": 421,
+   "ok": true,
+   "seed_hi": 30302095,
+   "seed_lo": 30302000,
+   "sem": 0.0026516418469825797,
+   "tasks": [
+    "TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA"
+   ],
+   "wall_max": 2125.4,
+   "wall_med": 2066.27
+  },
+  "2048": {
+   "R": 24,
+   "arms": [
+    "mockL64nc2048"
+   ],
+   "mean": 0.3121439368051702,
+   "n_steps": 421,
+   "ok": true,
+   "seed_hi": 31308023,
+   "seed_lo": 31308000,
+   "sem": 0.0035686227001912084,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 4062.43,
+   "wall_med": 3900.62
+  }
+ },
+ "64|64|0.35|0.3232|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.28098377835724464,
+   "n_steps": 435,
+   "ok": true,
+   "seed_hi": 31209023,
+   "seed_lo": 31209000,
+   "sem": 0.0045451574405582775,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 2164.64,
+   "wall_med": 2133.8050000000003
+  }
+ },
+ "64|64|0.35|0.3332|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.24804839733662298,
+   "n_steps": 448,
+   "ok": true,
+   "seed_hi": 31210023,
+   "seed_lo": 31210000,
+   "sem": 0.0034509516151364186,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 2212.68,
+   "wall_med": 2153.11
+  }
+ },
+ "64|64|0.35|0.3432|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.21888861530367396,
+   "n_steps": 462,
+   "ok": true,
+   "seed_hi": 31211023,
+   "seed_lo": 31211000,
+   "sem": 0.004305763368711169,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 2261.52,
+   "wall_med": 2176.965
+  }
+ },
+ "64|64|0.35|0.3532|6|systematic": {
+  "1024": {
+   "R": 24,
+   "arms": [
+    "mockL64"
+   ],
+   "mean": 0.18579173867375964,
+   "n_steps": 475,
+   "ok": true,
+   "seed_hi": 31212023,
+   "seed_lo": 31212000,
+   "sem": 0.003944527642511053,
+   "tasks": [
+    "TASK-2026-09-02-MOCK-PRODUCTION"
+   ],
+   "wall_max": 2033.3,
+   "wall_med": 1960.3400000000001
+  }
+ },
+ "96|96|0.35|0.3032|6|systematic": {
+  "128": {
+   "R": 32,
+   "arms": [
+    "arm1"
+   ],
+   "mean": 0.387928041645645,
+   "n_steps": 922,
+   "ok": true,
+   "seed_hi": 1168047,
+   "seed_lo": 1168016,
+   "sem": 0.023515921740794338,
+   "tasks": [
+    "TASK-2026-09-01-SMCRUCHE-READY"
+   ],
+   "wall_max": 1466.41,
+   "wall_med": 1381.4050000000002
+  },
+  "256": {
+   "R": 32,
+   "arms": [
+    "arm1"
+   ],
+   "mean": 0.3359057595852698,
+   "n_steps": 922,
+   "ok": true,
+   "seed_hi": 1296047,
+   "seed_lo": 1296016,
+   "sem": 0.018342073555910093,
+   "tasks": [
+    "TASK-2026-09-01-SMCRUCHE-READY"
+   ],
+   "wall_max": 2722.43,
+   "wall_med": 2388.66
+  },
+  "512": {
+   "R": 48,
+   "arms": [
+    "arm1"
+   ],
+   "mean": 0.2663117581151189,
+   "n_steps": 922,
+   "ok": true,
+   "seed_hi": 1552047,
+   "seed_lo": 1552000,
+   "sem": 0.010274275405768118,
+   "tasks": [
+    "TASK-2026-09-01-SMCRUCHE-READY"
+   ],
+   "wall_max": 5659.53,
+   "wall_med": 5433.3150000000005
+  }
+ }
+}

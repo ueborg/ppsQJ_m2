@@ -1,0 +1,954 @@
+{
+ "arms": [
+  {
+   "name": "A_L64_nc2048_topup",
+   "tag": "A2048",
+   "group": "A",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.3032,
+     6.0,
+     2048
+    ]
+   ],
+   "tasks": 24,
+   "reused_populations": 24,
+   "seed_lo": 33000024,
+   "seed_hi": 33000047,
+   "core_h": 32.14,
+   "pess_core_h": 44.99,
+   "slowest_h": 1.339,
+   "pess_slowest_h": 1.875,
+   "elapsed_h": 1.339,
+   "pess_elapsed_h": 1.875,
+   "mem_mb": 1708,
+   "mem_req": "3G",
+   "partition": "cpu_med",
+   "time": "03:00:00",
+   "n_steps": [
+    408
+   ],
+   "rate_ms": [
+    5.769
+   ]
+  },
+  {
+   "name": "A_L64_nc4096",
+   "tag": "A4096",
+   "group": "A",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.3032,
+     6.0,
+     4096
+    ]
+   ],
+   "tasks": 48,
+   "reused_populations": 0,
+   "seed_lo": 33020000,
+   "seed_hi": 33020047,
+   "core_h": 146.35,
+   "pess_core_h": 204.88,
+   "slowest_h": 3.049,
+   "pess_slowest_h": 4.268,
+   "elapsed_h": 3.049,
+   "pess_elapsed_h": 4.268,
+   "mem_mb": 2774,
+   "mem_req": "4G",
+   "partition": "cpu_long",
+   "time": "08:00:00",
+   "n_steps": [
+    408
+   ],
+   "rate_ms": [
+    6.568
+   ]
+  },
+  {
+   "name": "A_L64_nc8192",
+   "tag": "A8192",
+   "group": "A",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.3032,
+     6.0,
+     8192
+    ]
+   ],
+   "tasks": 48,
+   "reused_populations": 0,
+   "seed_lo": 33040000,
+   "seed_hi": 33040047,
+   "core_h": 333.22,
+   "pess_core_h": 466.51,
+   "slowest_h": 6.942,
+   "pess_slowest_h": 9.719,
+   "elapsed_h": 6.942,
+   "pess_elapsed_h": 9.719,
+   "mem_mb": 4647,
+   "mem_req": "7G",
+   "partition": "cpu_long",
+   "time": "18:00:00",
+   "n_steps": [
+    408
+   ],
+   "rate_ms": [
+    7.477
+   ]
+  },
+  {
+   "name": "B_L64_cross_nc512",
+   "tag": "B512",
+   "group": "B",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     512
+    ],
+    [
+     0.2232,
+     6.0,
+     512
+    ],
+    [
+     0.2282,
+     6.0,
+     512
+    ],
+    [
+     0.2332,
+     6.0,
+     512
+    ],
+    [
+     0.2382,
+     6.0,
+     512
+    ],
+    [
+     0.2432,
+     6.0,
+     512
+    ],
+    [
+     0.2482,
+     6.0,
+     512
+    ]
+   ],
+   "tasks": 336,
+   "reused_populations": 0,
+   "seed_lo": 33060000,
+   "seed_hi": 33066047,
+   "core_h": 90.85,
+   "pess_core_h": 127.19,
+   "slowest_h": 0.288,
+   "pess_slowest_h": 0.403,
+   "elapsed_h": 1.726,
+   "pess_elapsed_h": 2.417,
+   "mem_mb": 569,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    294,
+    300,
+    307,
+    314,
+    321,
+    327,
+    334
+   ],
+   "rate_ms": [
+    6.057
+   ]
+  },
+  {
+   "name": "B_L64_cross_nc1024",
+   "tag": "B1024",
+   "group": "B",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     1024
+    ],
+    [
+     0.2232,
+     6.0,
+     1024
+    ],
+    [
+     0.2282,
+     6.0,
+     1024
+    ],
+    [
+     0.2332,
+     6.0,
+     1024
+    ],
+    [
+     0.2382,
+     6.0,
+     1024
+    ],
+    [
+     0.2432,
+     6.0,
+     1024
+    ],
+    [
+     0.2482,
+     6.0,
+     1024
+    ]
+   ],
+   "tasks": 264,
+   "reused_populations": 72,
+   "seed_lo": 33080000,
+   "seed_hi": 33086047,
+   "core_h": 135.99,
+   "pess_core_h": 190.39,
+   "slowest_h": 0.548,
+   "pess_slowest_h": 0.767,
+   "elapsed_h": 2.74,
+   "pess_elapsed_h": 3.837,
+   "mem_mb": 1363,
+   "mem_req": "2G",
+   "partition": "cpu_med",
+   "time": "02:00:00",
+   "n_steps": [
+    294,
+    300,
+    307,
+    314,
+    321,
+    327,
+    334
+   ],
+   "rate_ms": [
+    5.769
+   ]
+  },
+  {
+   "name": "B_L64_cross_nc2048",
+   "tag": "B2048",
+   "group": "B",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     2048
+    ],
+    [
+     0.2232,
+     6.0,
+     2048
+    ],
+    [
+     0.2282,
+     6.0,
+     2048
+    ],
+    [
+     0.2332,
+     6.0,
+     2048
+    ],
+    [
+     0.2382,
+     6.0,
+     2048
+    ],
+    [
+     0.2432,
+     6.0,
+     2048
+    ],
+    [
+     0.2482,
+     6.0,
+     2048
+    ]
+   ],
+   "tasks": 336,
+   "reused_populations": 0,
+   "seed_lo": 33100000,
+   "seed_hi": 33106047,
+   "core_h": 346.1,
+   "pess_core_h": 484.54,
+   "slowest_h": 1.096,
+   "pess_slowest_h": 1.535,
+   "elapsed_h": 6.577,
+   "pess_elapsed_h": 9.208,
+   "mem_mb": 1705,
+   "mem_req": "3G",
+   "partition": "cpu_med",
+   "time": "03:00:00",
+   "n_steps": [
+    294,
+    300,
+    307,
+    314,
+    321,
+    327,
+    334
+   ],
+   "rate_ms": [
+    5.769
+   ]
+  },
+  {
+   "name": "B2_L32_nc512",
+   "tag": "Y32N512",
+   "group": "B2",
+   "L": 32,
+   "T": 32.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     512
+    ],
+    [
+     0.2232,
+     6.0,
+     512
+    ],
+    [
+     0.2282,
+     6.0,
+     512
+    ],
+    [
+     0.2332,
+     6.0,
+     512
+    ],
+    [
+     0.2382,
+     6.0,
+     512
+    ],
+    [
+     0.2432,
+     6.0,
+     512
+    ],
+    [
+     0.2482,
+     6.0,
+     512
+    ]
+   ],
+   "tasks": 336,
+   "reused_populations": 0,
+   "seed_lo": 33120000,
+   "seed_hi": 33126047,
+   "core_h": 7.49,
+   "pess_core_h": 10.49,
+   "slowest_h": 0.024,
+   "pess_slowest_h": 0.033,
+   "elapsed_h": 0.143,
+   "pess_elapsed_h": 0.2,
+   "mem_mb": 302,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    73,
+    74,
+    76,
+    78,
+    79,
+    81,
+    83
+   ],
+   "rate_ms": [
+    2.018
+   ]
+  },
+  {
+   "name": "B2_L32_nc1024",
+   "tag": "Y32N1024",
+   "group": "B2",
+   "L": 32,
+   "T": 32.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     1024
+    ],
+    [
+     0.2232,
+     6.0,
+     1024
+    ],
+    [
+     0.2282,
+     6.0,
+     1024
+    ],
+    [
+     0.2332,
+     6.0,
+     1024
+    ],
+    [
+     0.2382,
+     6.0,
+     1024
+    ],
+    [
+     0.2432,
+     6.0,
+     1024
+    ],
+    [
+     0.2482,
+     6.0,
+     1024
+    ]
+   ],
+   "tasks": 264,
+   "reused_populations": 72,
+   "seed_lo": 33140000,
+   "seed_hi": 33146047,
+   "core_h": 11.22,
+   "pess_core_h": 15.71,
+   "slowest_h": 0.045,
+   "pess_slowest_h": 0.064,
+   "elapsed_h": 0.227,
+   "pess_elapsed_h": 0.318,
+   "mem_mb": 278,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    73,
+    74,
+    76,
+    78,
+    79,
+    81,
+    83
+   ],
+   "rate_ms": [
+    1.922
+   ]
+  },
+  {
+   "name": "B2_L32_nc2048",
+   "tag": "Y32N2048",
+   "group": "B2",
+   "L": 32,
+   "T": 32.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     2048
+    ],
+    [
+     0.2232,
+     6.0,
+     2048
+    ],
+    [
+     0.2282,
+     6.0,
+     2048
+    ],
+    [
+     0.2332,
+     6.0,
+     2048
+    ],
+    [
+     0.2382,
+     6.0,
+     2048
+    ],
+    [
+     0.2432,
+     6.0,
+     2048
+    ],
+    [
+     0.2482,
+     6.0,
+     2048
+    ]
+   ],
+   "tasks": 336,
+   "reused_populations": 0,
+   "seed_lo": 33160000,
+   "seed_hi": 33166047,
+   "core_h": 32.5,
+   "pess_core_h": 45.51,
+   "slowest_h": 0.103,
+   "pess_slowest_h": 0.145,
+   "elapsed_h": 0.62,
+   "pess_elapsed_h": 0.868,
+   "mem_mb": 595,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    73,
+    74,
+    76,
+    78,
+    79,
+    81,
+    83
+   ],
+   "rate_ms": [
+    2.188
+   ]
+  },
+  {
+   "name": "B2_L48_nc512",
+   "tag": "Y48N512",
+   "group": "B2",
+   "L": 48,
+   "T": 48.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     512
+    ],
+    [
+     0.2232,
+     6.0,
+     512
+    ],
+    [
+     0.2282,
+     6.0,
+     512
+    ],
+    [
+     0.2332,
+     6.0,
+     512
+    ],
+    [
+     0.2382,
+     6.0,
+     512
+    ],
+    [
+     0.2432,
+     6.0,
+     512
+    ],
+    [
+     0.2482,
+     6.0,
+     512
+    ]
+   ],
+   "tasks": 336,
+   "reused_populations": 0,
+   "seed_lo": 33180000,
+   "seed_hi": 33186047,
+   "core_h": 30.5,
+   "pess_core_h": 42.71,
+   "slowest_h": 0.097,
+   "pess_slowest_h": 0.135,
+   "elapsed_h": 0.579,
+   "pess_elapsed_h": 0.811,
+   "mem_mb": 491,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    165,
+    168,
+    172,
+    176,
+    180,
+    183,
+    187
+   ],
+   "rate_ms": [
+    3.63
+   ]
+  },
+  {
+   "name": "B2_L48_nc1024",
+   "tag": "Y48N1024",
+   "group": "B2",
+   "L": 48,
+   "T": 48.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     1024
+    ],
+    [
+     0.2232,
+     6.0,
+     1024
+    ],
+    [
+     0.2282,
+     6.0,
+     1024
+    ],
+    [
+     0.2332,
+     6.0,
+     1024
+    ],
+    [
+     0.2382,
+     6.0,
+     1024
+    ],
+    [
+     0.2432,
+     6.0,
+     1024
+    ],
+    [
+     0.2482,
+     6.0,
+     1024
+    ]
+   ],
+   "tasks": 264,
+   "reused_populations": 72,
+   "seed_lo": 33200000,
+   "seed_hi": 33206047,
+   "core_h": 45.67,
+   "pess_core_h": 63.93,
+   "slowest_h": 0.184,
+   "pess_slowest_h": 0.257,
+   "elapsed_h": 0.919,
+   "pess_elapsed_h": 1.287,
+   "mem_mb": 833,
+   "mem_req": "2G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    165,
+    168,
+    172,
+    176,
+    180,
+    183,
+    187
+   ],
+   "rate_ms": [
+    3.457
+   ]
+  },
+  {
+   "name": "B2_L48_nc2048",
+   "tag": "Y48N2048",
+   "group": "B2",
+   "L": 48,
+   "T": 48.0,
+   "R": 48,
+   "cells": [
+    [
+     0.2182,
+     6.0,
+     2048
+    ],
+    [
+     0.2232,
+     6.0,
+     2048
+    ],
+    [
+     0.2282,
+     6.0,
+     2048
+    ],
+    [
+     0.2332,
+     6.0,
+     2048
+    ],
+    [
+     0.2382,
+     6.0,
+     2048
+    ],
+    [
+     0.2432,
+     6.0,
+     2048
+    ],
+    [
+     0.2482,
+     6.0,
+     2048
+    ]
+   ],
+   "tasks": 336,
+   "reused_populations": 0,
+   "seed_lo": 33220000,
+   "seed_hi": 33226047,
+   "core_h": 132.3,
+   "pess_core_h": 185.22,
+   "slowest_h": 0.419,
+   "pess_slowest_h": 0.586,
+   "elapsed_h": 2.512,
+   "pess_elapsed_h": 3.517,
+   "mem_mb": 1515,
+   "mem_req": "2G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    165,
+    168,
+    172,
+    176,
+    180,
+    183,
+    187
+   ],
+   "rate_ms": [
+    3.936
+   ]
+  },
+  {
+   "name": "C_L96_nc1024",
+   "tag": "C1024",
+   "group": "C",
+   "L": 96,
+   "T": 96.0,
+   "R": 24,
+   "cells": [
+    [
+     0.3032,
+     6.0,
+     1024
+    ]
+   ],
+   "tasks": 24,
+   "reused_populations": 0,
+   "seed_lo": 33240000,
+   "seed_hi": 33240023,
+   "core_h": 89.04,
+   "pess_core_h": 124.66,
+   "slowest_h": 3.71,
+   "pess_slowest_h": 5.194,
+   "elapsed_h": 3.71,
+   "pess_elapsed_h": 5.194,
+   "mem_mb": 2155,
+   "mem_req": "3G",
+   "partition": "cpu_long",
+   "time": "12:00:00",
+   "n_steps": [
+    922
+   ],
+   "rate_ms": [
+    14.147
+   ]
+  },
+  {
+   "name": "C_L96_nc2048",
+   "tag": "C2048",
+   "group": "C",
+   "L": 96,
+   "T": 96.0,
+   "R": 24,
+   "cells": [
+    [
+     0.3032,
+     6.0,
+     2048
+    ]
+   ],
+   "tasks": 24,
+   "reused_populations": 0,
+   "seed_lo": 33260000,
+   "seed_hi": 33260023,
+   "core_h": 202.74,
+   "pess_core_h": 283.84,
+   "slowest_h": 8.448,
+   "pess_slowest_h": 11.827,
+   "elapsed_h": 8.448,
+   "pess_elapsed_h": 11.827,
+   "mem_mb": 2574,
+   "mem_req": "4G",
+   "partition": "cpu_long",
+   "time": "24:00:00",
+   "n_steps": [
+    922
+   ],
+   "rate_ms": [
+    16.106
+   ]
+  },
+  {
+   "name": "D_L128_nc2048",
+   "tag": "D2048",
+   "group": "D",
+   "L": 128,
+   "T": 128.0,
+   "R": 16,
+   "cells": [
+    [
+     0.3032,
+     6.0,
+     2048
+    ]
+   ],
+   "tasks": 16,
+   "reused_populations": 0,
+   "seed_lo": 33280000,
+   "seed_hi": 33280015,
+   "core_h": 502.36,
+   "pess_core_h": 703.31,
+   "slowest_h": 31.398,
+   "pess_slowest_h": 43.957,
+   "elapsed_h": 31.398,
+   "pess_elapsed_h": 43.957,
+   "mem_mb": 6330,
+   "mem_req": "9G",
+   "partition": "cpu_long",
+   "time": "72:00:00",
+   "n_steps": [
+    1643
+   ],
+   "rate_ms": [
+    33.592
+   ]
+  },
+  {
+   "name": "E_L64_dtau_nc64",
+   "tag": "E64",
+   "group": "E",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.3032,
+     3.0,
+     64
+    ],
+    [
+     0.3032,
+     6.0,
+     64
+    ],
+    [
+     0.3032,
+     12.0,
+     64
+    ]
+   ],
+   "tasks": 144,
+   "reused_populations": 0,
+   "seed_lo": 33300000,
+   "seed_hi": 33302047,
+   "core_h": 9.14,
+   "pess_core_h": 12.79,
+   "slowest_h": 0.109,
+   "pess_slowest_h": 0.152,
+   "elapsed_h": 0.326,
+   "pess_elapsed_h": 0.457,
+   "mem_mb": 226,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    204,
+    408,
+    816
+   ],
+   "rate_ms": [
+    7.5
+   ]
+  },
+  {
+   "name": "E_L64_dtau_nc256",
+   "tag": "E256",
+   "group": "E",
+   "L": 64,
+   "T": 64.0,
+   "R": 48,
+   "cells": [
+    [
+     0.3032,
+     3.0,
+     256
+    ],
+    [
+     0.3032,
+     6.0,
+     256
+    ],
+    [
+     0.3032,
+     12.0,
+     256
+    ]
+   ],
+   "tasks": 144,
+   "reused_populations": 0,
+   "seed_lo": 33320000,
+   "seed_hi": 33322047,
+   "core_h": 32.34,
+   "pess_core_h": 45.27,
+   "slowest_h": 0.385,
+   "pess_slowest_h": 0.539,
+   "elapsed_h": 1.155,
+   "pess_elapsed_h": 1.617,
+   "mem_mb": 455,
+   "mem_req": "1G",
+   "partition": "cpu_med",
+   "time": "01:00:00",
+   "n_steps": [
+    204,
+    408,
+    816
+   ],
+   "rate_ms": [
+    6.634
+   ]
+  }
+ ],
+ "seed_floor": 33000000,
+ "seed_ceil": 34000000,
+ "concurrency": 64,
+ "pessimistic": 1.4,
+ "tau_I": 0.006,
+ "tau_lambda": 0.004,
+ "tau_D": 0.0118
+}

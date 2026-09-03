@@ -1,0 +1,102 @@
+# TASK PHASE LEDGER - append-only. Written by research/tools/task_phase.py.
+# Editing a frozen artifact after its stage closed is validate_task.py error M5.
+schema_version: 2
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+mode: normal
+phases:
+- stage: task_created
+  closed: '2026-09-03T18:54:45Z'
+  frozen: {}
+- stage: stage_1_problem
+  closed: '2026-09-03T19:34:02Z'
+  frozen:
+    CHARTER.md: sha256:1929ac7f7b3c22afe7e43691a03a91410b2739752ae95cd268933ee11e2523cc
+    PROBLEM_MEMO.md: sha256:d22f59db3286fcc84d5925c186878ccd831d839997fa37e2ba7ae1e1733f8e32
+    SOURCE_REGISTER.md: sha256:e9599878b85068a4b4d2a95f5feb875e4cf300a541c3fb2462b2e06090c16a11
+  note: Problem, charter and task-scoped source scope frozen before any arm was built, any cost computed
+    or any tolerance chosen.
+- stage: investigators_dispatched
+  closed: '2026-09-03T19:35:06Z'
+  frozen: {}
+  workers:
+  - role: numerics
+    model: lead-inline
+  workers_skipped:
+  - literature
+  - theory
+- stage: first_pass_frozen
+  closed: '2026-09-03T19:35:06Z'
+  frozen:
+    agent_reports/numerics.md: sha256:df8ed29560f2486f725f794a45de2af5c112a2869364042daed891d9eeb05c46
+  note: 'The numerics first pass was executed INLINE BY THE LEAD. No independence was obtained in this
+    run; INDEPENDENCE_LEDGER.yaml records that as a real limitation rather than a design choice. literature
+    and theory were skipped: no external source is load-bearing for this campaign-preparation task and
+    the analytic question was settled (negatively) by TASK-2026-09-02-FINITE-NC-THEORY.'
+- stage: collaboration_opened
+  closed: null
+  frozen: {}
+- stage: collaboration_closed
+  closed: null
+  frozen: {}
+- stage: stage_3_candidates
+  closed: '2026-09-03T19:38:48Z'
+  frozen:
+    CANDIDATES.md: sha256:13b0d5effcead4c956fb9ec5e0754fb452a1754db58b9d11e34afae7f8036c2c
+    FALSIFICATION_PLAN.md: sha256:dc0a1ec1b3f380a22767a3c72b1be3b6ce9320cb21585d28baf11e6305ad8ed8
+    ANALYSIS_SPEC.yaml: sha256:c62bdd38cd9856ee71b9fa58279d06826653d7c753e54f667686089b30eb7506
+    NOVELTY_GATE.md: sha256:2494193d3fcd172cec85ad47a7a9eac2139a1861bb6ce461d00a1ad67383a1e8
+    FIELD_MAP.md: sha256:b92b7197b998c07da408e1e813eb73e8dfb92436d4b8011a4280e9f4c561cdc2
+    NOVELTY_MATRIX.md: sha256:d4f5c8b05c3572ba6d8fee3b0bc456b47cdb34113b480856a48bead60cb27bee
+  note: Design candidates, falsification plan, analysis spec, field map, novelty matrix and duplicate
+    gate frozen BEFORE any new datum exists. SUCCESS_CRITERIA.yaml (tau_I, tau_lambda, P1-P5, H1-H3, E1-E2)
+    is frozen at the same moment by the preflight, which prints its sha256; it is not in the engine's
+    FREEZES table and its hash is recorded in VALIDATION.md.
+- stage: redteam_dispatched
+  closed: '2026-09-03T20:01:29Z'
+  frozen: {}
+  note: Red team run INLINE BY THE LEAD. No independent reviewer was dispatched; validate_redteam.py correctly
+    refuses the report under rule R3 and the flag was not falsified to make the check pass. Charter Stage
+    8 is NOT satisfied by this run.
+- stage: synthesis_closed
+  closed: '2026-09-03T20:01:29Z'
+  frozen:
+    REDTEAM.yaml: sha256:ba3691edbb10c77f98886bbd14edddef8f91df9beb632cace1b985c8162d6566
+    RESEARCH_MEMO.md: sha256:c5dac6231e376eb67f5cb6d142eaa8c1e698491a4fb7da9af474007ba6e78d9d
+    RECOMMENDATION.md: sha256:d1304f95718514032285e32e4726c77e9c5a363ffc5b261bd49267d0d7172d1b
+    FALSIFICATION_RESULTS.md: sha256:ed8ad26636b352638fd790f58dd3d9b318b5511786f625ca69b4d5ed43e54d9f
+    ASSESSMENT_AH.md: sha256:7dcc87608cdf1056c2a542f7d28ad81a0f866ac51a4040a6604f6eba417b9b10
+    SLOP_WARNINGS.md: sha256:157c7d82dfcfa1c21ffac3899d9e50455cc10b564240df6f032ab85f4b9a10c7
+  note: Terminal state READY_FOR_HUMAN_SUBMISSION. Nothing submitted, research/state/** unwritten, no
+    predecessor directory modified.
+amendments:
+- path: CANDIDATES.md
+  was: sha256:c2de79d28527b6b9f0fe022818389234d4a03782c8fe2864909ff373bb164b53
+  now: sha256:13b0d5effcead4c956fb9ec5e0754fb452a1754db58b9d11e34afae7f8036c2c
+  at: '2026-09-03T19:51:07Z'
+  reason: 'Restructured into the mandated eleven-field Stage-3 schema after validate_task.py T7 rejected
+    the original prose headings. Substance unchanged: same six candidates plus the killed C0, same kill
+    criteria, same arms, same tolerances. No criterion was weakened, added or removed.'
+  authorised_by: lead, on validate_task.py T7
+- path: NOVELTY_GATE.md
+  was: sha256:0cf68e56b576e5edd6d4eea3f5b26188ee9cf1c6335ec5cdf9c2c10f98383dca
+  now: sha256:2494193d3fcd172cec85ad47a7a9eac2139a1861bb6ce461d00a1ad67383a1e8
+  at: '2026-09-03T19:51:07Z'
+  reason: 'Added the qualification validate_task.py G4 requires: ''no predecessor found'' means none found
+    under the searches actually performed, no external prior-art search was done, and external novelty
+    is therefore UNRESOLVED. This weakens the file''s claims and adds no new ones.'
+  authorised_by: lead, on validate_task.py G4
+- path: RECOMMENDATION.md
+  was: sha256:a74535340369d2f4c60faf51ac64682dda28038f1f91f6d5b890ec64d9eb4846
+  now: sha256:d1304f95718514032285e32e4726c77e9c5a363ffc5b261bd49267d0d7172d1b
+  at: '2026-09-03T20:13:29Z'
+  reason: 'Corrected one factual cell in the ''What is ready'' table: the validation count read 23/24
+    and the completed suite is 25/26 (the two slow checks -- smoke test and bit-level reproduction --
+    were skipped in the run the first number came from). The failing check is the same one in both counts:
+    Stage 8. No verdict, recommendation, number, cost or caveat changed.'
+  authorised_by: lead, on a self-audit of VALIDATION.md against the completed check suite
+collaboration:
+  rounds: 0
+  decision: COLLABORATION_NOT_NEEDED
+  reason: Only one role ran, and it ran inline. There is no cross-role dependency to open a round on,
+    and opening one would be theatre.
+  at: '2026-09-03T19:35:07Z'

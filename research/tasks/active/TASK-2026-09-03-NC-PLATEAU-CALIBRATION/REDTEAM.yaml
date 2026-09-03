@@ -1,0 +1,460 @@
+# MANDATORY red-team output. Charter section 7 Stage 8. SCHEMA VERSION 2.
+schema_version: 2
+
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+reviewer: lead-inline-self-redteam
+date: 2026-09-03
+
+independence_limitation: >
+  THIS IS NOT AN INDEPENDENT RED TEAM AND MUST NOT BE READ AS ONE. It was run by
+  the lead, against the lead's own design, with full sight of the lead's
+  reasoning. The charter's Stage 8 exists precisely to prevent that arrangement,
+  and INDEPENDENCE_LEDGER.yaml records the same limitation without softening it.
+  What follows is an adversarial pass with real findings - one of which killed a
+  design decision and cost 200 core-hours to repair - but it carries none of the
+  epistemic weight of an independent review, and a human gate should treat its
+  survivals as unreviewed.
+
+inputs_seen:
+  claims:
+    - "CANDIDATES.md C0-C6, eleven fields each"
+    - "CHARTER.md, PROBLEM_MEMO.md (frozen at stage_1_problem)"
+    - "SUCCESS_CRITERIA.yaml, ANALYSIS_SPEC.yaml, FALSIFICATION_PLAN.md (frozen)"
+    - "CAMPAIGN_DESIGN.md, COST_MODEL.md, DECISION_TREE.md"
+    - "agent_reports/numerics.md (frozen first pass, lead-inline)"
+  evidence:
+    - "OBS-CMI-001 (observable convention; cited, not re-derived)"
+    - "EXISTING_POPULATION_INVENTORY.csv - 1896 raw populations, rebuilt from result JSONs"
+    - "EXISTING_LADDERS.md - 53 ladders"
+    - "EV-CODE-ANCHORSCAN-001 (known-wrong script; not run, not cited)"
+  task_verified:
+    - TV-01
+    - TV-02
+    - TV-03
+    - TV-04
+    - TV-05
+    - TV-06
+    - TV-07
+  task_verified_detail:
+    - "TV-01 recomputation - the L=128 lambda=0.3032 ladder (N_c = 64..1024, R = 64/64/64/48/32) rejects I_inf + B/N: chi2 = 12.58, 3 dof, p = 0.0056. Reproduced from the raw result JSONs, independently of the predecessor's code. Verified. Does NOT establish anything about any other L or lambda."
+    - "TV-02 recomputation - the L=96 lambda=0.3032 ladder rebuilt from raw files has THREE rungs (N_c = 128/256/512) and gives chi2 = 1.90, 1 dof, p = 0.168. NOT rejected. The predecessor reported chi2 = 10.54 on 3 dof for 'L=96, T=96', which requires a four-rung ladder this reconstruction cannot locate. Verified. Does NOT establish that the predecessor is wrong - only that its ladder is unlocatable from lambda=0.3032 raw data."
+    - "TV-03 recomputation - L=64 lambda=0.3032: Delta_1024 = +0.00235 +- 0.00528 (R = 96 and 24). 95% interval [-0.00799, +0.01269], half-width 1.72x tau_I. Matched R for a P2 pass at that step: 137. Verified."
+    - "TV-04 recomputation - matched R needed for P2 at the L=128 512->1024 step is 2675, and larger at every lower rung. At N_c = 2048 that is roughly 13000 core-hours for one lambda. Verified. Establishes that absolute-level plateau certification at tau_I is unreachable at L=128 at any affordable R."
+    - "TV-05 measurement - direct ru_maxrss of the bundled certified sampler at 14 cells. The deployed --mem model (128 + 2*N_c*per_clone) UNDER-predicts at seven of them; L=64 N_c=2048 reads 1694 MB against a predicted 1202 MB, and the arm that ran that cell shipped --mem=2G. Verified. Limitation: these are macOS ru_maxrss and the cluster is Linux."
+    - "TV-06 reproduction - two completed predecessor populations re-executed through this task's modified run_cell.py: all 1024 per-clone CMI values BIT-IDENTICAL in both cases, every integer diagnostic exactly equal, derived reductions within 1.7e-14 relative. Verified. Establishes the sampler is unchanged; the residual is x86-vs-arm64 summation order."
+    - "TV-07 measurement - the L=128 per-clone-window rate is NOT flat above N_c = 256: 23.998, 25.080, 28.260 ms (max) at N_c = 256, 512, 1024. The predecessor cost model extrapolated flat from N_c=256 and would predict 21.52 at 1024, 30% low. Verified."
+  external_sources: []
+  lead_summary_seen: true      # unavoidable: the reviewer IS the lead
+
+candidate_reviews:
+
+  C1:
+    statement: "A high-N_c plateau is reachable at L = 64, lambda = 0.3032, at or below N_c = 8192."
+    verdict: survives_scoped
+    surviving_scope: >
+      As a MEASUREMENT PROGRAMME, not as a prediction. Campaign A can determine
+      whether a plateau is observable at this one cell; it cannot establish that
+      one exists before it runs, and nothing in the design assumes it does.
+      Scope is L = 64, T = 64, zeta = 0.35, lambda = 0.3032, OBS-CMI-001, this
+      sampler.
+    reason: >
+      No attack lands fatally. The strongest, A8, forced R from 24 to 48 and is
+      recorded as having changed the design rather than as having been argued away.
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: "TASK-2026-09-02-MOCK-PRODUCTION measured this cell at N_c = 2048, R = 24 and left convergence unresolved. The question is open, not solved."
+        severity: none
+        unresolved: "No external search for empirical plateau-detection protocols was performed by this task."
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: "It does not follow at all: the analytic route is closed (uniform-mixing bounds do not transfer) and the 1/N form is rejected at L=128. Nothing predicts the outcome."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: "The comparison is against the SAME estimator at smaller N_c, produced by the byte-identical sampler with disjoint seeds. There is no baseline to disadvantage."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: "The gain IS extra resources - that is the point of an N_c ladder - and R is raised as well. The design therefore reports the N_c and R budgets separately and every verdict names which binds."
+        severity: minor
+        unresolved: "Whether a reader will keep them apart in practice. The verdict labels UNRESOLVED_R_LIMITED and STILL_DRIFTING exist to force it."
+        effect_on_candidate: narrow_scope
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: "Populations are independent by construction (disjoint seeds, no shared state). The boundary case that bites is R < 4, where P4's block test has no variance; the analysis reports that as an unmet precondition rather than NaN."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: "Delta_N is the movement of the estimator, not the distance to the unknown N_c -> infinity target. A plateau in Delta is CONSISTENT WITH, and does not prove, convergence: a slowly-varying drift can pass P1-P5 over two doublings."
+        severity: material
+        unresolved: "This cannot be closed by any finite ladder. It is why the task calls the movement DRIFT and never BIAS, and why no I_inf is extrapolated from a rejected model."
+        effect_on_candidate: narrow_scope
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: "Convergence at L=64 says nothing about L=96 or 128, which is where production would run. The candidate is explicitly the EXISTENCE question, and C4/C5 carry the transfer."
+        severity: material
+        unresolved: "If A holds and C, D fail, the programme has a converged estimator only where it does not need one."
+        effect_on_candidate: narrow_scope
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: "AT R = 24 THIS ATTACK WAS FATAL: the top step's Delta half-width would have been ~1.2x tau_I, so the arm could not have satisfied P2 whatever the data did - an arm that cannot pass its own criterion is not a measurement. R was raised to 48 in response, and the residual (the LOWER step still needs R ~ 80) is stated in CAMPAIGN_DESIGN.md rather than hidden."
+        severity: material
+        unresolved: "The 2048->4096 step remains under-powered for P2 by ~28%."
+        effect_on_candidate: narrow_scope
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: "The simpler explanation for the existing +0.00235 step is that R = 24 was too small to see anything, and that IS this task's reading. It is adopted as the null, not argued against."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+
+  C2:
+    statement: "The finite-N_c correction is flat enough in lambda (H1 additive or H2 multiplicative) to preserve the shape of CMI(lambda) across the locator region."
+    verdict: survives_scoped
+    surviving_scope: >
+      A test with three declared outcomes, one of which (neither hypothesis
+      rejected) is UNRESOLVED and is pre-registered as such. Scope: L = 64,
+      seven lambda in 0.2182-0.2482, N_c 512/1024/2048.
+    reason: "Survives as a test. It does NOT survive as a claim, and the task makes none."
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: "No measured Delta(lambda) exists in the locator region anywhere in the corpus. No external search was performed, so external priority is UNRESOLVED (NOVELTY_GATE.md)."
+        severity: none
+        unresolved: "External prior art, entirely."
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: "The predecessor theory task SUGGESTED additive can fail while multiplicative survives. If that were imported as a prior the test would be circular. SUCCESS_CRITERIA.yaml gives it explicitly zero prior weight."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: "H1 and H2 each get one free parameter and the same six residual dof. Neither is favoured by the fitting procedure."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: "R = 48 is matched across all three N_c and all seven lambda; no cell is advantaged."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: "The H2 test uses I_lo in its own regressor, so the two axes are correlated; the analysis inflates the H2 weights for that correlation. Seven points at the edge of the window are also the least constrained."
+        severity: minor
+        unresolved: "The correlation correction is first-order only."
+        effect_on_candidate: narrow_scope
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: "Shape is measured at N_c = 512..2048, but what matters for production is the shape at the N_c eventually used. If that is higher, this measures a different regime."
+        severity: material
+        unresolved: "Only campaign A can say whether 2048 is in the asymptotic regime at all."
+        effect_on_candidate: narrow_scope
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: "At L = 96 and 128 the per-population spread is 2-5x larger, so a distortion resolvable at L = 64 may be invisible where production runs."
+        severity: material
+        unresolved: "Not addressed by this campaign. Recorded in PARKING_LOT.md."
+        effect_on_candidate: narrow_scope
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: "Seven points and two one-parameter models: failing to reject either is likely and proves nothing. Pre-registered as UNRESOLVED rather than as support."
+        severity: material
+        unresolved: "The most probable single outcome of campaign B is that neither hypothesis is rejected."
+        effect_on_candidate: narrow_scope
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: "The simplest explanation of a flat Delta(lambda) is that the region is narrow (0.03 in lambda) and any smooth correction looks flat across it. The analysis therefore reports the increments and second differences, not only the fitted constant."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+
+  C3:
+    statement: "The inferred cross-L crossing location converges with N_c earlier than the absolute CMI level does, because the displacement common to both L cancels in D = I_L1 - I_L2."
+    verdict: survives_scoped
+    surviving_scope: >
+      A PARTIAL-cancellation hypothesis only. The displacement is already known
+      to be L-dependent, so complete cancellation is refuted before the campaign
+      starts. Scope: L in {32,48,64}, seven lambda, N_c 512/1024/2048, and the
+      two interior crossings only.
+    reason: >
+      The load-bearing candidate. It survives, and the attack that landed
+      hardest (A6) changed the arm's design at a cost of 200 core-hours rather
+      than being answered in prose.
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: "No matched cross-L N_c comparison exists in the corpus. But the underlying observation - a common additive offset cancels in a difference - is elementary and almost certainly in the SMC or FSS literature. NO EXTERNAL SEARCH WAS PERFORMED."
+        severity: material
+        unresolved: "External priority is UNRESOLVED, not favourable. NOVELTY_MATRIX.md states the search is owed before anyone calls this a contribution."
+        effect_on_candidate: narrow_scope
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: "If the displacement were L-independent, C3 would be trivially true and worth nothing. It is NOT L-independent - L=64 moves +0.002 from 1024 to 2048 while L=128 moves -0.060 from 512 to 1024 - so the trivial case is already excluded by measurement."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: "The comparison holds L=32/48 at matched R = 48 on the identical grid at the identical N_c. Campaign B2 exists precisely to remove the asymmetry the one-sided version would have had."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: "B2 is 260 extra core-hours and 1872 extra tasks. It buys matching, not information: the same lambda, the same R, the same sampler."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: "The boundary case is the whole risk. A crossing within one grid step of either end is ENDPOINT_INDUCED and reports as boundary-sensitive regardless of anything else."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: "FATAL AGAINST THE FIRST DESIGN, and it killed it. B2 was originally three shared lambda at a sixth of the cost. Running the frozen crossing protocol on that grid showed BOTH interior crossings fall in the first or last interval, so every crossing is flagged ENDPOINT_INDUCED BY CONSTRUCTION - the arm would have measured its own grid, not the crossing. Rebuilt on the full seven points; tools/design.py records the reason at the changed line."
+        severity: material
+        unresolved: none
+        effect_on_candidate: narrow_scope
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: "C3 is tested at L <= 64 and would be USED at L = 96 and 128, where the L-dependence of the displacement is much larger. The extrapolation is the weakest link in the whole campaign."
+        severity: material
+        unresolved: "Nothing in this campaign tests C3 at L >= 96, because a matched cross-L N_c comparison there costs thousands of core-hours. Recorded in PARKING_LOT.md as the top follow-up."
+        effect_on_candidate: narrow_scope
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: "At R = 48 the crossing's statistical half-width is ~0.0034 in lambda, below tau_lambda = 0.004, so a movement of tolerance size IS resolvable. This attack fails."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: "A crossing that appears stable across N_c may simply be insensitive because both curves are steep there. The analysis therefore recomputes |dD/dlambda| from the new data and re-derives tau_D if it has moved."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+
+  C4:
+    statement: "The L = 96 ladder, extended to N_c = 1024 and 2048, enters a simpler high-N regime."
+    verdict: survives_scoped
+    surviving_scope: "A SCREENING measurement at R = 24. It cannot certify convergence and is labelled so in SUCCESS_CRITERIA.yaml."
+    reason: "Survives as screening. Its stated motivation partly rests on a predecessor result this task could not reproduce, and that is recorded rather than repaired."
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: "The three lower rungs exist. The top two do not, anywhere."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: "No. The 1/N form is rejected at L=128 and not rejected at L=96 on three rungs; nothing predicts which way five rungs will go."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: "The existing rungs carry R = 32, 32, 48 while the new ones carry 24. Matched-R comparisons are therefore taken on seed-ordered blocks of 24, and full-R views are secondary with no verdict authority."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: "292 core-hours for two rungs. No informational asymmetry."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: "Fine at R = 24 for block tests. The five-rung 1/N fit will have 3 dof, matching the L=128 fit, so the two are directly comparable."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: "Same as C1-A6: a plateau in Delta is not proof of convergence."
+        severity: material
+        unresolved: "Irreducible."
+        effect_on_candidate: narrow_scope
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: "L = 96 is a waypoint; production targets L = 128. If L=96 converges and L=128 does not, the campaign has learned where the onset is not."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: "At R = 24 the Delta half-width is ~4.5x tau_I. This arm CANNOT satisfy P2, and its small-step outcome is pre-registered as UNRESOLVED_R_LIMITED. It is honest, and it is a weak measurement."
+        severity: material
+        unresolved: "Reaching P2 at L=96 needs R in the hundreds and was judged not worth buying before the screening result exists."
+        effect_on_candidate: narrow_scope
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: "The existing three-rung 'not rejected' (p = 0.168) is explained simply by having 1 dof, not by the ladder being clean. The task says so and does not lean on it."
+        severity: minor
+        unresolved: "The predecessor's chi2 = 10.54 L=96 rejection is unlocatable from raw data (TV-02). Open provenance item."
+        effect_on_candidate: narrow_scope
+
+  C5:
+    statement: "N_c = 2048 is materially better than 1024 at L = 128, lambda = 0.3032."
+    verdict: survives_scoped
+    surviving_scope: >
+      A SCREENING rung at R = 16 with one job: is the 1024 -> 2048 change still
+      of the size the 512 -> 1024 change was. It cannot certify convergence and
+      it discriminates no mechanism.
+    reason: >
+      Survives only in that narrow scope. A predecessor explicitly declined this
+      design and its reasoning is correct on its own terms; the answer is that
+      the purpose here is different, not that the objection was wrong.
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: "Proposed one task ago as 'Design 4' and NOT RECOMMENDED, at 901 pessimistic core-hours and R = 32."
+        severity: material
+        unresolved: "Whether production-adequacy screening justifies what mechanism-discrimination did not. This reviewer's judgement is yes at R = 16 and 502 core-hours; an independent one might differ."
+        effect_on_candidate: narrow_scope
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: "No. The four measured steps run -0.099, -0.121, -0.048, -0.060: not monotone, so nothing predicts the fifth."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: "The partner rung has R = 32 against this arm's 16, so the Delta interval is dominated by the NEW rung. Matched-R blocks are used for the primary statistic."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: "502 core-hours, 23% of the campaign, for 16 tasks. The most expensive answer-per-core-hour here, and stated as such."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: "R = 16 gives 8-population blocks for P4, which is thin but has variance. A 31-hour uncheckpointed task is a real operational boundary case: one node failure loses a population."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: "It measures a step in a ladder whose limit is unknown, and it is the ONLY arm at the L production actually targets."
+        severity: material
+        unresolved: "Irreducible."
+        effect_on_candidate: narrow_scope
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: "Whatever it finds, N_c = 2048 at L = 128 for a nine-lambda scan is 1739 core-hours and N_c = 4096 is 3960 - and a single N_c = 4096 population sits at cpu_long's 168 h MaxTime exactly. The realistic condition is that the level route at L = 128 may be unaffordable regardless of the answer."
+        severity: material
+        unresolved: "This is the strongest argument in the campaign for the locator route, and it is derivable without running D at all."
+        effect_on_candidate: narrow_scope
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: "At R = 16 the half-width is ~4.3x tau_I. The arm can only resolve a shift the size of the previous one. Pre-registered: a SMALL shift here is UNRESOLVED_R_LIMITED, never convergence."
+        severity: material
+        unresolved: "Matched R for P2 is ~2675, about 13000 core-hours. Unreachable."
+        effect_on_candidate: narrow_scope
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: "The simplest reading of the L=128 ladder is that it is nowhere near asymptotic and one more rung will not change that. The task adopts this as the expected outcome and gates the 4096 rung on it in advance."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+
+  C6:
+    statement: "Finite-N_c behaviour approaches a discretisation-stable continuous-time particle limit (E2), against the alternative that drift scales as 1/dtau_mult (E1)."
+    verdict: survives
+    reason: >
+      The cleanest arm in the campaign. The target measure is exactly invariant
+      under the manipulation, both outcomes kill a mechanism, the INCONCLUSIVE
+      band is pre-registered, and it costs 1.9% of the total. No attack lands
+      above minor.
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: "TASK-2026-08-30-SMCSTAT ran the same dtau_mult set at K = 232/116/58 on a smaller cell; its three means are flat to about one SEM. Classified rediscovery at production geometry, not new."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: narrow_scope
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: "The exactness of the FK weight guarantees the TARGET is unchanged; it says nothing about the ESTIMATOR's finite-N_c behaviour, which is what varies. Not trivial."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: "dtau_mult = 6 is included as the control at both N_c, so production discretisation is measured on the same footing as the two alternatives."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: "Cost rises with K, so dtau_mult = 3 is 4x dtau_mult = 12. That is the physics of the manipulation, not an advantage given to one arm."
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: "dtau_mult = 12 is the historical corpus value and 6 is certified; if 12 differs, the corpus and the certified path differ. That is a finding, not a failure mode."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: "It measures the endpoint CMI at three window densities, and 'drift' here is a between-arm difference rather than a ladder step. The per-window histories this task now records let the accumulation be watched through the run instead."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: "N_c = 64 and 256 are far below production. Both are reported separately and neither is pooled; a disagreement between them IS the result."
+        severity: material
+        unresolved: "Whether a null at N_c <= 256 transfers to N_c = 2048 is not tested and cannot be at this cost."
+        effect_on_candidate: narrow_scope
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: "R = 48 at N_c = 64/256, where the per-population spread is largest. The INCONCLUSIVE band is wide and is pre-registered as the likely outcome rather than discovered afterwards."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: "A flat result is also what one would see if the estimator were insensitive to everything at these N_c. The dtau_mult = 6 control at two N_c is the check on that."
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+
+overall_task_assessment:
+  surviving_candidates: [C1, C2, C3, C4, C5, C6]
+  killed_candidates: []
+  recommendation_basis: >
+    Every candidate survives, and five of the six survive SCOPED. That pattern
+    is the honest summary: this is a calibration campaign whose arms are
+    measurements rather than claims, so the attacks that land are about POWER
+    and TRANSFER rather than about correctness. Two attacks changed the design
+    materially - C1/A8 forced R from 24 to 48, and C3/A6 killed the cheap
+    three-lambda version of campaign B2 at a cost of 200 core-hours - and both
+    are recorded at the line of code that changed. Three unresolved items are
+    carried forward rather than closed: no external prior-art search was
+    performed anywhere in this task; C3 is tested at L <= 64 and would be USED
+    at L >= 96; and absolute-level certification at L = 128 is unreachable at
+    any affordable R, which makes the locator route load-bearing rather than
+    merely attractive. NOTHING here was reviewed independently, and a human gate
+    should treat every survival above as unreviewed.
+  proposed_status: READY_FOR_HUMAN_SUBMISSION

@@ -1,0 +1,234 @@
+---
+task: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+frozen_at: stage_3_candidates
+status: >
+  FROZEN BEFORE ANY NEW DATUM EXISTS. Every threshold, every hypothesis and
+  every verdict label below was fixed while the only numbers available were the
+  ones already on disk from completed predecessor campaigns. Nothing here may be
+  edited after a result arrives; a criterion that can be rewritten to agree with
+  its own outcome is not a criterion.
+
+# ===========================================================================
+# 0. THE TOLERANCES, AND WHY THEY ARE IN THIS ORDER
+# ===========================================================================
+tolerances:
+  primary: tau_lambda
+  rationale: >
+    The programme needs a transition LOCATION. An absolute-CMI tolerance with no
+    decision attached to it is a number chosen for convenience, so tau_lambda is
+    fixed first and tau_I is derived from it. This ordering is itself frozen: it
+    is what stops the campaign from declaring success against whatever tolerance
+    the returned data happen to meet.
+
+  tau_lambda:
+    value: 0.004
+    units: lambda
+    meaning: >
+      The largest movement of an inferred cross-L crossing that the programme
+      will accept as immaterial for transition-location work.
+    justification: >
+      [J] 0.8 x the frozen 0.005 grid spacing of campaign B, so a displacement
+      inside tau_lambda cannot move a crossing by a full measured grid step.
+      [E] It is also at the achievable end of the existing statistics: the
+      L32-L64 cross-L difference at N_c=1024, R=24 per curve, has a 95 %
+      half-width of 0.0128 in D, which is 0.0043 in lambda -- i.e. the existing
+      corpus already locates that crossing to about tau_lambda, so tau_lambda is
+      a tolerance the measurement can speak to rather than an aspiration.
+      Chosen from the range the brief names (0.003-0.005) at its centre.
+    not_justified_by: >
+      No critical-law prediction. Nothing about sqrt(zeta), zeta^(1/3), or any
+      other candidate exponent enters this number, and nothing may be centred
+      on one.
+
+  dD_dlambda_min:
+    value: 2.965
+    units: per unit lambda
+    provenance: >
+      [E] MEASURED, not assumed. Local slope of D = I_L32 - I_L64 across the
+      grid step that brackets its interior sign change (lambda 0.2232 -> 0.2332)
+      on the N_c = 1024, R = 24 curves of TASK-2026-09-02-MOCK-PRODUCTION and
+      TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION, recomputed from raw result JSONs
+      by tools/reconstruct_inventory.py. The other interior-crossing pair,
+      L48-L64 over 0.2332 -> 0.2432, gives 4.052. The SMALLER slope is adopted
+      because a smaller slope converts a given CMI error into a LARGER lambda
+      error.
+    revalidation: >
+      The analysis recomputes this slope from the new curves. If it differs
+      materially from 2.965, tau_D must be re-derived before any adequacy
+      verdict is issued, and the re-derivation must be recorded as an amendment.
+
+  tau_D:
+    value: 0.0118
+    derivation: tau_lambda * dD_dlambda_min
+    meaning: tolerance on the error of a cross-L DIFFERENCE D = I_L1 - I_L2.
+
+  tau_I:
+    value: 0.006
+    derivation: tau_D / 2
+    meaning: >
+      Per-curve absolute-CMI tolerance in the WORST case, where the finite-N_c
+      displacements of the two curves do not cancel at all and therefore add.
+    explicit_warning: >
+      tau_I is a worst-case translation. If the displacement is common to both L
+      it cancels exactly in D and tau_I is far stricter than the locator
+      actually requires. That is precisely the question campaigns B, B2 and the
+      locator diagnostic exist to answer, and it is why an absolute-level
+      failure at tau_I is NOT automatically a locator failure.
+
+# ===========================================================================
+# 1. PLATEAU CRITERIA P1-P5   (campaigns A, C, D)
+# ===========================================================================
+plateau:
+  definition: Delta_N = I_{2N} - I_N, both rungs from independent populations.
+  vocabulary: >
+    Delta is DRIFT. It is never called bias: the N_c -> infinity target is
+    unknown, so a non-zero Delta says the estimate is still moving and says
+    nothing about which side of the truth it is on.
+  P1:
+    statement: Delta_N is statistically compatible with zero.
+    test: abs(Delta) <= 1.96 * SEM(Delta)
+  P2:
+    statement: the 95 % interval lies ENTIRELY inside [-tau_I, +tau_I].
+    test: -tau_I <= Delta - 1.96*SEM  and  Delta + 1.96*SEM <= tau_I
+    note: >
+      P1 without P2 is the campaign's most important failure mode and has its
+      own verdict label. It means R was too small to tell, not that the ladder
+      converged. Increasing N_c does not repair it.
+  P3:
+    statement: successive abs(Delta_N) do not increase materially.
+    test: abs(Delta_2N) - abs(Delta_N) <= 1.96 * sqrt(SEM_N^2 + SEM_2N^2)
+  P4:
+    statement: independent-population BLOCK estimates agree at both top rungs.
+    test: >
+      the R populations of each top rung, cut into two disjoint blocks IN SEED
+      ORDER (observable-blind), have means agreeing within 1.96 joint SEM.
+      A cut on anything the observable can see would let this pass by
+      construction.
+  P5:
+    statement: the conclusion survives removing the lowest included N_c rung.
+    test: re-evaluating P1-P4 on the ladder minus its smallest rung still gives
+      PLATEAU_OBSERVED.
+  verdicts:
+    PLATEAU_OBSERVED: P1-P5 all true at the top step.
+    UNRESOLVED_R_LIMITED: P1 true, P2 false. Binding budget is R. The required
+      matched R is reported.
+    STILL_DRIFTING: P1 false. Binding budget is N_c.
+    UNRESOLVED: anything else.
+  forbidden:
+    - inferring a plateau by eye or from a figure
+    - calling a step "small" without comparing it to tau_I and to its own
+      half-width
+    - treating a larger R as evidence about finite-N_c drift
+    - treating a larger N_c as evidence about finite-R uncertainty
+
+# ===========================================================================
+# 2. ASYMPTOTIC-FORM TEST   (section 3B, campaigns A, C, D)
+# ===========================================================================
+asymptotic_form:
+  models_tested_separately:
+    - I_N = I_inf + B/N
+    - I_N = I_inf + B * N^(-gamma), gamma free
+  B_eff:
+    definition: B_eff(N) = -2 N (I_{2N} - I_N)
+    meaning: constant in N if and only if the pure 1/N form holds.
+  usable_coefficient_requires_all_of:
+    - B_eff stable across the top two steps within 1.96 joint SEM
+    - the 1/N chi2 not rejected at 5 %
+    - a fit that survives dropping the lowest rung (where >= 4 rungs exist)
+  on_failure:
+    verdict: NO OBSERVED 1/Nc ASYMPTOTIC REGIME
+    consequences:
+      - do NOT extrapolate I_inf from the rejected model
+      - do NOT quote gamma from a ladder that has not passed the above
+      - a 3-parameter free-gamma fit on 3 rungs has zero dof, is exact by
+        construction, and is reported with its dof so it cannot be misread
+  scope_limit: >
+    Any B that IS extracted is LOCAL and CELL-SPECIFIC (section 12). It is not
+    promoted to a law B(L, zeta, lambda), and B is compared across L only where
+    each ladder INDEPENDENTLY shows evidence of the same asymptotic form. A
+    pre-asymptotic ladder is excluded from the comparison, not averaged into it.
+
+# ===========================================================================
+# 3. SHAPE HYPOTHESES H1-H3   (campaign B, section 4A)
+# ===========================================================================
+shape:
+  H1: the finite-N_c correction is compatible with an ADDITIVE constant in lambda
+  H2: the finite-N_c correction is compatible with a MULTIPLICATIVE rescaling
+  H3: a resolved lambda-dependent shape distortion is present
+  method: >
+    One free parameter each, weighted least squares over the seven measured
+    lambdas, chi2 with 6 dof. Seven points are not overfitted with more.
+  interpretation_rules:
+    - failing to reject H1 is NOT accepting H1
+    - if neither H1 nor H2 is rejected the outcome is UNRESOLVED and is reported
+      as such
+    - the predecessor theory task's suggestion that broad additive displacement
+      can fail while multiplicative behaviour survives is a HYPOTHESIS UNDER
+      TEST here, and carries no prior weight in the verdict
+
+# ===========================================================================
+# 4. LOCATOR CONVERGENCE   (section 4B -- LOAD-BEARING)
+# ===========================================================================
+locator:
+  question: >
+    Does the inferred crossing location converge with N_c EARLIER than the
+    absolute CMI level does?
+  why_it_can: >
+    A finite-N_c displacement common to both L cancels exactly in
+    D = I_L1 - I_L2 and does not move the crossing. Only the L-DEPENDENT part
+    moves it. A smooth but shifted curve is therefore not necessarily unusable
+    for locating a crossing.
+  diagnostics:
+    fully_matched: both curves at the same N_c. Requires campaign B2.
+    one_sided: >
+      L = 64 moved in N_c against a reference held at N_c = 1024. Isolates the
+      L = 64 side of the displacement, which is the part that does not cancel.
+      This is the "controlled local error-propagation diagnostic" the brief
+      permits when an exact matched comparison cannot be built, and it is
+      reported even when the matched one can.
+  criterion: >
+    Production N_c at a given L is ADEQUATE FOR LOCATION if the crossing
+    location moves by less than tau_lambda between that N_c and the next
+    doubling, with the movement resolved against its own bootstrap interval.
+  explicit_permission: >
+    If this criterion is met while P2 fails on the absolute level, production
+    N_c is defined by the CROSSING tolerance and that must be stated as the
+    basis. The reverse substitution is not permitted: absolute-level convergence
+    does not by itself certify a locator.
+
+# ===========================================================================
+# 5. DISCRETISATION HYPOTHESES E1-E2   (campaign E)
+# ===========================================================================
+discretisation:
+  frozen_before_results: true
+  E1_window_count_effect: drift changes materially, ~ 1/dtau_mult, at fixed
+    physical L, T, zeta, lambda, N_c
+  E2_discretisation_stable: results approximately independent of K, consistent
+    with a continuous-time interacting-particle limit
+  both_outcomes_kill_something: true
+  INCONCLUSIVE: >
+    An intermediate result kills neither and must be reported INCONCLUSIVE, not
+    resolved toward whichever side is closer.
+  naming_rules:
+    - K is not called the causal variable unless E1 is supported
+    - dtau_mult is a DISCRETISATION CONTROL and never a physical parameter
+    - both N_c are reported separately because the K-dependence may itself
+      depend on population size
+    - dtau_mult != 6 rows may NEVER be pooled with the production corpus
+
+# ===========================================================================
+# 6. WHAT THIS TASK MAY NOT CONCLUDE, WHATEVER THE DATA SHOW
+# ===========================================================================
+out_of_scope:
+  - any statement of the form lambda_c(zeta), from any crossing found here
+  - any phase-boundary law, exponent, or its confirmation
+  - any claim that the 0.2182-0.2482 window is a critical window; it is an
+    OBSERVED LOCATOR REGION in L <= 64 curves at N_c = 1024
+  - any general N_c_req(L, zeta, lambda) rule; the predecessor theory task
+    established there is no controlled analytic one and this task does not
+    supply an empirical replacement
+  - any inference that 1/N_c convergence is impossible. The frozen theory
+    result is narrower and must be preserved as stated: the standard useful
+    uniform-mixing Feynman-Kac bounds do not directly transfer to the
+    production mutation kernel, because the no-click branch is deterministic.
+    That is a failure of a proof route, not of convergence.

@@ -1,0 +1,104 @@
+[
+ {
+  "control": "N01_off_grid_lambda",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N02_duplicate_seed",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N03_wrong_zeta",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N04_wrong_dtau_mult",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N05_T_not_equal_L",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N06_wrong_resampler",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N07_predecessor_seed",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N08_row_count_mismatch",
+  "fired": true,
+  "exit": 1,
+  "expected": "manifest == frozen design"
+ },
+ {
+  "control": "N09_array_range_mismatch",
+  "fired": true,
+  "exit": 1,
+  "expected": "--array matches manifest"
+ },
+ {
+  "control": "N10_time_too_short",
+  "fired": true,
+  "exit": 1,
+  "expected": "--time"
+ },
+ {
+  "control": "N11_mem_under_request",
+  "fired": true,
+  "exit": 1,
+  "expected": "--mem"
+ },
+ {
+  "control": "N12_mem_unit_trap",
+  "fired": true,
+  "exit": 1,
+  "expected": "--mem"
+ },
+ {
+  "control": "N13_wrong_partition",
+  "fired": true,
+  "exit": 1,
+  "expected": "--partition"
+ },
+ {
+  "control": "N14_multicore_request",
+  "fired": true,
+  "exit": 1,
+  "expected": "one core per task"
+ },
+ {
+  "control": "N15_run_cell_drift",
+  "fired": true,
+  "exit": 1,
+  "expected": "shared/run_cell.py"
+ },
+ {
+  "control": "N16_scheduler_call_injected",
+  "fired": true,
+  "exit": 1,
+  "expected": "scheduler call"
+ },
+ {
+  "control": "N17_mem_unit_table",
+  "fired": true,
+  "exit": 0,
+  "expected": "unit table"
+ }
+]

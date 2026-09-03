@@ -1,0 +1,196 @@
+# CLAIM STRENGTH AUDIT — TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+# Written at synthesis. Structure validated by research/tools/validate_task.py.
+#
+# NOTE ON SCOPE. This is a campaign-PREPARATION task with no HPC data. Its
+# load-bearing conclusions are therefore about the CORPUS, the COST MODEL and
+# the DESIGN, not about the physics of the transition. The implication ladder
+# below (microscopic inequivalence -> invalidity of transfer -> different
+# effective theories -> different universality classes) is aimed at
+# universality claims and this task makes none: every conclusion sits at
+# level 1 or 2 and none is promoted. That is recorded per conclusion rather
+# than waved at once.
+schema_version: 1
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+
+conclusions:
+
+  - id: CS-1
+    conclusion: >
+      The finite-N_c displacement of the CMI estimator is L-dependent, so a
+      cross-L comparison at a fixed N_c cannot be assumed to be free of it.
+    evidence_directly_establishes: >
+      At L=64, lambda=0.3032 the measured N_c = 1024 -> 2048 step is
+      +0.00235 +- 0.00528 (R = 96, 24). At L=128, same lambda, the measured
+      512 -> 1024 step is -0.06021 +- 0.02343 (R = 48, 32). Both from raw
+      per-population JSONs. The two steps differ in sign and in magnitude by
+      more than either uncertainty.
+    inference_adds: >
+      That the difference is a property of L rather than of the different N_c
+      ranges compared, or of the different R. It could fail: the L=64 step is at
+      1024->2048 and the L=128 step at 512->1024, so L and the rung are
+      confounded. Campaigns A, C and D exist partly to remove that confound by
+      putting all three L on overlapping rungs.
+    strongest_justified_wording: >
+      The measured finite-N_c drift is not L-independent over the rungs each
+      ladder covers, and no evidence supports treating it as a common offset
+      across L.
+    stronger_wording_rejected: >
+      "The finite-N_c bias grows with L." Rejected twice over: the movement is
+      DRIFT, not bias, because the N_c -> infinity target is unknown; and
+      "grows with L" asserts a functional form that two ladders at different
+      rungs cannot support.
+    ladder:
+      established_level: 1
+      claimed_level: 1
+      additional_inference_step: none
+      inference_risk: none
+
+  - id: CS-2
+    conclusion: >
+      Absolute-level plateau certification at the frozen tau_I = 0.006 is
+      unreachable at L = 128 with this estimator at any affordable R.
+    evidence_directly_establishes: >
+      From the measured across-population standard deviations of the existing
+      L=128 rungs, the matched R needed for a Delta 95% interval of half-width
+      tau_I is 2675 at the 512->1024 step and larger at every lower rung. At the
+      measured N_c=2048 rate that is about 13000 core-hours for one lambda.
+    inference_adds: >
+      That the spread at N_c = 2048 and above will be comparable to what is
+      measured at 1024. It could fail in the favourable direction: the spread
+      fell by a factor 2.95 from N_c = 512 to 1024, faster than any other L, and
+      if that continued the required R would fall sharply. The estimate uses the
+      slowest decay observed anywhere (N_c^-0.40) and is therefore conservative.
+    strongest_justified_wording: >
+      On the measured variances, certifying P2 at L = 128 requires R in the
+      thousands, which is not affordable; the locator route is therefore the
+      only route to L = 128 production that this campaign can cost.
+    stronger_wording_rejected: >
+      "L = 128 production is impossible." Rejected: it is the ABSOLUTE-LEVEL
+      certification that is unaffordable. Whether the crossing converges earlier
+      is candidate C3 and is untested.
+    ladder:
+      established_level: 1
+      claimed_level: 2
+      additional_inference_step: >
+        From "the required R is large on the measured variances" to "this route
+        should not be taken", which is a resource judgement, not a measurement.
+      inference_risk: >
+        If the variance falls faster at higher N_c than the conservative
+        exponent assumes, the required R could be an order of magnitude smaller
+        and the conclusion would be wrong. The analysis recomputes the required
+        R from the returned data at every step, so the judgement is auditable
+        against the campaign's own output rather than only against this estimate.
+
+  - id: CS-3
+    conclusion: >
+      The L = 96 half of the accepted statement "a clean I_inf + B/N is rejected
+      at L=96 and L=128" does not reproduce from raw data.
+    evidence_directly_establishes: >
+      The L=96, lambda=0.3032 ladder rebuilt from raw result JSONs has three
+      rungs and gives chi2 = 1.90 on 1 dof, p = 0.168. The L=128 ladder
+      reproduces the predecessor's figure exactly (chi2 = 12.58, 3 dof,
+      p = 0.0056). The predecessor's L=96 figure (chi2 = 10.54, 3 dof) requires
+      four rungs.
+    inference_adds: >
+      Nothing. The conclusion is deliberately about REPRODUCIBILITY and not
+      about correctness.
+    strongest_justified_wording: >
+      This task could not locate the four-rung L = 96 ladder behind the
+      predecessor's chi2 = 10.54, and the three-rung lambda = 0.3032 ladder does
+      not reject the 1/N form. An open provenance item.
+    stronger_wording_rejected: >
+      "The predecessor's L = 96 rejection is wrong." Rejected: a ladder this
+      task cannot find is not a ladder this task has shown to be wrong, and
+      CLAUDE.md requires following a claim's direct provenance before
+      contradicting its history. Also rejected: "the 1/N form HOLDS at L = 96" -
+      not rejected on 1 dof is close to no information.
+    ladder:
+      established_level: 1
+      claimed_level: 1
+      additional_inference_step: none
+      inference_risk: none
+
+  - id: CS-4
+    conclusion: >
+      The --mem model every predecessor package used under-predicts the true
+      peak RSS, and had never been checked against a running process.
+    evidence_directly_establishes: >
+      Direct ru_maxrss of the bundled certified sampler at 14 (L, N_c) cells:
+      the formula 128 + 2*N_c*per_clone under-predicts at seven of them, by up
+      to a factor 1.60. L=64, N_c=2048 measures 1694 MB against a predicted
+      1202 MB, and the arm that ran that cell requested --mem=2G.
+      TASK-2026-09-01-SMCRUCHE-READY's "measured 732 MB peak" is exactly what
+      that formula returns for L=96, N_c=512, and no MaxRSS from any Ruche job
+      appears anywhere in the repository.
+    inference_adds: >
+      That the local macOS measurement transfers to the cluster's Linux
+      allocator. It could fail in either direction. The old formula is retained
+      as a FLOOR and a 1.35x margin sits on top, so the package is safe under
+      either, and RUCHE_RUNBOOK.md 7 asks for one sacct MaxRSS line to settle it.
+    strongest_justified_wording: >
+      On this machine the deployed --mem formula under-predicts peak RSS at half
+      the cells probed; no cluster measurement of it exists anywhere in the
+      repository, and one is requested.
+    stronger_wording_rejected: >
+      "Predecessor arms were under-provisioned and were at risk of OOM."
+      Rejected: they all completed. What is established is that the margin was
+      smaller than documented, not that it was insufficient.
+    ladder:
+      established_level: 1
+      claimed_level: 1
+      additional_inference_step: none
+      inference_risk: none
+
+  - id: CS-5
+    conclusion: >
+      This task's modified run_cell.py is exact-compatible with the populations
+      it reuses, so the reuse ledger is sound.
+    evidence_directly_establishes: >
+      Two completed predecessor populations re-executed through the modified
+      wrapper: all 1024 per-clone CMI values bit-identical in both cases, every
+      integer diagnostic exactly equal, derived reductions within 1.7e-14
+      relative (x86 -> arm64 summation order).
+    inference_adds: >
+      That the result transfers to cells not tested. The argument is structural:
+      run_cell.py's call into the sampler is one line with the same keywords, the
+      bundled sampler is sha256-gated, and nothing in the added code path runs
+      before the simulation. Two L = 32 cells were chosen because they are the
+      cheapest available.
+    strongest_justified_wording: >
+      The sampler is unchanged: on the cells tested the trajectory is
+      bit-identical, and the modification is output-only by construction.
+    stronger_wording_rejected: >
+      "Every reused population is verified." Rejected: two were, out of 240.
+    ladder:
+      established_level: 1
+      claimed_level: 2
+      additional_inference_step: >
+        From two verified cells to the whole reuse set, on the structural
+        argument that the modification cannot depend on L, N_c or lambda.
+      inference_risk: >
+        Low but not zero. A defect conditional on a code path only reached at
+        large N_c would not be caught. The bundle sha256 gate and the
+        manifest-identity check bound it further.
+
+  - id: CS-6
+    conclusion: >
+      Stage 8 is not satisfied by this run, and every "survives" verdict in
+      REDTEAM.yaml should be treated as unreviewed.
+    evidence_directly_establishes: >
+      REDTEAM.yaml declares lead_summary_seen: true. research/tools/validate_redteam.py
+      refuses it under rule R3 and validate_task.py reports T4. No independent
+      investigator or red-team agent was dispatched at any point in this run.
+    inference_adds: none
+    strongest_justified_wording: >
+      No independence was obtained in this run. The red-team pass was executed
+      by the lead against the lead's own design and the engine's own validator
+      correctly refuses it.
+    stronger_wording_rejected: >
+      "The design has been adversarially reviewed." Rejected. A self-red-team is
+      a checklist, not a check - even though this one killed two design
+      decisions at a combined cost of ~386 core-hours.
+    ladder:
+      established_level: 1
+      claimed_level: 1
+      additional_inference_step: none
+      inference_risk: none

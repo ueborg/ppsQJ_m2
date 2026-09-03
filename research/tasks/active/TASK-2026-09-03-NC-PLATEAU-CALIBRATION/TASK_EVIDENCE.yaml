@@ -1,0 +1,165 @@
+# TASK_EVIDENCE - task-verified items for TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+schema: task_verified_v1
+note: >-
+  TASK-VERIFIED is not CANONICAL. Everything here was established DURING this run,
+  is admissible in-task including by the red team, and becomes canonical only if
+  the researcher merges it. 'proposed promotion' is not 'promoted'.
+task_verified:
+- id: TV-01
+  tier: task_verified
+  kind: recomputation
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: >
+    research/tasks/active/TASK-2026-09-03-NC-PLATEAU-CALIBRATION/analysis/nc_plateau_analysis.py,
+    weighted least squares on I_inf + B/N over the L=128, lambda=0.3032 ladder rebuilt
+    by tools/reconstruct_inventory.py from the raw per-population result JSONs.
+  what_was_verified: >
+    The L=128 lambda=0.3032 ladder (N_c = 64,128,256,512,1024; R = 64,64,64,48,32)
+    REJECTS a clean I_N = I_inf + B/N: chi2 = 12.58 on 3 dof, p = 0.0056. This independently
+    reproduces the figure reported by TASK-2026-09-03-FINITE-NC-REQUIRED-SCALING,
+    from the raw files rather than from its code or its summary.
+  what_it_does_not_establish: >
+    Anything about any other L, lambda or zeta. It does not establish that 1/N_c
+    convergence fails - only that this functional form does not describe this ladder
+    over this range.
+  canonical: false
+  promotion_status: proposed
+- id: TV-02
+  tier: task_verified
+  kind: recomputation
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: as TV-01, on the L=96, lambda=0.3032 ladder.
+  what_was_verified: >
+    The L=96 lambda=0.3032 ladder that can be rebuilt from raw files has THREE rungs
+    (N_c = 128, 256, 512; R = 32, 32, 48) and gives chi2 = 1.90 on 1 dof, p = 0.168
+    -- NOT rejected. The predecessor reported chi2 = 10.54 on 3 dof for "L=96, T=96",
+    which requires a four-rung ladder this reconstruction cannot locate anywhere
+    in the repository.
+  what_it_does_not_establish: >
+    That the predecessor's result is wrong. It establishes only that the ladder
+    behind it is not locatable from the lambda=0.3032 raw data, and that the "rejected
+    at L=96" half of the accepted framing should not be leaned on until it is. An
+    open provenance item, not a refutation.
+  canonical: false
+  promotion_status: proposed
+- id: TV-03
+  tier: task_verified
+  kind: recomputation
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: as TV-01, on the L=64, lambda=0.3032 ladder.
+  what_was_verified: >
+    Delta_1024 = I_2048 - I_1024 = +0.00235 +- 0.00528 across independent populations
+    (R = 96 and 24). The 95% interval is [-0.00799, +0.01269], whose half-width
+    is 1.72x the frozen tau_I = 0.006. Matched R needed for a P2 pass at that step:
+    137.
+  what_it_does_not_establish: >
+    That the ladder has converged. P1 passes and P2 fails, which is UNRESOLVED_R_LIMITED:
+    the step shows R was too small to tell, and no increase in N_c narrows an interval
+    set by R.
+  canonical: false
+  promotion_status: proposed
+- id: TV-04
+  tier: task_verified
+  kind: recomputation
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: >
+    r_required(sd_lo, sd_hi, tau_I) in analysis/nc_plateau_analysis.py, from the
+    measured across-population standard deviations of every existing rung.
+  what_was_verified: >
+    The matched R needed to put a Delta 95% interval inside tau_I = 0.006 at L=128
+    is 2675 at the 512->1024 step and larger at every lower rung; at N_c = 2048
+    that is roughly 13000 core-hours for one lambda. Absolute-level plateau certification
+    at tau_I is therefore unreachable at L=128 with this estimator at any affordable
+    R.
+  what_it_does_not_establish: >
+    That L=128 production is impossible - only that it cannot be certified on the
+    ABSOLUTE LEVEL. The locator route (candidate C3) is untested and is what campaigns
+    B and B2 exist to evaluate.
+  canonical: false
+  promotion_status: proposed
+- id: TV-05
+  tier: task_verified
+  kind: measurement
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: >
+    tools/mem_probe.py, reading ru_maxrss from a real run of the BUNDLED certified
+    sampler at 14 (L, N_c) cells on the local machine.
+  what_was_verified: >
+    The --mem model every predecessor package used (128 + 2*N_c*per_clone) UNDER-predicts
+    peak RSS at seven of the fourteen probed cells. L=64, N_c=2048 reads 1694 MB
+    against a predicted 1202 MB, and the arm that ran that cell shipped --mem=2G,
+    i.e. 21% headroom rather than the ~70% implied. These are the first peak-RSS
+    measurements of this sampler anywhere in the repository; TASK-2026-09-01-SMCRUCHE-READY's
+    "measured 732 MB peak" is exactly what the formula returns for L=96, N_c=512.
+  what_it_does_not_establish: >
+    The cluster's footprint. These are macOS ru_maxrss and Ruche is Linux with a
+    different allocator. The old formula is retained as a FLOOR and a 1.35x margin
+    sits on top for exactly this reason. One `sacct ... MaxRSS` line on a completed
+    job would settle it and is requested in RUCHE_RUNBOOK.md 7.
+  canonical: false
+  promotion_status: proposed
+- id: TV-06
+  tier: task_verified
+  kind: reproduction
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: >
+    tools/reproduce_check.py: two completed predecessor populations (TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/lowlamL32,
+    seeds 32002014 and 32002021) re-executed through THIS task's modified shared/run_cell.py.
+  what_was_verified: >
+    All 1024 per-clone CMI values BIT-IDENTICAL in both cases; every integer diagnostic
+    exactly equal; derived reductions agreeing to within 1.7e-14 relative. The sampler
+    is unchanged and the reuse ledger is sound. Separately: a stored AGGREGATE in
+    this corpus is NOT bit-reproducible on a different architecture (x86 -> arm64
+    summation order in numpy's pairwise reductions) even though the trajectory is.
+  what_it_does_not_establish: >
+    Anything about cells not tested. Two L=32 populations were chosen because they
+    are the cheapest available; the argument that the result transfers is that run_cell.py's
+    call into the sampler is one line and does not depend on L, N_c or lambda.
+  canonical: false
+  promotion_status: proposed
+- id: TV-07
+  tier: task_verified
+  kind: measurement
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: >
+    tools/reconstruct_inventory.py + tools/cost_model.py, per-clone-window wall
+    time from the wall_s every completed run recorded for itself.
+  what_was_verified: >
+    The L=128 per-clone-window rate is NOT flat above N_c = 256. Worst-case rates:
+    23.998, 25.080, 28.260 ms at N_c = 256, 512, 1024. The predecessor cost model
+    extrapolated flat from N_c = 256 and would predict 21.52 ms at N_c = 1024 --
+    30% low, in the optimistic direction, in exactly the regime this campaign enters.
+    A log-log fit over N_c >= 256 gives rate ~ N_c^0.187.
+  what_it_does_not_establish: >
+    That the exponent 0.187 transfers to other L. It was fitted at one L on three
+    points and is APPLIED at three L as a deliberately conservative choice; at L=96
+    the measured trend is flat and at L=64 slightly negative.
+  canonical: false
+  promotion_status: proposed
+- id: TV-08
+  tier: task_verified
+  kind: recomputation
+  date: 2026-09-03
+  verified_by: lead
+  source_or_artifact: >-
+    analysis/nc_plateau_analysis.py, cross-L differences on the measured 17-point
+    N_c=1024 curves at L = 32, 48, 64.
+  what_was_verified: >
+    Two interior crossings exist on the measured grid: L32-L64 between lambda =
+    0.2232 and 0.2332, and L48-L64 between 0.2332 and 0.2432. The local |dD/dlambda|
+    across those brackets is 2.965 and 4.052 per unit lambda respectively. L32-L48
+    crosses near 0.2005, one grid step from the lower endpoint, and remains boundary-sensitive.
+  what_it_does_not_establish: >
+    Any lambda_c(zeta). These are LOCATOR-QUALITY results at L <= 64 and N_c = 1024,
+    at or below the programme's own corpus floor, and the campaign may not call
+    the region a critical window.
+  canonical: false
+  promotion_status: proposed

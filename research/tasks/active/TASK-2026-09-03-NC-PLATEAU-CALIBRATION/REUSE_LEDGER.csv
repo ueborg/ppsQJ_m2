@@ -1,0 +1,85 @@
+arm,campaign,L,T,zeta,lam,N_c,dtau_mult,K,target_R,existing_reused,fresh_here,total_after,decision,existing_source,exact_compatible
+(none - reused entire),-,64,64.0,0.35,0.3032,1024,6.0,408,96,96,0,96,"reused entire, nothing recomputed",TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA/armB,yes
+(none - reused entire),-,96,96.0,0.35,0.3032,128,6.0,922,32,32,0,32,"reused entire, nothing recomputed",TASK-2026-09-01-SMCRUCHE-READY/arm1,yes
+(none - reused entire),-,96,96.0,0.35,0.3032,256,6.0,922,32,32,0,32,"reused entire, nothing recomputed",TASK-2026-09-01-SMCRUCHE-READY/arm1,yes
+(none - reused entire),-,96,96.0,0.35,0.3032,512,6.0,922,48,48,0,48,"reused entire, nothing recomputed",TASK-2026-09-01-SMCRUCHE-READY/arm1,yes
+(none - reused entire),-,128,128.0,0.35,0.3032,64,6.0,1643,64,64,0,64,"reused entire, nothing recomputed",TASK-2026-09-01-SMCRUCHE-READY/arm2,yes
+(none - reused entire),-,128,128.0,0.35,0.3032,128,6.0,1643,64,64,0,64,"reused entire, nothing recomputed",TASK-2026-09-01-SMCRUCHE-READY/arm2,yes
+(none - reused entire),-,128,128.0,0.35,0.3032,256,6.0,1643,64,64,0,64,"reused entire, nothing recomputed",TASK-2026-09-01-SMCRUCHE-READY/arm2,yes
+(none - reused entire),-,128,128.0,0.35,0.3032,512,6.0,1643,48,48,0,48,"reused entire, nothing recomputed",TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA/armA512,yes
+(none - reused entire),-,128,128.0,0.35,0.3032,1024,6.0,1643,32,32,0,32,"reused entire, nothing recomputed",TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA/armA1024,yes
+A_L64_nc2048_topup,A,64,64.0,0.35,0.3032,2048,6.0,408,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL64nc2048,yes
+A_L64_nc4096,A,64,64.0,0.35,0.3032,4096,6.0,408,48,0,48,48,all fresh,,yes
+A_L64_nc8192,A,64,64.0,0.35,0.3032,8192,6.0,408,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2182,512,6.0,294,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2232,512,6.0,300,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2282,512,6.0,307,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2332,512,6.0,314,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2382,512,6.0,321,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2432,512,6.0,327,48,0,48,48,all fresh,,yes
+B_L64_cross_nc512,B,64,64.0,0.35,0.2482,512,6.0,334,48,0,48,48,all fresh,,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2182,1024,6.0,294,48,0,48,48,all fresh,,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2232,1024,6.0,300,48,24,24,48,top-up,TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/lowlamL64,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2282,1024,6.0,307,48,0,48,48,all fresh,,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2332,1024,6.0,314,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL64,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2382,1024,6.0,321,48,0,48,48,all fresh,,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2432,1024,6.0,327,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL64,yes
+B_L64_cross_nc1024,B,64,64.0,0.35,0.2482,1024,6.0,334,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2182,2048,6.0,294,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2232,2048,6.0,300,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2282,2048,6.0,307,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2332,2048,6.0,314,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2382,2048,6.0,321,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2432,2048,6.0,327,48,0,48,48,all fresh,,yes
+B_L64_cross_nc2048,B,64,64.0,0.35,0.2482,2048,6.0,334,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2182,512,6.0,73,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2232,512,6.0,74,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2282,512,6.0,76,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2332,512,6.0,78,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2382,512,6.0,79,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2432,512,6.0,81,48,0,48,48,all fresh,,yes
+B2_L32_nc512,B2,32,32.0,0.35,0.2482,512,6.0,83,48,0,48,48,all fresh,,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2182,1024,6.0,73,48,0,48,48,all fresh,,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2232,1024,6.0,74,48,24,24,48,top-up,TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/lowlamL32,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2282,1024,6.0,76,48,0,48,48,all fresh,,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2332,1024,6.0,78,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL32,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2382,1024,6.0,79,48,0,48,48,all fresh,,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2432,1024,6.0,81,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL32,yes
+B2_L32_nc1024,B2,32,32.0,0.35,0.2482,1024,6.0,83,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2182,2048,6.0,73,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2232,2048,6.0,74,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2282,2048,6.0,76,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2332,2048,6.0,78,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2382,2048,6.0,79,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2432,2048,6.0,81,48,0,48,48,all fresh,,yes
+B2_L32_nc2048,B2,32,32.0,0.35,0.2482,2048,6.0,83,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2182,512,6.0,165,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2232,512,6.0,168,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2282,512,6.0,172,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2332,512,6.0,176,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2382,512,6.0,180,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2432,512,6.0,183,48,0,48,48,all fresh,,yes
+B2_L48_nc512,B2,48,48.0,0.35,0.2482,512,6.0,187,48,0,48,48,all fresh,,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2182,1024,6.0,165,48,0,48,48,all fresh,,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2232,1024,6.0,168,48,24,24,48,top-up,TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/lowlamL48,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2282,1024,6.0,172,48,0,48,48,all fresh,,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2332,1024,6.0,176,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL48,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2382,1024,6.0,180,48,0,48,48,all fresh,,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2432,1024,6.0,183,48,24,24,48,top-up,TASK-2026-09-02-MOCK-PRODUCTION/mockL48,yes
+B2_L48_nc1024,B2,48,48.0,0.35,0.2482,1024,6.0,187,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2182,2048,6.0,165,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2232,2048,6.0,168,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2282,2048,6.0,172,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2332,2048,6.0,176,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2382,2048,6.0,180,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2432,2048,6.0,183,48,0,48,48,all fresh,,yes
+B2_L48_nc2048,B2,48,48.0,0.35,0.2482,2048,6.0,187,48,0,48,48,all fresh,,yes
+C_L96_nc1024,C,96,96.0,0.35,0.3032,1024,6.0,922,24,0,24,24,all fresh,,yes
+C_L96_nc2048,C,96,96.0,0.35,0.3032,2048,6.0,922,24,0,24,24,all fresh,,yes
+D_L128_nc2048,D,128,128.0,0.35,0.3032,2048,6.0,1643,16,0,16,16,all fresh,,yes
+E_L64_dtau_nc64,E,64,64.0,0.35,0.3032,64,3.0,816,48,0,48,48,all fresh,,yes
+E_L64_dtau_nc64,E,64,64.0,0.35,0.3032,64,6.0,408,48,0,48,48,all fresh,,yes
+E_L64_dtau_nc64,E,64,64.0,0.35,0.3032,64,12.0,204,48,0,48,48,all fresh,,yes
+E_L64_dtau_nc256,E,64,64.0,0.35,0.3032,256,3.0,816,48,0,48,48,all fresh,,yes
+E_L64_dtau_nc256,E,64,64.0,0.35,0.3032,256,6.0,408,48,0,48,48,all fresh,,yes
+E_L64_dtau_nc256,E,64,64.0,0.35,0.3032,256,12.0,204,48,0,48,48,all fresh,,yes

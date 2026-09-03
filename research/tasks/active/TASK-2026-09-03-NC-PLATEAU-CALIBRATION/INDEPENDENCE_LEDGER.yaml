@@ -1,0 +1,78 @@
+# INDEPENDENCE_LEDGER — TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+#
+# What independence this run actually obtained. The honest answer is NONE, and
+# this file says so rather than describing the arrangement in a way that sounds
+# better than it was.
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+
+summary: >
+  NO INDEPENDENCE WAS OBTAINED IN THIS RUN. Every role was executed inline by
+  the lead. The first pass, the design, the criteria, the analysis and the
+  red team all share one set of assumptions and one set of blind spots. This is
+  a real limitation of the run and is not a design choice that bought anything.
+
+first_passes:
+  - role: numerics
+    executed_by: lead, inline
+    model: lead-inline
+    independent: false
+    report: agent_reports/numerics.md
+    note: >
+      Filed in agent_reports/ because that is where the phase ledger records a
+      first pass. It is not an independent one and its own header says so.
+  - role: theory
+    executed_by: none
+    skipped: true
+    reason: >
+      The analytic question was settled, negatively, by
+      TASK-2026-09-02-FINITE-NC-THEORY and
+      TASK-2026-09-03-FINITE-NC-REQUIRED-SCALING: the uniform-mixing Feynman-Kac
+      bounds do not transfer to this kernel and no controlled N_c_req rule
+      exists. Re-deriving that would be the "three agents independently
+      rediscovering the same fact" failure the Skill names. The negative result
+      is CARRIED, in its narrow form, and is not re-litigated.
+  - role: literature
+    executed_by: none
+    skipped: true
+    reason: >
+      No external source is load-bearing for a campaign-preparation task about
+      this sampler's own convergence.
+    consequence: >
+      NO EXTERNAL PRIOR-ART SEARCH WAS PERFORMED ANYWHERE IN THIS TASK. External
+      novelty for candidates C2 and C3 is therefore UNRESOLVED, not favourable,
+      and NOVELTY_GATE.md and NOVELTY_MATRIX.md both record it. A search is owed
+      before anyone describes C3's outcome as a contribution rather than as an
+      internal calibration.
+
+collaboration:
+  opened: false
+  reason: >
+    COLLABORATION_NOT_NEEDED. Only one role ran, and it ran inline. There is no
+    cross-role dependency to open a round on, and opening one would be theatre.
+
+red_team:
+  independent: false
+  executed_by: lead, inline
+  report: REDTEAM.yaml
+  lead_summary_seen: true
+  validator_status: >
+    validate_redteam.py REFUSES this report under rule R3 ("reviewer saw the
+    lead summary; Stage 8 requires review independent of the affirmative
+    reasoning"). The refusal is CORRECT and the flag was not set to false to
+    make the check green. Charter Stage 8 is NOT SATISFIED by this run.
+  what_it_nevertheless_found:
+    - "C1/A8 was fatal at the brief's preferred R = 24: the top step could not have satisfied P2 whatever the data did. R was raised to 48 and the residual under-power at the LOWER step is stated rather than hidden."
+    - "C3/A6 killed the cheap three-lambda version of campaign B2: on that grid every interior crossing is flagged ENDPOINT_INDUCED by construction. Rebuilt on seven points at a cost of ~200 core-hours."
+  what_it_cannot_do: >
+    Find the errors the lead cannot see. A self-red-team is a checklist, not a
+    check. Every 'survives' verdict in REDTEAM.yaml should be treated as
+    UNREVIEWED at the human gate.
+
+what_would_fix_this:
+  - "An independent red-team pass over CANDIDATES.md, SUCCESS_CRITERIA.yaml and CAMPAIGN_DESIGN.md, without sight of RESEARCH_MEMO.md or RECOMMENDATION.md."
+  - "An independent numerics pass that rebuilds the ladders from the raw JSONs without seeing agent_reports/numerics.md -- in particular one that tries to LOCATE the four-rung L=96 ladder behind the predecessor's chi2 = 10.54 (TV-02)."
+  - "A literature pass on empirical plateau-detection protocols and on crossing-estimator robustness under a common estimator offset."
+
+engine_defects_observed:
+  - "validate_task.py implements no independence check: TASK_EVIDENCE.yaml and this ledger could both have been left empty with nothing failing. Recorded by the two immediately preceding tasks and recurring here, which makes it a pattern rather than an incident."
+  - "task_phase.py close first_pass_frozen requires at least one dispatched worker with a report, so a run in which the lead does everything cannot record that fact without filing a 'first pass' for a role that was not independently executed. This ledger is the compensating record."

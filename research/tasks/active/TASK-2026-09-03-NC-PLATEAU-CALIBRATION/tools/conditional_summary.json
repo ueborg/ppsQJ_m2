@@ -1,0 +1,216 @@
+[
+ {
+  "name": "cond_D2_L128_nc4096",
+  "group": "D2",
+  "gate": "CAMPAIGN D ADJUDICATION",
+  "trigger": "Recommend this arm if, on the L = 128 ladder completed by campaign D, EITHER |Delta_1024| = |I_2048 - I_1024| is resolved OUTSIDE the frozen material tolerance tau_I = 0.006 (i.e. the 95 % interval excludes [-tau_I, +tau_I]), OR no plateau criterion P1-P5 of ../SUCCESS_CRITERIA.yaml is satisfied at the top of that ladder. Do NOT recommend it because the observed Delta_1024 'looks large'.",
+  "L": 128,
+  "zeta": 0.35,
+  "R": 8,
+  "tasks": 8,
+  "lambdas": [
+   0.3032
+  ],
+  "N_c": [
+   4096
+  ],
+  "core_h": 571.9,
+  "pess_core_h": 800.7,
+  "slowest_h": 71.49,
+  "pess_slowest_h": 100.09,
+  "elapsed_h": 71.49,
+  "partition": "cpu_long",
+  "time": "168:00:00",
+  "mem_req": "26G",
+  "seed_lo": 33500000,
+  "seed_hi": 33500007
+ },
+ {
+  "name": "cond_M96_nc1024",
+  "group": "M96",
+  "gate": "CAMPAIGN C ADJUDICATION -- AND ONLY ONE OF THE TWO M96 ARMS",
+  "trigger": "Release ONLY if campaign C identifies N_c = 1024 as the smallest N_c meeting the frozen production adequacy criterion at L = 96. If it identifies 2048, release cond_M96_nc2048 INSTEAD. Never both: they are the same physical scan at two population sizes and running both is duplicated compute, not a robustness check.",
+  "L": 96,
+  "zeta": 0.35,
+  "R": 12,
+  "tasks": 108,
+  "lambdas": [
+   0.2032,
+   0.2182,
+   0.2232,
+   0.2282,
+   0.2332,
+   0.2382,
+   0.2432,
+   0.2482,
+   0.2632
+  ],
+  "N_c": [
+   1024
+  ],
+  "core_h": 308.3,
+  "pess_core_h": 431.6,
+  "slowest_h": 3.22,
+  "pess_slowest_h": 4.51,
+  "elapsed_h": 6.45,
+  "partition": "cpu_long",
+  "time": "08:00:00",
+  "mem_req": "3G",
+  "seed_lo": 33520000,
+  "seed_hi": 33528011
+ },
+ {
+  "name": "cond_M96_nc2048",
+  "group": "M96",
+  "gate": "CAMPAIGN C ADJUDICATION -- AND ONLY ONE OF THE TWO M96 ARMS",
+  "trigger": "Release ONLY if campaign C identifies N_c = 2048 as the smallest N_c meeting the frozen production adequacy criterion at L = 96, or if it identifies none and the researcher accepts a scan at the largest calibrated rung. Never together with cond_M96_nc1024.",
+  "L": 96,
+  "zeta": 0.35,
+  "R": 12,
+  "tasks": 108,
+  "lambdas": [
+   0.2032,
+   0.2182,
+   0.2232,
+   0.2282,
+   0.2332,
+   0.2382,
+   0.2432,
+   0.2482,
+   0.2632
+  ],
+  "N_c": [
+   2048
+  ],
+  "core_h": 702.0,
+  "pess_core_h": 982.8,
+  "slowest_h": 7.34,
+  "pess_slowest_h": 10.27,
+  "elapsed_h": 14.68,
+  "partition": "cpu_long",
+  "time": "18:00:00",
+  "mem_req": "4G",
+  "seed_lo": 33540000,
+  "seed_hi": 33548011
+ },
+ {
+  "name": "cond_M128_nc2048",
+  "group": "M128",
+  "gate": "CAMPAIGN D ADJUDICATION -- STRONGLY GATED",
+  "trigger": "Release ONLY if campaign D's N_c = 2048 rung PASSES the frozen adequacy screen at L = 128. If it fails, the conditional N_c = 4096 central rung comes first and this arm stays blocked. An adequate N_c must be identified BEFORE a 9-point scan at this L is run at all.",
+  "L": 128,
+  "zeta": 0.35,
+  "R": 8,
+  "tasks": 72,
+  "lambdas": [
+   0.2032,
+   0.2182,
+   0.2232,
+   0.2282,
+   0.2332,
+   0.2382,
+   0.2432,
+   0.2482,
+   0.2632
+  ],
+  "N_c": [
+   2048
+  ],
+  "core_h": 1739.3,
+  "pess_core_h": 2435.0,
+  "slowest_h": 27.27,
+  "pess_slowest_h": 38.18,
+  "elapsed_h": 54.54,
+  "partition": "cpu_long",
+  "time": "72:00:00",
+  "mem_req": "9G",
+  "seed_lo": 33560000,
+  "seed_hi": 33568007
+ },
+ {
+  "name": "cond_M128_nc4096",
+  "group": "M128",
+  "gate": "CAMPAIGN D AND cond_D2_L128_nc4096 ADJUDICATION",
+  "trigger": "Release ONLY if N_c = 2048 FAILS the adequacy screen at L = 128 and the conditional N_c = 4096 central rung then PASSES it. Read the core-hour line before releasing: this is the most expensive object in the whole campaign by a wide margin and it should not be the first way the programme learns that L = 128 is unaffordable.",
+  "L": 128,
+  "zeta": 0.35,
+  "R": 8,
+  "tasks": 72,
+  "lambdas": [
+   0.2032,
+   0.2182,
+   0.2232,
+   0.2282,
+   0.2332,
+   0.2382,
+   0.2432,
+   0.2482,
+   0.2632
+  ],
+  "N_c": [
+   4096
+  ],
+  "core_h": 3960.3,
+  "pess_core_h": 5544.5,
+  "slowest_h": 62.09,
+  "pess_slowest_h": 86.93,
+  "elapsed_h": 124.18,
+  "partition": "cpu_long",
+  "time": "144:00:00",
+  "mem_req": "26G",
+  "seed_lo": 33580000,
+  "seed_hi": 33588007
+ },
+ {
+  "name": "cond_LOWZ_nc64",
+  "group": "LOWZ",
+  "gate": "OPTIONAL -- NOT PART OF THE zeta = 0.35 CALIBRATION",
+  "trigger": "Design 2 of TASK-2026-09-03-FINITE-NC-REQUIRED-SCALING. It is deliberately NOT in the immediate group: the programme wants the zeta = 0.35 calibration understood before it spends anything on a second zeta. Release only as an explicit decision to buy that one test now.",
+  "L": 64,
+  "zeta": 0.1,
+  "R": 48,
+  "tasks": 48,
+  "lambdas": [
+   0.3032
+  ],
+  "N_c": [
+   64
+  ],
+  "core_h": 2.6,
+  "pess_core_h": 3.7,
+  "slowest_h": 0.05,
+  "pess_slowest_h": 0.08,
+  "elapsed_h": 0.05,
+  "partition": "cpu_med",
+  "time": "01:00:00",
+  "mem_req": "1G",
+  "seed_lo": 33600000,
+  "seed_hi": 33600047
+ },
+ {
+  "name": "cond_LOWZ_nc256",
+  "group": "LOWZ",
+  "gate": "OPTIONAL -- NOT PART OF THE zeta = 0.35 CALIBRATION",
+  "trigger": "As cond_LOWZ_nc64. The pre-registered kill criterion needs BOTH population sizes: drift at zeta = 0.10 greater than or equal to drift at zeta = 0.35 kills the guided-residual mechanism and revives Born-rarity reasoning. Release both or neither.",
+  "L": 64,
+  "zeta": 0.1,
+  "R": 48,
+  "tasks": 48,
+  "lambdas": [
+   0.3032
+  ],
+  "N_c": [
+   256
+  ],
+  "core_h": 9.2,
+  "pess_core_h": 12.9,
+  "slowest_h": 0.19,
+  "pess_slowest_h": 0.27,
+  "elapsed_h": 0.19,
+  "partition": "cpu_med",
+  "time": "01:00:00",
+  "mem_req": "1G",
+  "seed_lo": 33620000,
+  "seed_hi": 33620047
+ }
+]

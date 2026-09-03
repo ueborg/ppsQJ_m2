@@ -1,0 +1,172 @@
+# QUALITY_DIAGNOSTICS — TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+#
+# Every curve-quality and crossing-quality diagnostic this campaign computes,
+# where it is implemented, and -- for the diagnostics that already have values
+# from the existing corpus -- what those values are.
+#
+# NOTHING HERE IS A VERDICT ON NEW DATA. The new-data columns are empty because
+# no HPC job has been submitted; the analysis that fills them is frozen and
+# demonstrated to run to completion on zero results.
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+implemented_by: analysis/nc_plateau_analysis.py
+specification: ANALYSIS_SPEC.yaml   # authoritative; this file is a register
+
+standing_rules_enforced:
+  uncertainty_source: >
+    Across INDEPENDENT POPULATIONS, always. Within-clone spread is a diagnostic
+    and is never the standard error of a population mean.
+  vif: >
+    Reported as a VARIANCE-EQUIVALENCE diagnostic ONLY. It is never used as a
+    bias diagnostic and appears in no adequacy verdict anywhere in this task.
+  genealogy: >
+    Founder count and genealogical ESS are diagnostics. Neither is read as a
+    literal number of independent samples; genealogy may collapse completely
+    without implying an information ceiling.
+  drift_not_bias: >
+    Finite-N_c movement is called DRIFT. It is never called bias, because the
+    N_c -> infinity target is unknown.
+  matched_R: >
+    Every primary statistic uses matched R across the rungs it compares. Blocks
+    are cut in SEED ORDER, which is observable-blind. Full-R views are secondary
+    and carry no curve-quality or crossing authority.
+  forbidden:
+    - smoothing
+    - interpolation replacing a measured point
+    - imposed monotonicity
+    - removal of a lambda point for being inconvenient
+    - any value-based exclusion
+    - a special fit across a reuse join
+  audit_block: >
+    NC_PLATEAU_RESULTS.json carries an audit block asserting each of the above
+    about the run that produced it, so the assertion travels with the numbers.
+
+per_lambda_diagnostics:      # section 10 of the brief, per measured point
+  - mean_CMI
+  - across_population_SEM
+  - across_population_sd
+  - VIF                              # variance equivalence only
+  - N_eff                            # diagnostic only
+  - split_half_stability             # disjoint seed-ordered blocks
+  - leave_one_population_out_spread  # reported in units of SEM
+  - standardized_outliers            # max |z| and count beyond 3 sigma
+  - non_finite_clone_fraction        # cell flagged SUSPECT above 1 %
+  - brentq_fallbacks                 # reported, NEVER an exclusion
+  - Var_log_carried_weight           # NEW; absent from 100 % of the prior corpus
+
+per_curve_diagnostics:
+  - adjacent_increments
+  - increment_SEMs
+  - increment_resolution             # is each increment resolved at 95 %
+  - second_differences
+  - roughness                        # RMS second difference, absolute
+  - roughness_in_SEM                 # and in units of mean SEM
+
+cross_L_diagnostics:
+  statistics:
+    - raw_sign_changes
+    - resolved_sign_changes            # both bracketing points resolved at 95 %
+    - bootstrap_crossing_count_histogram
+    - bootstrap_crossing_interval
+    - bootstrap_crossing_median
+    - fraction_exactly_one_crossing
+    - endpoint_induced_status
+    - leave_one_lambda_out_stability
+    - split_half_crossing_stability
+  bootstrap:
+    replicates: 4000
+    model: Gaussian on each point's across-population SEM
+    seed: 20260903                   # fixed so the number is reproducible
+  endpoint_rule: >
+    A crossing within one grid step of either end is ENDPOINT_INDUCED and is
+    reported as a boundary-sensitive locator, not as a located crossing. This is
+    the defect TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION was created to repair
+    and it is not allowed to recur silently. It is also what killed the cheap
+    three-lambda version of campaign B2 before submission.
+
+# ---------------------------------------------------------------------------
+# VALUES ALREADY OBTAINED, from the existing corpus only. No new data exist.
+# ---------------------------------------------------------------------------
+existing_corpus:
+  populations: 1896
+  cells: 62
+  ladders: 53
+  exact_compatible: 1896        # all of them
+  status_not_ok: 0
+  non_systematic_resampler: 0
+  T_not_equal_L: 0
+  brentq_fallbacks: 0
+  n_steps_formula_exact: 1896   # K = ceil(2 lam (L-1) T / dtau_mult), all cases
+
+  curve_quality_Nc1024_17point:
+    L32: {points: 17, R_per_point: 24, sem_range: [0.00223, 0.00629]}
+    L48: {points: 17, R_per_point: 24, sem_range: [0.00275, 0.01099]}
+    L64: {points: 17, R_per_point: "24 (96 at three lambda)",
+          sem_range: [0.00265, 0.01644]}
+
+  interior_crossings_Nc1024:
+    L32_minus_L64:
+      bracket: [0.2232, 0.2332]
+      linear_location: 0.23145
+      local_dD_dlambda: 2.965
+      bootstrap_fraction_exactly_one: 0.986
+      note: >
+        On the FULL 17-point grid this is interior. On the three-lambda subset
+        first proposed for campaign B2 it is ENDPOINT_INDUCED by construction,
+        which is why that design was rejected.
+    L48_minus_L64:
+      bracket: [0.2332, 0.2432]
+      linear_location: 0.23691
+      local_dD_dlambda: 4.052
+      bootstrap_fraction_exactly_one: 0.965
+    L32_minus_L48:
+      bracket: [0.1932, 0.2032]
+      linear_location: 0.20050
+      local_dD_dlambda: 1.711
+      status: >
+        One grid step from the lower endpoint. Remains boundary-sensitive and is
+        NOT used to set any tolerance.
+
+  ladder_diagnostics:
+    L64_lambda0.3032:
+      rungs: {1024: {R: 96, mean: 0.35316, sem: 0.00291},
+              2048: {R: 24, mean: 0.35551, sem: 0.00440}}
+      delta_1024: {value: 0.00235, sem: 0.00528,
+                   ci95: [-0.00799, 0.01269],
+                   half_width_over_tau_I: 1.72,
+                   P1: true, P2: false,
+                   verdict: UNRESOLVED_R_LIMITED,
+                   R_required_for_P2: 137}
+    L96_lambda0.3032:
+      rungs: {128: {R: 32, mean: 0.38793, sem: 0.02352},
+              256: {R: 32, mean: 0.33591, sem: 0.01834},
+              512: {R: 48, mean: 0.26631, sem: 0.01027}}
+      delta_128: {value: -0.05202, sem: 0.02982, P1: true, P2: false}
+      delta_256: {value: -0.06959, sem: 0.02102, P1: false, P2: false}
+      verdict: STILL_DRIFTING
+      fit_1overN: {chi2: 1.90, dof: 1, p: 0.168, rejected: false}
+      note: >
+        NOT rejected, on 1 dof. This does NOT reproduce the accepted framing's
+        L=96 rejection (chi2 = 10.54, 3 dof), which needs a four-rung ladder
+        this reconstruction cannot locate. Open provenance item.
+    L128_lambda0.3032:
+      rungs: {64: {R: 64, mean: 0.51957, sem: 0.02494},
+              128: {R: 64, mean: 0.42059, sem: 0.02354},
+              256: {R: 64, mean: 0.29932, sem: 0.01679},
+              512: {R: 48, mean: 0.25109, sem: 0.02164},
+              1024: {R: 32, mean: 0.19088, sem: 0.00898}}
+      delta_512: {value: -0.06021, sem: 0.02343, P1: false, P2: false,
+                  R_required_for_P2: 2675}
+      verdict: STILL_DRIFTING
+      fit_1overN: {chi2: 12.58, dof: 3, p: 0.0056, rejected: true}
+      note: >
+        Reproduces the predecessor's figure exactly, from raw files. The
+        strongest available check that this task's fitting machinery is correct.
+
+# ---------------------------------------------------------------------------
+awaiting_data:
+  - "campaign A: P1-P5, B_eff, 1/N and free-gamma fits at N_c = 4096 and 8192"
+  - "campaign B: the 7-point curves at three N_c, H1/H2/H3, the full per-point battery"
+  - "campaigns B+B2: the fully matched cross-L crossing analysis at three N_c"
+  - "campaign C: the L=96 ladder at N_c = 1024 and 2048"
+  - "campaign D: the L=128 N_c = 2048 screening rung"
+  - "campaign E: E1 vs E2 at N_c = 64 and 256"

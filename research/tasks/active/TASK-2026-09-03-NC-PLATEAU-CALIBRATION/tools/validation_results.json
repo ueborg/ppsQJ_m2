@@ -1,0 +1,123 @@
+[
+ {
+  "check": "bash -n on every shell and job script",
+  "ok": true,
+  "detail": "74 files"
+ },
+ {
+  "check": "py_compile on every python file",
+  "ok": true,
+  "detail": "81 files"
+ },
+ {
+  "check": "import numpy + instrumented + pps_qj in a subprocess",
+  "ok": true,
+  "detail": "numpy 2.4.3"
+ },
+ {
+  "check": "tools/build_arms.py is idempotent",
+  "ok": true,
+  "detail": "34 manifests and job scripts byte-identical after regeneration"
+ },
+ {
+  "check": "tools/build_conditional.py runs",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "check": "K = ceil(2 lam (L-1) T / dtau_mult) vs recorded n_steps",
+  "ok": true,
+  "detail": "exact in all 1896 completed populations"
+ },
+ {
+  "check": "every immediate arm's preflight exits 0",
+  "ok": true,
+  "detail": "17/17 PASSED"
+ },
+ {
+  "check": "every conditional arm reports BLOCKED and exits 3",
+  "ok": true,
+  "detail": "7/7 blocked"
+ },
+ {
+  "check": "no executable file carries a scheduler call",
+  "ok": true,
+  "detail": "155 files scanned"
+ },
+ {
+  "check": "every conditional job script carries the interlock",
+  "ok": true,
+  "detail": "7 scripts"
+ },
+ {
+  "check": "tools/dedup_scan.py",
+  "ok": true,
+  "detail": "reuse ledger matches disk; seeds structurally disjoint; no arm duplicates another"
+ },
+ {
+  "check": "tools/negative_controls.py",
+  "ok": true,
+  "detail": "16 controls fired; the preflight fails when it should"
+ },
+ {
+  "check": "analysis runs to completion on the current corpus",
+  "ok": true,
+  "detail": "4 section(s) reported empty rather than silently passed"
+ },
+ {
+  "check": "the results file carries its own no-smoothing audit block",
+  "ok": true,
+  "detail": "across independent populations"
+ },
+ {
+  "check": "git diff --check",
+  "ok": true,
+  "detail": "clean"
+ },
+ {
+  "check": "research/state/** untouched",
+  "ok": true,
+  "detail": "no modification"
+ },
+ {
+  "check": "no predecessor task directory modified",
+  "ok": true,
+  "detail": "26 predecessor task dirs scanned"
+ },
+ {
+  "check": "validate_state.py (knowledge plane)",
+  "ok": true,
+  "detail": "0 error(s), 1 warning(s)"
+ },
+ {
+  "check": "validate_task.py (this task)",
+  "ok": false,
+  "detail": "1 error(s), 1 warning(s)"
+ },
+ {
+  "check": "validate_resource_policy.py",
+  "ok": true,
+  "detail": "0 error(s), 0 warning(s)"
+ },
+ {
+  "check": "test_model_routing.py",
+  "ok": true,
+  "detail": "JS engine used: /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc"
+ },
+ {
+  "check": "test_workflow_regressions.py",
+  "ok": true,
+  "detail": "25/25 passed"
+ },
+ {
+  "check": "test_guard_research.py (the hook that denies submission)",
+  "ok": true,
+  "detail": "62/62 passed"
+ },
+ {
+  "check": "validate_redteam.py -- KNOWN UNREPAIRED GAP",
+  "ok": true,
+  "gap": true,
+  "detail": "R3: reviewer saw the lead summary. The report is a lead-inline self-red-team and Stage 8 is NOT satisfied. An independent pass is owed before merge. NOT counted as a pass; recorded so it cannot be missed."
+ }
+]

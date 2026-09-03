@@ -1,0 +1,147 @@
+---
+task: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+frozen_at: stage_3_candidates
+implemented_by: analysis/nc_plateau_analysis.py
+authority: >
+  This file and SUCCESS_CRITERIA.yaml are the specification. The analysis script
+  implements them and is the authority for nothing. Where the two disagree, this
+  file is right and the script is the bug.
+
+observable:
+  observable_id: OBS-CMI-001
+  estimator: cmi_weighted_mean
+  definition: >
+    Weighted mean over the final population of the per-clone conditional mutual
+    information, with the normalised cumulative importance weights at t = T.
+    Written by the certified sampler; this task does not redefine it.
+  never_compared_across: >
+    OBS-BLPROD-001 and OBS-BLKMR-001 are different quantities under a retired
+    shared label (OBS-BL-001) and nothing here is compared against either.
+
+parameterization:
+  zeta: 0.35
+  T_over_L: 1.0
+  resample_scheme: systematic
+  proposal: guided, proposal_c = zeta, exact RN compensator
+  dtau_mult: 6.0 everywhere EXCEPT campaign E, which varies it deliberately
+  cell_identity: [L, T, zeta, lambda, N_c, dtau_mult]
+  note: >
+    dtau_mult is part of cell identity. Pooling two discretisations into one
+    cell is the single easiest way to manufacture a wrong answer in this task,
+    so the loader keys on it and the per-arm analysis asserts n_steps is
+    constant within a cell.
+
+uncertainty_model:
+  source: across INDEPENDENT POPULATIONS, always
+  never: >
+    Within-clone spread is never a standard error of a population mean. VIF is
+    reported as a VARIANCE-EQUIVALENCE diagnostic only and appears in no
+    adequacy verdict. Founder count and genealogical ESS are diagnostics and are
+    never read as a literal number of independent samples; genealogy may
+    collapse completely without implying an information ceiling.
+  matched_R: >
+    Every primary statistic uses matched R across the rungs it compares. Where a
+    rung holds more populations than its partner, the excess is a SECONDARY view
+    with no verdict authority, and blocks are cut in SEED ORDER, which is
+    observable-blind.
+
+two_budgets:
+  N_c: controls the finite-particle approximation -- drift and within-population
+    variance.
+  R: controls the uncertainty of the finite-N_c population MEAN.
+  rule: >
+    Increasing R does not eliminate finite-N_c drift. Increasing N_c does not
+    give precise crossing statistics if R is too small. Section 1 of the
+    analysis reports both budgets for every cell and every downstream verdict
+    names which one binds.
+
+exclusions:
+  status_not_ok: excluded, and counted
+  non_finite_clones: reported per cell; a cell above 1 % is flagged SUSPECT and
+    is not silently dropped
+  brentq_fallbacks: reported, never an exclusion
+  value_based_exclusion: FORBIDDEN. No population, and no lambda point, is
+    removed because of the value it took.
+
+forbidden_transformations:
+  smoothing: forbidden
+  interpolation_replacing_a_measured_point: forbidden
+  imposed_monotonicity: forbidden
+  removal_of_an_inconvenient_lambda: forbidden
+  special_fit_across_a_reuse_join: forbidden
+  audit: >
+    The results file carries an audit block asserting each of these about the
+    run that produced it, so the assertion travels with the numbers.
+
+interpolation_permitted_only_for: >
+  Placing a crossing BETWEEN two measured points that bracket a sign change,
+  linearly, for the purpose of reporting a location. It never replaces,
+  augments or overrides a measurement.
+
+curve_quality:
+  per_lambda:
+    - mean CMI
+    - across-population SEM
+    - across-population sd
+    - VIF (variance-equivalence diagnostic only)
+    - split-half stability over disjoint seed-ordered blocks
+    - leave-one-population-out spread, in units of SEM
+    - standardized outliers: max |z| and the count beyond 3 sigma
+  per_curve:
+    - adjacent increments and their SEMs
+    - increment resolution (is each increment resolved at 95 %)
+    - second differences
+    - roughness = RMS second difference, absolute and in units of mean SEM
+
+crossing_analysis:
+  statistic: D(lambda) = I_L1(lambda) - I_L2(lambda) on the SHARED RAW GRID
+  reported:
+    - raw sign changes
+    - resolved sign changes (both bracketing points resolved at 95 %)
+    - bootstrap crossing-count histogram
+    - bootstrap crossing interval and median
+    - fraction of bootstrap replicates with exactly one crossing
+    - endpoint-induced status
+    - leave-one-lambda-out stability
+    - split-half crossing stability
+  bootstrap: 4000 replicates, Gaussian on each point's across-population SEM,
+    seed 20260903, fixed here so the number is reproducible
+  endpoint_rule: >
+    A crossing within one grid step of either end of the scanned grid is
+    ENDPOINT-INDUCED and is reported as a boundary-sensitive locator, not as a
+    located crossing. This is the exact defect
+    TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION was created to repair and it is
+    not allowed to recur silently.
+
+fitting_window:
+  rule: >
+    Every ladder fit is reported with its dof, and repeated with the lowest rung
+    dropped wherever four or more rungs exist. A fit whose conclusion depends on
+    its lowest rung is reported as such rather than as a result.
+  free_gamma_on_three_rungs: >
+    Three parameters on three rungs has zero dof, is exact by construction and
+    is NOT a test. It is printed with its dof so it cannot be read as one.
+
+finite_size_extrapolation: NONE. No thermodynamic-limit extrapolation is
+  performed or reported anywhere in this task.
+
+figures:
+  A: L=64 central CMI vs N_c, log-N axis
+  B: L=64 Delta_N vs N, with the frozen tau_I band
+  C: L=64 B_eff(N)
+  D: L=64 transition-region 7-point curves at N_c = 512, 1024, 2048
+  E: Delta_512->1024(lambda) and Delta_1024->2048(lambda)
+  F: additive vs multiplicative correction diagnostics
+  G: L = 64, 96, 128 central ladders together
+  H: adequacy criterion as a function of L
+  I: discretisation experiment at N_c = 64
+  J: discretisation experiment at N_c = 256
+  K: higher-L mock-production CMI curves (empty until those are released)
+  L: cross-L differences near the locator region
+  rule: >
+    No smoothing in any figure. Markers are measurements; a line only connects
+    adjacent measurements and is never a fit unless the caption says so.
+
+runs_with_no_data: >
+  The analysis runs to completion with zero, partial or complete results and
+  states which. An empty section is an empty section, never a silent pass.

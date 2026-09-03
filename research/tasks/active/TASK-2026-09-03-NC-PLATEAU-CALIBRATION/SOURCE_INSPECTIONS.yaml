@@ -1,0 +1,90 @@
+# SOURCE_INSPECTIONS — append-only, never frozen.
+# Sources inspected DURING TASK-2026-09-03-NC-PLATEAU-CALIBRATION.
+task_id: TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+
+inspections:
+  - id: SRC-RAW-CORPUS
+    date: 2026-09-03
+    verifier: lead
+    inspection_level: fully_inspected
+    sections_read: >
+      All 1896 per-population result JSONs under research/tasks/**/results/,
+      enumerated and parsed field by field by tools/reconstruct_inventory.py.
+    establishes: >
+      The complete inventory (EXISTING_POPULATION_INVENTORY.csv), all 53 N_c
+      ladders (EXISTING_LADDERS.md), every per-clone-window rate in
+      COST_MODEL.md, and every reuse decision in REUSE_LEDGER.csv. All 1896 are
+      exact-compatible: no status != ok, no non-systematic resampler, no T != L,
+      no brentq fallback.
+    does_not_establish: >
+      Anything about data outside this repository. The two data trees named in
+      research/state/DATA_ROOTS.yaml were NOT swept; only the task-plane results
+      were.
+    promotion_status: proposed
+
+  - id: SRC-FNCRS
+    date: 2026-09-03
+    verifier: lead
+    inspection_level: relevant_sections
+    sections_read: >
+      TASK-2026-09-03-FINITE-NC-REQUIRED-SCALING: RECOMMENDATION.md in full,
+      HUMAN_SUBMISSION.md Designs 1-4 in full, ruche_package/README.md in full.
+    establishes: >
+      The structural obstruction (deterministic no-click branch, minorisation
+      fails for every finite beta and every m); that no controlled N_c_req rule
+      exists; campaign E's exact configuration, its pre-registered E1/E2
+      predictions and its INCONCLUSIVE clause; Design 2's low-zeta configuration
+      and kill criterion, carried into conditional/cond_LOWZ_*; and that Design 4
+      (the L=128 N_c=2048 rung) was costed and NOT recommended.
+    does_not_establish: >
+      Its L=96 1/N rejection. TV-02 could not reproduce it from the
+      lambda=0.3032 raw ladder and could not locate the four-rung ladder behind
+      it. Recorded as an open provenance item.
+    promotion_status: proposed
+
+  - id: SRC-LOWLAM
+    date: 2026-09-03
+    verifier: lead
+    inspection_level: fully_inspected
+    sections_read: >
+      TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION: README.md, SCHEDULER_DECISION.md,
+      RUCHE_RUNBOOK.md, VALIDATION.md, tools/build_arms.py, tools/cost_model.py,
+      shared/{run_cell,preflight,analyse_arm}.py, support/instrumented.py.
+    establishes: >
+      The package architecture this task inherits; the crossing and endpoint
+      protocol; the cpu_short QOS-serialisation evidence; the Slurm --mem unit
+      defect and its fix; and the byte-identical certified sampler
+      (sha256 0a33c403...).
+    does_not_establish: >
+      Its --mem coefficient, which TV-05 shows was never measured.
+    promotion_status: proposed
+
+  - id: SRC-HIGHRUNG
+    date: 2026-09-03
+    verifier: lead
+    inspection_level: relevant_sections
+    sections_read: >
+      TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA: COST_MODEL.md in full, the four arms'
+      submit.slurm headers and manifests.
+    establishes: >
+      The measured Ruche rates at L=96 and L=128 up to N_c=256, the cpu_long
+      precedent, and the flat-from-N_c=256 extrapolation rule.
+    does_not_establish: >
+      That rule's validity above N_c = 256. TV-07 shows it is 30% low at
+      N_c = 1024, in the optimistic direction.
+    promotion_status: proposed
+
+  - id: SRC-SMCSTAT-AN7
+    date: 2026-09-03
+    verifier: lead
+    inspection_level: fully_inspected
+    sections_read: >
+      TASK-2026-08-30-SMCSTAT/scratch/results/AN7_scheme_chunking.json in full.
+    establishes: >
+      The only prior dtau_mult in {3,6,12} comparison in the repository, at
+      K = 232/116/58 with R = 24. Systematic-resampling means 0.33504, 0.33729,
+      0.32927 -- flat to about one SEM.
+    does_not_establish: >
+      Anything at production geometry. That cell is far smaller than campaign
+      E's L=64, T=64, K=816/408/204, so the numbers do not transfer.
+    promotion_status: proposed
