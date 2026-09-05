@@ -1,0 +1,221 @@
+# CLAIM_STRENGTH_AUDIT — TASK-2026-09-06-NC-ZETA-MOCKPROD
+#
+# One entry per load-bearing conclusion: what the evidence DIRECTLY establishes,
+# what the inference ADDS, the strongest justified wording, and the stronger
+# wording explicitly REJECTED. The rejected wording is the point of this file.
+schema_version: 1
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+state_fingerprint_changed: false
+
+conclusions:
+
+  - id: CSA-01
+    subject: the N_c^0.1871 rate law
+    evidence_directly_establishes: >
+      At L=64 the measured worst-case per-clone-window rate is 5.05 ms at
+      N_c=4096 and 5.11 at 8192, against 6.57 and 7.48 predicted by applying
+      rate ~ N_c^0.1871 forward from the smallest measured rung; at L=128,
+      N_c=2048 it is 22.45 against 31.7. Over N_c = 512..8192 at L in {32,48,64}
+      the rate is flat to within about 9 % with no monotone trend.
+    inference_adds: >
+      That the exponent was an L=128-specific three-point artifact rather than a
+      corpus-wide law, and that a flat per-L constant is the right model for
+      L <= 64.
+    implication_ladder: >
+      three rungs disagree with the law -> the law does not hold at these L ->
+      a flat constant is adopted -> --time is sized from it.
+    strongest_justified_wording: >
+      "The N_c^0.1871 rate law is contradicted by rungs returned since it was
+      fitted, at every L this task uses."
+    rejected_wording:
+      - >
+        "The per-clone-window rate is independent of N_c." Not established. Only
+        512..8192 is measured, only at three L, only at zeta = 0.35, and only on
+        one cluster. N_c = 128 and 256 are unmeasured at L = 32 and 48.
+      - >
+        "The predecessor's cost model was wrong." It was wrong about this law,
+        upward, and right about the memory finding this package relies on.
+    declared_step: >
+      From "three rungs disagree" to "adopt a flat constant" is a modelling
+      choice, not a measurement. It errs upward at the unmeasured low rungs by
+      an added small-batch penalty the investigator would not apply.
+
+  - id: CSA-02
+    subject: reusability of existing data
+    evidence_directly_establishes: >
+      Of 5 185 stored populations in 136 distinct cells, ZERO match any of this
+      design's 407 cells on all seven of (zeta, L, T, N_c, lambda, dtau_mult,
+      resample_scheme).
+    inference_adds: >
+      That every population in this campaign must be computed fresh, and that no
+      rung of any ladder can be seeded from history.
+    strongest_justified_wording: >
+      "No exact-compatible stored population exists at zeta in {0.10, 0.20,
+      0.70} for any cell in this design."
+    rejected_wording:
+      - >
+        "No data exists at these zeta." False. results/boundary_aggregate.csv
+        carries zeta = 0.1/0.2/0.7 rows and TASK-2026-08-11-ARCH has a zeta=0.7
+        JSON. They are not POOLABLE, which is a different statement.
+      - >
+        "The historical corpus is worthless." It is used, as descriptive context
+        for grid width and for the zeta timing ratios. It is not evidence for a
+        sqrt(zeta) law and is not pooled.
+
+  - id: CSA-03
+    subject: lambda grid coverage
+    evidence_directly_establishes: >
+      Anchoring both positions of DISP-PHI-001 on lambda_x(0.35) = 0.23691, all
+      six predictions are strictly interior to the proposed grids, with at least
+      two grid points beyond each and a worst margin of 6.9 tau_lambda to the
+      nearer grid end. Every grid is strictly wider than the independently
+      re-derived STAGE1 bracket rule on both sides at all three zeta.
+    inference_adds: >
+      That the grids are adequate coverage brackets and need no widening.
+    strongest_justified_wording: >
+      "Each grid contains both open positions of DISP-PHI-001 with margin, and
+      is wider than the law-agnostic bracket rule on both sides."
+    rejected_wording:
+      - >
+        "The grids contain the crossing." They contain both CANDIDATE LAWS. The
+        crossing's actual location is unknown -- that is what the campaign
+        measures -- which is why ABOVE_GRID and BELOW_GRID are pre-registered
+        outcome classes rather than error conditions.
+      - >
+        "lambda_c(zeta) lies in these ranges." No lambda_c is estimated anywhere
+        and DISP-PHI-001 is moved in neither direction.
+    declared_step: >
+      The anchor 0.23691 is a LOCATOR at L <= 64, not lambda_c(0.35), and is not
+      L-extrapolated. Both law predictions inherit that caveat. Promoting a
+      locator to a boundary estimate is the step this file exists to refuse.
+
+  - id: CSA-04
+    subject: what the survey's qualitative verdicts will mean
+    evidence_directly_establishes: >
+      Nothing yet. No population has been computed. The classification rules,
+      the crossing-validity rule XV1 and the six outcome classes are frozen in
+      ANALYSIS_SPEC.yaml before any datum exists, and tools/smoke_test.py shows
+      the classifier separating nine constructed cases including three it is
+      required to fail.
+    inference_adds: >
+      That when data returns, a ROUGHLY_STABLE verdict will be a statement about
+      the resolution of an R = 16 survey.
+    strongest_justified_wording: >
+      "At this zeta the CMI curves are visually insensitive to increasing N_c
+      beyond <rung> at L <= 64 within the resolution of this survey."
+    rejected_wording:
+      - >
+        "N_c = <rung> is converged." The N_c -> infinity target is unknown, so
+        what is measured is DRIFT and never bias.
+      - >
+        "Finite-N_c bias at <rung> is below tolerance." No tolerance is tested;
+        no equivalence test is run; tau_lambda appears in this task only as a
+        margin yardstick for grid coverage.
+      - >
+        "N_c^req(zeta) behaves as ..." Three zeta cannot support a law and none
+        is fitted.
+      - Any use of the word "certified".
+    enforcement: >
+      analysis/mockprod_analysis.py prints the prohibition next to every
+      ROUGHLY_STABLE verdict, and preflight P16 fails on certification language
+      attached to an N_c, a convergence, a crossing or a rung in any shipped or
+      conclusion-bearing file.
+
+  - id: CSA-05
+    subject: the cost figures
+    evidence_directly_establishes: >
+      Committed 1 160.3 core-hours over 15 arms and 2 557 packed array tasks;
+      the held rung 861.6; full design 2 021.9. Every rate input is either a
+      Ruche measurement or a ratio from the only zeta-resolved timing available.
+    inference_adds: >
+      That the campaign is affordable and that holding one rung saves 42.6 %.
+    strongest_justified_wording: >
+      "1 160.3 committed core-hours under a model whose rate inputs are measured
+      and whose lambda correction is an extrapolation."
+    rejected_wording:
+      - >
+        "The campaign will cost 1 160 core-hours." It is a prediction. F13
+        pre-registers the model as killed if measured exceeds the pessimistic
+        figure, and this programme's rate model has now been wrong in both
+        directions.
+      - >
+        "Memory requests are safe." They descend entirely from local macOS
+        ru_maxrss. NO Ruche MaxRSS exists anywhere in this repository, and one
+        sacct line would be the first.
+    weakest_input: >
+      f_lam at zeta = 0.10, lambda = 0.040 -- a ~4x extrapolation of a
+      lambda^-0.5 rate law below its calibrated window. Named as such in
+      COST_MODEL.md section 5 rather than smoothed over.
+
+  - id: CSA-06
+    subject: what R = 16 can actually see
+    evidence_directly_establishes: >
+      Measured from the stored zeta = 0.35 corpus at R = 16, the median
+      across-population SEM/|CMI| is 0.0105/0.0078/0.0052 at L = 32 for
+      N_c = 512/1024/2048, 0.0157/0.0114/0.0078 at L = 48, and
+      0.0243/0.0188/0.0144 at L = 64. With the simulated z_crit = 3.88 the
+      minimum detectable uniform rung shift is 2.9-5.8 % of CMI at L = 32,
+      4.3-8.6 % at L = 48 and 7.9-13.3 % at L = 64. The rung changes actually
+      measured at zeta = 0.35, L = 64, at matched lambda are -0.13 %
+      (1024->2048), -2.01 % (2048->4096) and +1.21 % (4096->8192).
+    inference_adds: >
+      That at L = 64 a top-of-ladder rung which truly moves by 0.1-2 % will be
+      classified ROUGHLY_STABLE by this survey, because nothing below about 8 %
+      is visible there.
+    strongest_justified_wording: >
+      "At L = 64 the top of the N_c ladder cannot be resolved at R = 16; the
+      1024 -> 2048 question is answerable at L = 32 and L = 48 only."
+    rejected_wording:
+      - >
+        "R = 16 is adequate for this survey." It is adequate for the low-rung
+        questions at every L and for the top rung at L = 32 and 48. It is not
+        adequate for the top rung at L = 64, which is one of the five questions
+        the brief asks.
+      - >
+        "This can be fixed by raising R." Reaching a 3 % MDE at L = 64,
+        N_c = 1024 requires R about 190; 5 % requires about 68, which at
+        zeta = 0.70 is roughly 1700 core-hours for one rung. It is a structural
+        limit of a survey at this cost, not a tuning parameter.
+      - >
+        "A ROUGHLY_STABLE verdict at L = 64 means the rung has stopped moving."
+        It means the rung moved by less than the MDE printed beside it.
+    declared_step: >
+      The MDE is computed from the zeta = 0.35 corpus and carried to zeta = 0.10,
+      0.20 and 0.70, where the noise has never been measured. That transfer is
+      an INFERENCE. If the sampler is noisier at another zeta the MDE is worse
+      there, not better.
+    enforcement: >
+      analysis/mockprod_analysis.py prints the MDE beside every rung verdict and
+      carries the worst MDE of the chain into the recommendation caveat, so
+      ROUGHLY_STABLE and "we could not have seen it" can be told apart in the
+      output. Required by ANALYSIS_SPEC.yaml amendment_2 R3, after the red team
+      showed the two were indistinguishable.
+
+  - id: CSA-07
+    subject: drift versus bias, and the 1/N_c fit
+    evidence_directly_establishes: >
+      The red team fitted CMI(N_c) = c0 + c1/N_c to all six measured rungs at
+      zeta = 0.35, L = 64, lambda = 0.3032 with chi2/dof = 0.92 and
+      c0 = 0.34542 +- 0.00114.
+    inference_adds: >
+      That at THAT CELL the N_c -> infinity target is estimable from ladder data
+      to about 0.3 %, and therefore that the movement there could be called bias
+      rather than drift.
+    strongest_justified_wording: >
+      "At one zeta = 0.35 cell the ladder is consistent with a 1/N_c approach to
+      an estimable limit."
+    rejected_wording:
+      - >
+        "Finite-N_c movement is bias, not drift." One cell, one zeta, one L, one
+        lambda, one observable. It says nothing about other zeta, the tails of
+        the CMI curve, or the crossing location -- which is what this survey
+        actually locates.
+      - >
+        "The task's premise is refuted." The premise is refuted AT THAT CELL and
+        is untested everywhere else.
+    action_taken: >
+      NONE in this task. CHARTER.md and ANALYSIS_SPEC.yaml both state the
+      drift-not-bias premise and both are frozen; changing a frozen premise on
+      one cell would be exactly the move the freeze exists to prevent. Carried
+      to RECOMMENDATION.md section 4(c) as a proposed child task via
+      research/tools/child_task.py, for the human to open or decline.

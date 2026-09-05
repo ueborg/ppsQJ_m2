@@ -1,0 +1,356 @@
+# ANALYSIS_SPEC — TASK-2026-09-06-NC-ZETA-MOCKPROD
+#
+# FROZEN at stage_3_candidates, BEFORE any datum exists. Everything the analysis
+# is allowed to do is fixed here. analysis/mockprod_analysis.py implements this
+# file and nothing else; a post-hoc analysis is a CHILD TASK
+# (research/tools/child_task.py propose), never an edit to this file.
+schema_version: 1
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+kind: mock_production_survey
+not_a: [certification, equivalence_test, phase_boundary_estimate, scaling_law_fit]
+
+# ---------------------------------------------------------------------------
+observable:
+  observable_id: OBS-CMI-001
+  stored_field: CMI_mean
+  parameterization: lambda = alpha / (alpha + w)
+  region_convention: >
+    Majorana regions A=[0,L/2), B=[L/2,L), C=[L,3L/2); D is the complement and
+    the trajectory state is pure so S_ABC = S_D. Verified in OBS-CMI-001.
+  guard: L % 4 == 0            # 32, 48, 64 all satisfy it
+  per_population_estimator: cmi_weighted_mean      # the field run_cell.py writes
+  note: >
+    OBS-BL-001 is retired and is not used. CMI is peaked in lambda and returns
+    to zero on both sides; it is NOT a 0->1 order parameter, so a monotone
+    reading of a single curve is a misreading of the observable.
+
+# ---------------------------------------------------------------------------
+uncertainty:
+  source: across_independent_populations_only
+  R: 16
+  estimator: SEM = sd(population means, ddof=1) / sqrt(R)
+  matched_R_required: true
+  diagnostic_only: [ESS, GESS, VIF, n_distinct_anc_final, ess_frac_mean,
+                    gess_final, ess_cum_final, brentq_fallbacks]
+  authority: DEC-MASTER-METRIC-001
+  forbidden: >
+    Within-clone spread may NEVER be used as a standard error. VIF is reported
+    so the gap between within-population and across-population spread is
+    visible, and never so that it can be divided out.
+
+# ---------------------------------------------------------------------------
+grids:
+  zeta_measured: [0.10, 0.20, 0.70]
+  zeta_reference_only: 0.35        # quoted from a predecessor, NEVER recomputed
+  L: [32, 48, 64]
+  T: equals_L
+  N_c_ladder: [128, 256, 512, 1024, 2048]
+  dtau_mult: 6.0
+  resample_scheme: systematic
+  lambda:
+    0.10: [0.040, 0.055, 0.070, 0.085, 0.100, 0.115, 0.130, 0.145, 0.160]
+    0.20: [0.080, 0.1025, 0.125, 0.1475, 0.170, 0.1925, 0.215, 0.2375, 0.260]
+    0.70: [0.250, 0.284, 0.318, 0.351, 0.385, 0.419, 0.453, 0.486, 0.520]
+
+# ---------------------------------------------------------------------------
+crossings:
+  primary_pair: [48, 64]
+  supporting_pairs: [[32, 48], [32, 64]]
+  supporting_pairs_are: >
+    Supporting information on small-L drift and crossing quality. A supporting
+    pair may NEVER be reported as the primary locator, and a disagreement
+    between pairs is reported, not resolved.
+  difference: D(lambda) = CMI_Lb(lambda) - CMI_La(lambda)
+  crossing_definition: sign change of D on the measured grid
+  interpolation: linear in lambda between the two bracketing grid points ONLY
+  interpolation_limit: >
+    No interpolated location is quoted for a sign change that falls in the first
+    or the last grid interval. Such a cell is reported ENDPOINT_INDUCED.
+  uncertainty_model: >
+    Nonparametric bootstrap over the R population means at each (L, lambda),
+    resampled independently per cell, 10000 draws; the crossing is relocated on
+    every draw and the histogram of crossing COUNTS is reported, never discarded.
+  fitting_window: not_applicable      # no fit is performed anywhere
+  finite_size_extrapolation: none
+  pair_selection_rule: >
+    Fixed in advance: L48-L64 is primary at every zeta and every N_c. It is
+    never chosen after seeing which pair gives a nicer crossing.
+
+  crossing_validity_rule:
+    id: XV1
+    statement: >
+      A crossing location may enter the summary table only if (a) exactly one
+      sign change exists on the grid, (b) it is not in an end interval, and
+      (c) the bootstrap 95% interval is clear of both grid ends by at least
+      half a grid spacing. Otherwise the cell is reported by outcome class and
+      NO location is quoted.
+    invalid_crossings_may_not: >
+      enter any comparison, any difference, any recommendation row, or any
+      figure axis that implies a location.
+
+  outcome_classes:
+    INTERIOR:         one sign change, interior, bootstrap interval clear of both ends
+    ENDPOINT_INDUCED: a sign change exists but sits in an end interval or its interval touches an end
+    ABOVE_GRID:       no sign change and D has the same sign as it would above the crossing at every point, with bootstrap mass piling at the upper end
+    BELOW_GRID:       the same at the lower end
+    MULTIPLE:         more than one sign change on the grid
+    NONE:             no sign change and no end accumulation
+
+# ---------------------------------------------------------------------------
+# The N_c comparison. This is the task's actual product.
+nc_comparison:
+  rungs: [[128, 256], [256, 512], [512, 1024], [1024, 2048]]
+  per_rung_statistics:
+    A_difference_curve: Delta_N(lambda, L) = CMI_2Nc(lambda, L) - CMI_Nc(lambda, L)
+    B_rms: RMS of Delta_N over the nine lambda, per L
+    C_normalised: z(lambda, L) = Delta_N / sqrt(SEM_Nc^2 + SEM_2Nc^2)
+    D_crossing_shift: >
+      difference of the L48-L64 crossing locations, reported ONLY when BOTH
+      crossings are valid under XV1. Otherwise "n/a (crossing not usable)".
+  # ADDED 2026-09-06 (amendment_2, R1). The final recommendation table was
+  # specified in words in the brief and had NO rule here, so the implementation
+  # invented one -- first-stable-wins, never revised by a higher rung. It would
+  # have printed the cheapest N_c while the rung table above it said
+  # STILL_CHANGING, and directionally so, because relative SEM falls with N_c
+  # and the lowest rung is always the most likely to read stable for want of
+  # power. Found by the red team.
+  recommendation_rule:
+    smallest_adequate_Nc: >
+      The smallest N_c such that THAT RUNG AND EVERY HIGHER RUNG classify
+      ROUGHLY_STABLE. If any rung at or above a candidate is CLEARLY_TOO_SMALL
+      or STILL_CHANGING, that candidate is not adequate.
+    if_no_such_Nc_and_the_top_rung_still_moves: report "> 2048"
+    if_any_rung_in_the_chain_is_INCONCLUSIVE: >
+      confidence is "none" and the caveat names the inconclusive rung. An
+      INCONCLUSIVE rung BREAKS the chain: it is not evidence of stability and
+      may not be skipped over to reach a stable rung above it.
+    confidence: >
+      "low" at best, always. This survey has no path to any higher confidence
+      and the column exists to say so.
+
+  # ADDED 2026-09-06 (amendment_2, R3).
+  minimum_detectable_effect:
+    required_beside_every_verdict: true
+    definition: >
+      MDE = z_crit * median_lambda( sqrt(SEM_lo^2 + SEM_hi^2) ), expressed as a
+      percentage of median_lambda(|CMI|) on the higher rung. It is the size of a
+      UNIFORM per-point rung shift that would reach the STILL_CHANGING
+      threshold.
+    why: >
+      Without it, ROUGHLY_STABLE and "we could not have seen it" are
+      indistinguishable in the output, and telling those two apart is the single
+      thing this survey most needs to do.
+
+  also_reported_per_zeta_and_Nc:
+    - raw L48-L64 sign-change count
+    - rough interpolated crossing location, subject to XV1
+    - interior or endpoint-induced
+    - bootstrap crossing interval
+    - fraction of bootstrap draws with exactly one crossing
+    - curve roughness: mean over interior points of (second difference / its SEM)^2
+    - mean |Delta_N| from the previous rung
+    - max statistically resolved |z| across lambda
+
+  qualitative_classification:
+    order: [INCONCLUSIVE, CLEARLY_TOO_SMALL, STILL_CHANGING, ROUGHLY_STABLE]
+    evaluated_first: INCONCLUSIVE
+    INCONCLUSIVE:
+      rule: >
+        median SEM/|CMI| over the 9 lambda at L=48 or L=64 exceeds 0.05, OR
+        fewer than 6 of the 9 lambda have |z| computable, OR the rung is
+        missing populations. Evaluated FIRST so that a noisy rung can never be
+        reported as stable by default.
+      or_means_maximum: >
+        CLARIFIED 2026-09-06 (amendment_2, R2), not changed. "at L=48 or L=64
+        exceeds 0.05" fires when EITHER exceeds it, i.e. on the MAXIMUM over the
+        two L -- the same reading the STILL_CHANGING rule already uses. The
+        first implementation used the minimum, so it required BOTH L to be
+        unusable before firing, and an L = 64 curve with a relative SEM six
+        times the threshold was classified ROUGHLY_STABLE. Found by the red
+        team.
+      evaluated_on_both_rungs: >
+        The relative SEM is evaluated on BOTH the lower and the higher rung of
+        the pair, and the worst is taken. The first implementation looked only
+        at the higher rung, so an unusable lower rung could not trigger the
+        gate.
+    # AMENDED 2026-09-06 before any datum existed -- see amendment_1 below.
+    # The thresholds are stated against z_crit, NOT against a fixed 2 and 4.
+    z_crit:
+      # AMENDED again 2026-09-06 (amendment_2, R4) -- still before any datum.
+      definition: >
+        max_lambda |z| is a MAXIMUM over n = (number of comparable lambda) x
+        (number of L in {48, 64} with data) standardised differences, typically
+        18. Under no drift at all the maximum of 18 standard normals exceeds 2
+        about 64 % of the time, so a fixed threshold of 2 could not return its
+        own null. That was amendment_1.
+      why_the_normal_quantile_was_not_enough: >
+        z divides by SEMs ESTIMATED FROM R = 16 populations, so each z is
+        t-like, not standard normal, and the maximum of 18 of them has a
+        heavier tail than the Sidak normal point suggests. Simulated true null
+        exceedance of the normal z_crit = 3.451 is 3.05 %, not the nominal 1 %.
+        Independently found by the red team (3.04 %) and reproduced by the lead.
+      formula: >
+        z_crit is SIMULATED, not tabulated: 20000 draws of the max over n
+        standardised differences, each built from two independent samples of R
+        population means with SEMs estimated from those same samples, at a
+        FIXED seed so the value is reproducible. Phi^-1((1+0.99**(1/n))/2) is
+        retained only as a printed comparison.
+      value_at_n_18_R_16: 3.86
+      alpha_per_rung: 0.01
+      family_wise_rate_across_rungs: >
+        There are up to 12 rung classifications (3 zeta x 4 rungs) and NO
+        correction is applied across them: a rung verdict is about that rung.
+        The expected number of STILL_CHANGING verdicts arising from noise alone
+        across a full campaign is therefore about 0.12, and the analysis PRINTS
+        that number rather than leaving the reader to compute it.
+    CLEARLY_TOO_SMALL:
+      rule: >
+        max_lambda |z| >= 2 * z_crit at L=48 or L=64, OR (both crossings valid
+        under XV1 and |crossing shift| >= 2 grid spacings).
+    STILL_CHANGING:
+      rule: >
+        max_lambda |z| >= z_crit at L=48 or L=64, OR (both crossings valid and
+        |crossing shift| >= 1 grid spacing).
+    ROUGHLY_STABLE:
+      rule: >
+        max_lambda |z| < z_crit at both L=48 and L=64, AND either both crossings
+        are valid with |shift| < 1 grid spacing, or neither is valid (in which
+        case the caveat column records that the verdict rests on curves alone).
+      means: >
+        The curves overlap within the statistical resolution of THIS survey at
+        R = 16.
+      does_not_mean: >
+        Finite-N_c bias is bounded, small, certified, or converged. The
+        N_c -> infinity target is unknown, so the movement measured here is
+        DRIFT, never bias. The analysis script prints this sentence next to
+        every ROUGHLY_STABLE verdict.
+
+# ---------------------------------------------------------------------------
+discretisation_control:
+  arm: E_dtau_z010
+  cell: {zeta: 0.10, L: 64, N_c: 512, lambda: 0.100}
+  legs: [3.0, 12.0]
+  sixth_leg_source: M_z010_nc512      # dtau_mult = 6 at the same cell and R
+  submission_dependency: >
+    The control cannot be analysed until M_z010_nc512 has returned, because its
+    dtau_mult = 6 leg lives there. This is deliberate: running that leg twice
+    under two seed blocks and comparing the halves as one measurement is the
+    error being avoided.
+  test: three-way comparison of the cell mean, 3 combined SEM
+  may_conclude: >
+    "no obvious dtau_mult dependence is detected at this one cell" or "an
+    obvious dependence is detected at this one cell".
+  may_not_conclude: >
+    anything global, anything about other zeta, other L, other N_c, other
+    lambda, or any discretisation theorem. dtau_mult != 6 rows are NEVER pooled
+    with the production corpus.
+
+# ---------------------------------------------------------------------------
+handling_of_data:
+  smoothing: forbidden
+  interpolation_replacing_a_measurement: forbidden
+  imposed_monotonicity: forbidden
+  value_based_exclusion: forbidden
+  outlier_removal: forbidden
+  missing_cells: flagged_and_counted_never_imputed
+  status_not_ok_rows: counted_and_reported_never_silently_dropped
+  audit_block_required: >
+    Every run of the analysis prints a block recording smoothing_applied,
+    value_based_exclusions, lambda_points_removed, populations_removed and
+    grid_extended: all must be False/0 and the block is part of the output.
+
+comparisons:
+  zeta_035_reference_row:
+    source: TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION
+    value: L48-L64 crossing 0.23691, N_c = 1024, R = 24, 17-point grid, INTERIOR
+    matched_observable_check:
+      observable_id: MATCHED (OBS-CMI-001 both sides)
+      estimator: MATCHED (cmi_weighted_mean, across-population SEM)
+      parameterization: MATCHED (lambda = alpha/(alpha+w))
+      region_convention: MATCHED
+      dtau_mult: MATCHED (6.0)
+      resample_scheme: MATCHED (systematic)
+      sampler_bytes: MATCHED (sha256 0a33c403...)
+      R: NOT MATCHED (24 there, 16 here)
+      lambda_grid: NOT MATCHED (different grid, different zeta)
+    consequence: >
+      Because R and the lambda grid are NOT matched, the 0.35 row is quoted as a
+      REFERENCE only. It is never pooled into any statistic computed here, never
+      differenced against a measured row, and never used to define a threshold.
+
+figures:
+  primary: one per zeta, CMI(lambda) with the five N_c overlaid, panelled by L
+  alternative: one per (zeta, L), CMI(lambda) for all five N_c on one axis
+  difference: one per zeta, Delta_N(lambda) for the four rungs, with combined SEM
+  status: validation figures, NOT manuscript figures
+  error_bars: across-population SEM, always, on every point
+
+prohibited_outputs:
+  - lambda_c(zeta) or any phase-boundary estimate
+  - any boundary exponent phi, or any statement moving DISP-PHI-001
+  - N_c^req(zeta), or any fit of N_c against zeta
+  - transfer of a zeta = 0.35 coefficient to any other zeta
+  - the word "certified" applied to any N_c, convergence, crossing or rung
+  - any claim about L > 64 or N_c > 2048
+
+# ---------------------------------------------------------------------------
+amendments:
+  amendment_1:
+    date: 2026-09-06
+    stage: after stage_3_candidates closed, BEFORE any datum exists
+    what_changed: >
+      The qualitative thresholds were 'max|z| >= 2' for STILL_CHANGING and
+      'max|z| >= 4' for CLEARLY_TOO_SMALL. They are now stated against z_crit,
+      a multiplicity-corrected critical value for the maximum of n standardised
+      differences (3.451 at n = 18).
+    why: >
+      tools/smoke_test.py, run on SYNTHETIC data with an injected drift of
+      EXACTLY ZERO, classified the rung STILL_CHANGING. max|z| is a maximum
+      over ~18 comparisons, so under the null it is around 2.5-3.2 and the old
+      threshold of 2 was below the noise floor of its own statistic. The old
+      rule would have reported almost every rung as still moving, at every
+      zeta, whatever the data did -- a test that cannot return its own null.
+    authorised_by: >
+      lead, TASK-2026-09-06-NC-ZETA-MOCKPROD, recorded via
+      research/tools/task_phase.py amend. No datum existed when this was made
+      and none could have influenced it: the failure was found on synthetic
+      data with a known answer.
+    what_did_not_change: >
+      INCONCLUSIVE is still evaluated first and its rule is untouched. The
+      crossing-shift criteria in grid spacings are untouched. The four class
+      names, their order, and the prohibition on reading ROUGHLY_STABLE as
+      convergence are untouched.
+
+  amendment_2:
+    date: 2026-09-06
+    stage: after stage_3_candidates closed and after redteam_dispatched, but
+      BEFORE any datum exists
+    trigger: >
+      The independent red team killed candidate C1 on its ANALYSIS half, by
+      executing the shipped script on injected data at the noise level measured
+      in the real zeta = 0.35 corpus. The measurement package -- grids, ladder,
+      seeds, cost model, SLURM -- survived and is unchanged by this amendment.
+    what_changed:
+      R1: >
+        The recommendation rule is now SPECIFIED (recommendation_rule above). It
+        had no rule anywhere in this file, so the script invented
+        first-stable-wins.
+      R2: >
+        The INCONCLUSIVE gate's "or" is stated as a MAXIMUM over L and is
+        evaluated on BOTH rungs. This is a clarification of what the rule
+        already said; the implementation had it as a minimum on one rung.
+      R3: >
+        A minimum-detectable-effect is now required beside every verdict.
+      R4: >
+        z_crit is SIMULATED at the actual R rather than taken from a normal
+        quantile, and the family-wise rate across rungs is stated and printed.
+    what_did_not_change: >
+      The four class names and their order, INCONCLUSIVE-first, the
+      crossing-validity rule XV1, the six crossing outcome classes, the
+      prohibition on reading ROUGHLY_STABLE as convergence, every grid, the
+      ladder, R, and every prohibited output.
+    authorised_by: >
+      lead, TASK-2026-09-06-NC-ZETA-MOCKPROD, recorded via
+      research/tools/task_phase.py amend. No datum existed when this was made.
+      The defects were demonstrated on injected and simulated data by an
+      independent reviewer and reproduced by the lead before the change.

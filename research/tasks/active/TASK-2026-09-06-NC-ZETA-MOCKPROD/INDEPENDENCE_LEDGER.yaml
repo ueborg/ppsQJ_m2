@@ -1,0 +1,136 @@
+# INDEPENDENCE_LEDGER — TASK-2026-09-06-NC-ZETA-MOCKPROD
+#
+# What independence this run actually obtained, and where it obtained none.
+# Filled in BEFORE the phrase "independently verified" appears anywhere. Two
+# checks over the same source representation are not methodologically
+# independent, however different the commands.
+schema_version: 1
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+
+checks:
+
+  - conclusion: >
+      The Ruche per-clone-window rate is flat in N_c at L in {32, 48, 64}, and
+      rate ~ N_c^0.1871 is refuted by rungs returned since it was fitted.
+    method_a: >
+      lead: scan of research/tasks/**/results/*.json, rate = wall_s/(N_c*n_steps),
+      worst case per (L, N_c) rung; the law applied forward from the smallest
+      measured rung.
+    method_b: >
+      numerics investigator: independent scan of the same files, 4 984 rows,
+      MEDIAN rate per (L, N_c); the law's three fitted L=128 points reproduced
+      and compared against the later L=64 rungs.
+    source_representation_a: stored result JSONs
+    source_representation_b: stored result JSONs
+    shared_assumptions:
+      - the stored wall_s and n_steps are what the sampler actually did
+      - status == "ok" rows are usable
+      - the code path is identical across all rows (same sha256 sampler)
+    varied_assumptions:
+      - worst-case versus median summary statistic
+      - forward application from the smallest rung versus refit
+    classification: >
+      IMPLEMENTATION-INDEPENDENT, NOT REPRESENTATION-INDEPENDENT. Two people,
+      two scripts, ONE source representation. If the stored wall_s were
+      systematically wrong, both would be wrong together. The agreement is
+      evidence against arithmetic error, not against a corrupted corpus.
+    strongest_justified_wording: >
+      "Two independent implementations reading the same stored corpus agree."
+    rejected_wording: >
+      "Independently verified." There is no second representation of Ruche
+      runtime anywhere; nothing else in the repository could confirm it.
+
+  - conclusion: >
+      rho(zeta) = 0.4486, 0.6391, 2.3720 at zeta = 0.10, 0.20, 0.70.
+    method_a: lead, log-log interpolation over the four ALGRD L, max over L.
+    method_b: >
+      numerics investigator, same interpolation, reported per L, recommending
+      L = 64 rather than the max.
+    source_representation_a: ALGRD b0_L*.json
+    source_representation_b: ALGRD b0_L*.json
+    shared_assumptions:
+      - the ALGRD intercept-fitted sec_per_clone_window is meaningful
+      - the ratio at fixed L cancels the L-confounded N_c
+    varied_assumptions:
+      - max over L (lead, errs upward) versus L = 64 (investigator, the largest L run)
+    classification: >
+      SAME REPRESENTATION, and it is the ONLY zeta-resolved timing in the
+      repository. There is no independent check available and none was
+      manufactured. The lead adopted the max because it errs upward; the
+      disagreement is recorded in COST_MODEL.md section 4 rather than resolved.
+    strongest_justified_wording: >
+      "Re-derived from the raw JSON and agreeing with the predecessor's table to
+      better than 0.1 %."
+    rejected_wording: >
+      "Confirmed." Agreeing with a predecessor who read the same four files is
+      reproduction, not confirmation.
+
+  - conclusion: >
+      Both open positions of DISP-PHI-001 are strictly interior to each
+      proposed lambda grid.
+    method_a: >
+      lead: anchor 0.23691, margins to the nearer grid END in units of
+      tau_lambda, plus an independent re-derivation of the STAGE1 bracket rule
+      at all three zeta.
+    method_b: >
+      numerics investigator: same anchor, margins to the nearest grid POINT,
+      plus the phi range each grid resolves edge-to-edge.
+    source_representation_a: canonical claims + the predecessor's crossing
+    source_representation_b: canonical claims + the predecessor's crossing
+    shared_assumptions:
+      - 0.23691 is the right anchor
+      - anchoring both laws at zeta = 0.35 is the right construction
+    varied_assumptions:
+      - margin measured to a grid end versus to a grid point
+    classification: >
+      SAME REPRESENTATION, DIFFERENT QUANTITY. The two margin figures are not
+      two estimates of one thing: distance to a grid POINT is not a coverage
+      measure, and proximity to a point is desirable rather than risky. The
+      apparent disagreement (0.83 tau versus 8.3 tau at zeta = 0.10, phi = 1/2)
+      is resolved in LAMBDA_GRID_DECISION.md section 3 by naming the quantities,
+      not by preferring one number.
+    strongest_justified_wording: >
+      "Every grid is strictly wider than the independently re-derived bracket
+      rule on both sides, at all three zeta."
+    rejected_wording: >
+      "The grids are known to contain the crossing." They contain both
+      CANDIDATE LAWS. The crossing's actual location is unknown, which is why
+      ABOVE_GRID and BELOW_GRID are pre-registered outcome classes.
+
+  - conclusion: >
+      The qualitative classifier separates the cases it names.
+    method_a: >
+      tools/smoke_test.py, eight synthetic cases with KNOWN answers, three of
+      which the classifier is required to FAIL.
+    method_b: none.
+    classification: >
+      NO INDEPENDENCE. One author, one test suite, one implementation. The
+      smoke test shows the classifier behaves as its author intended on data its
+      author constructed. It cannot show the intention was right.
+    what_would_add_independence: >
+      A second reviewer reading analysis/mockprod_analysis.py against
+      ANALYSIS_SPEC.yaml line by line without seeing the smoke test. That is
+      exactly what the red team was asked to do, and its verdict is in
+      REDTEAM.yaml.
+    strongest_justified_wording: >
+      "The classifier separates eight constructed cases, including three it is
+      required to fail."
+    rejected_wording: >
+      "The analysis is verified." It is tested against its author's own
+      expectations.
+
+where_no_independence_was_obtained:
+  - >
+    Runtime and memory: one cluster, one corpus, no second representation, and
+    NO Ruche MaxRSS measurement exists anywhere in this repository. Every memory
+    number descends from local macOS ru_maxrss on a different allocator.
+  - >
+    rho(zeta): one dataset, four L, local, in a different measurement regime
+    from production.
+  - >
+    f_lam: one representation, extrapolated ~4x below its calibrated window at
+    the low-zeta end. COST_MODEL.md section 5 names it the weakest input in the
+    package.
+  - >
+    External prior art: no search was performed anywhere in this task, by
+    instruction. External novelty is UNRESOLVED, not favourable.

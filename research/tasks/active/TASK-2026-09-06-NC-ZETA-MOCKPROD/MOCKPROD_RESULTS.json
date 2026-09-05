@@ -1,0 +1,109 @@
+{
+ "reference_zeta035": {
+  "source": "TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION",
+  "pair": "L48-L64",
+  "crossing": 0.23691,
+  "N_c": 1024,
+  "R": 24,
+  "grid_points": 17,
+  "outcome": "INTERIOR",
+  "matched": false,
+  "why_not_matched": "different R (24 vs 16) and a different lambda grid"
+ },
+ "zetas": {
+  "0.10": {
+   "grid": [
+    0.04,
+    0.055,
+    0.07,
+    0.085,
+    0.1,
+    0.115,
+    0.13,
+    0.145,
+    0.16
+   ],
+   "step": 0.015,
+   "rungs": {},
+   "curves": {},
+   "crossings": {}
+  },
+  "0.20": {
+   "grid": [
+    0.08,
+    0.1025,
+    0.125,
+    0.1475,
+    0.17,
+    0.1925,
+    0.215,
+    0.2375,
+    0.26
+   ],
+   "step": 0.022499999999999992,
+   "rungs": {},
+   "curves": {},
+   "crossings": {}
+  },
+  "0.70": {
+   "grid": [
+    0.25,
+    0.284,
+    0.318,
+    0.351,
+    0.385,
+    0.419,
+    0.453,
+    0.486,
+    0.52
+   ],
+   "step": 0.034,
+   "rungs": {},
+   "curves": {},
+   "crossings": {}
+  }
+ },
+ "files_read": 0,
+ "files_rejected": 0,
+ "duplicate_seeds_discarded": 0,
+ "audit": {
+  "smoothing_applied": false,
+  "value_based_exclusions": 0,
+  "lambda_points_removed": 0,
+  "populations_removed": 0,
+  "grid_extended": false
+ },
+ "recommendation": [
+  {
+   "zeta": 0.1,
+   "smallest_nc": null,
+   "confidence": "none",
+   "caveat": "no rung evaluable yet",
+   "worst_mde_pct": null
+  },
+  {
+   "zeta": 0.2,
+   "smallest_nc": null,
+   "confidence": "none",
+   "caveat": "no rung evaluable yet",
+   "worst_mde_pct": null
+  },
+  {
+   "zeta": 0.7,
+   "smallest_nc": null,
+   "confidence": "none",
+   "caveat": "no rung evaluable yet",
+   "worst_mde_pct": null
+  }
+ ],
+ "dtau_control": {
+  "cell": {
+   "zeta": 0.1,
+   "L": 64,
+   "N_c": 512,
+   "lam": 0.1
+  },
+  "status": "incomplete",
+  "legs_present": []
+ }
+}

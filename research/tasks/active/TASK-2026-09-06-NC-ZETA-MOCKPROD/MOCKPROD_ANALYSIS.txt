@@ -1,0 +1,156 @@
+==============================================================================
+  TASK-2026-09-06-NC-ZETA-MOCKPROD  --  mock-production survey
+  frozen rules: ANALYSIS_SPEC.yaml   observable: OBS-CMI-001
+==============================================================================
+  result files read: 0   runs with status != ok or unreadable: 0
+  duplicate seeds discarded (same population, two files): 0
+  Every error bar below is ACROSS INDEPENDENT POPULATIONS.
+  VIF is a diagnostic (DEC-MASTER-METRIC-001) and is never a
+  standard error. R = 16, matched at every compared cell.
+  THIS IS A SURVEY. It certifies nothing and no verdict below may
+  be read as convergence. ROUGHLY STABLE means the curves overlap within the statistical resolution of THIS survey at R = 16. It does NOT mean finite-N_c bias is bounded, small, or converged: the N_c -> infinity target is unknown, so what is measured here is DRIFT, never bias.
+
+==============================================================================
+  zeta = 0.10   grid 0.040 .. 0.160, step 0.0150, 9 points
+==============================================================================
+
+  [N_c = 128]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 256]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 512]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 1024]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 2048]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  CROSSINGS.  LOCATOR QUALITY ONLY. Nothing here is
+  lambda_c(zeta) and nothing here may become a phase boundary.
+
+  N_c RUNG COMPARISON
+     128 -> 256    not evaluable: a rung has returned nothing
+     256 -> 512    not evaluable: a rung has returned nothing
+     512 -> 1024   not evaluable: a rung has returned nothing
+    1024 -> 2048   not evaluable: a rung has returned nothing
+
+==============================================================================
+  zeta = 0.20   grid 0.080 .. 0.260, step 0.0225, 9 points
+==============================================================================
+
+  [N_c = 128]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 256]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 512]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 1024]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 2048]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  CROSSINGS.  LOCATOR QUALITY ONLY. Nothing here is
+  lambda_c(zeta) and nothing here may become a phase boundary.
+
+  N_c RUNG COMPARISON
+     128 -> 256    not evaluable: a rung has returned nothing
+     256 -> 512    not evaluable: a rung has returned nothing
+     512 -> 1024   not evaluable: a rung has returned nothing
+    1024 -> 2048   not evaluable: a rung has returned nothing
+
+==============================================================================
+  zeta = 0.70   grid 0.250 .. 0.520, step 0.0340, 9 points
+==============================================================================
+
+  [N_c = 128]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 256]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 512]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 1024]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  [N_c = 2048]  0 of 27 cells returned
+      nothing returned for this rung yet.
+
+  CROSSINGS.  LOCATOR QUALITY ONLY. Nothing here is
+  lambda_c(zeta) and nothing here may become a phase boundary.
+
+  N_c RUNG COMPARISON
+     128 -> 256    not evaluable: a rung has returned nothing
+     256 -> 512    not evaluable: a rung has returned nothing
+     512 -> 1024   not evaluable: a rung has returned nothing
+    1024 -> 2048   not evaluable: a rung has returned nothing
+
+==============================================================================
+  SUMMARY TABLE
+==============================================================================
+  zeta |   N_c | L48-L64 rough crossing | quality        | change from previous rung          | status
+  0.35 |  1024 | 0.23691 (REFERENCE)   | INTERIOR       | not measured here         | quoted from TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION
+       |       | R = 24, 17-point grid -- NOT matched to this survey's R = 16
+       |       | and lambda grid, so it is a reference point, never a
+       |       | row this task measured and never pooled into any statistic.
+
+==============================================================================
+  PRACTICAL RECOMMENDATION
+==============================================================================
+  zeta | smallest N_c that LOOKS adequate | confidence | caveat
+  RULE: the smallest N_c such that THAT RUNG AND EVERY HIGHER RUNG is
+  ROUGHLY_STABLE. An INCONCLUSIVE rung breaks the chain and is never
+  skipped over. Confidence is "low" at best, always.
+  0.10 | None                             | none       | no rung evaluable yet
+  0.20 | None                             | none       | no rung evaluable yet
+  0.70 | None                             | none       | no rung evaluable yet
+  0.35 | REFERENCE ROW -- not measured here. The predecessor's own
+       | finding at this zeta was CONSISTENT BUT R-LIMITED, i.e. R and
+       | not N_c was the binding budget.
+
+  MULTIPLICITY. z_crit is corrected WITHIN a rung (alpha = 0.01 over
+  the ~18 comparisons a rung makes) and NOT across rungs, because a
+  rung verdict is a statement about that rung. Over the 0 rung
+  classifications in this run the expected number of STILL_CHANGING
+  verdicts arising from noise alone is about 0.00.
+  z_crit is SIMULATED at R = 16, not read off a normal quantile: the
+  normal Sidak point has a true null exceedance of 3.05 %, not 1 %.
+
+  Every entry above is a QUALITATIVE, resolution-limited judgement.
+  ROUGHLY STABLE means the curves overlap within the statistical resolution of THIS survey at R = 16. It does NOT mean finite-N_c bias is bounded, small, or converged: the N_c -> infinity target is unknown, so what is measured here is DRIFT, never bias.
+
+==============================================================================
+  DISCRETISATION CONTROL  zeta=0.10 L=64 N_c=512 lambda=0.100
+==============================================================================
+  legs returned: [] of [3.0, 6.0, 12.0] -- NOT EVALUABLE.
+  The dtau_mult = 6 leg lives in M_z010_nc512; the control cannot
+  be read until that arm has returned. This is by design.
+
+==============================================================================
+  HANDLING AUDIT (ANALYSIS_SPEC.yaml -> handling_of_data)
+==============================================================================
+  smoothing_applied            False
+  value_based_exclusions       0
+  lambda_points_removed        0
+  populations_removed          0
+  grid_extended                False
+  Missing cells are printed as MISSING above and are never imputed.
+
+==============================================================================
+  WHAT THIS ANALYSIS MAY NOT SAY
+==============================================================================
+  * No crossing above is lambda_c(zeta) or a finite-size estimate of it.
+  * No boundary exponent phi is measured; DISP-PHI-001 stays open.
+  * No N_c^req(zeta) is produced and none may be fitted from these numbers.
+  * No zeta = 0.35 coefficient is transferred to any other zeta.
+  * Nothing here is certified, and no N_c here is converged.
+  * Nothing here extends to L > 64 or N_c > 2048.

@@ -1,0 +1,132 @@
+# SOURCE_INSPECTIONS — TASK-2026-09-06-NC-ZETA-MOCKPROD
+#
+# APPEND-ONLY and NEVER FROZEN. What was actually read during the run, as
+# opposed to SOURCE_REGISTER.md, which froze the SCOPE at stage_1_problem.
+schema_version: 1
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+
+external_literature_inspected: []
+external_search_performed: false
+why: >
+  Brief section 14 forbids a literature review and research/RESOURCE_POLICY.md
+  section 5.5 says not to spawn a role because it exists. The question -- how
+  large a clone population this sampler needs on this cluster -- has no external
+  answer. CONSEQUENCE, stated rather than glossed: external novelty for every
+  candidate in this task is UNRESOLVED, not favourable, and no statement
+  anywhere in this task is supported by the absence of a search.
+
+inspections:
+
+  - id: OBS-CMI-001
+    kind: canonical observable
+    date: 2026-09-05
+    sections_read: whole file
+    establishes: >
+      The locator definition, the region convention (verified 2026-08-10 against
+      worker_clone_pps.py:214), the guard L % 4 == 0, the stored field CMI_mean,
+      and the parameterization lambda = alpha/(alpha+w).
+    does_not_establish: >
+      Anything about finite-N_c behaviour, about zeta dependence, or about what
+      a cross-L crossing of CMI means physically. It records that CMI is peaked
+      in lambda and is NOT a 0->1 order parameter.
+    verifier: lead
+
+  - id: DISP-PHI-001
+    kind: canonical dispute
+    date: 2026-09-05
+    sections_read: whole file
+    establishes: >
+      The dispute is OPEN with exactly two positions, CB-PHI-HALF-001 and
+      CB-PHI-LINEAR-001, and its resolution_rule forbids closing it by recency,
+      elegance or headline status.
+    does_not_establish: >
+      Any prediction this task may rely on. Both positions are used ONLY to size
+      lambda grids that contain both, and this task moves the dispute in neither
+      direction.
+    verifier: [lead, numerics investigator]
+
+  - id: CB-PHI-HALF-001
+    kind: canonical claim
+    date: 2026-09-05
+    sections_read: whole file
+    establishes: position phi = 1/2, provisional, contested, confidence low.
+    does_not_establish: a prefactor this task may treat as measured.
+    verifier: [lead, numerics investigator]
+
+  - id: CB-PHI-LINEAR-001
+    kind: canonical claim
+    date: 2026-09-05
+    sections_read: whole file
+    establishes: position phi = 1, provisional, contested, confidence low.
+    does_not_establish: a prefactor this task may treat as measured.
+    verifier: [lead, numerics investigator]
+
+  - id: DEC-MASTER-METRIC-001
+    kind: canonical decision
+    date: 2026-09-05
+    sections_read: whole file
+    establishes: >
+      ESS, GESS, Var_log_W, Var_B_L, sum_D2 and coalescence_budget are
+      diagnostic_only; the production efficiency metric is t_wall * sigma^2.
+    consequence_here: >
+      ANALYSIS_SPEC.yaml derives every uncertainty from independent populations
+      and lists VIF among diagnostics. VIF is reported so the gap between
+      within-population and across-population spread is visible, never so that
+      it can be divided out.
+    verifier: lead
+
+  - id: TV-EXEC-ALGRD-b0
+    kind: execution-plane data (provenance)
+    path: research/tasks/active/TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json
+    date: 2026-09-05
+    sections_read: sec_per_clone_window, zeta, lam, N_c, L for all 16 blocks
+    establishes: >
+      The only zeta-resolved timing anywhere in this repository. Ratios at fixed
+      L give rho(zeta).
+    does_not_establish: >
+      An absolute rate (local, N_c <= 500, tiny n_steps, intercept-fitted), or a
+      rate at fixed lambda -- lambda co-varies as 0.51*sqrt(zeta) throughout.
+    verifier: [lead, numerics investigator]
+
+  - id: TV-EXEC-LOWLAMBDA
+    kind: execution-plane result (provenance)
+    path: research/tasks/active/TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt
+    date: 2026-09-05
+    sections_read: section A (curves), section D (crossings), section E (X1-X7)
+    establishes: >
+      At zeta = 0.35, N_c = 1024, R = 24, 17 points: L48-L64 crossing 0.23691
+      INTERIOR; L32-L64 0.23145 INTERIOR; L32-L48 0.2005 STILL_BOUNDARY.
+    does_not_establish: >
+      lambda_c(0.35). The file says so itself: the output is LOCATOR QUALITY,
+      not a finite-size estimate, and L <= 64 is at or below the programme's own
+      corpus floor.
+    used_here_as: the reference row and the grid anchor, never a measured row.
+    verifier: [lead, numerics investigator]
+
+  - id: TV-EXEC-PLATEAU
+    kind: execution-plane result (provenance)
+    path: research/tasks/active/TASK-2026-09-03-NC-PLATEAU-CALIBRATION/COST_MODEL.md
+    date: 2026-09-05
+    sections_read: sections 2, 3, 4 (rates, the N_c law, memory)
+    establishes: >
+      The measured-memory finding (the inherited formula under-predicts real
+      peak RSS by up to 1.6x at 15 probed cells) and the adopted
+      rate ~ N_c^0.1871.
+    contradicted_here: >
+      The N_c law, by that campaign's own later-returned rungs. See
+      TV-NC0187-REFUTED-001.
+    verifier: [lead, numerics investigator]
+
+  - id: TV-EXEC-STAGE1
+    kind: execution-plane design (provenance)
+    path: research/tasks/active/TASK-2026-09-06-NC-ZETA-STAGE1/CAMPAIGN_DESIGN.md
+    date: 2026-09-05
+    sections_read: sections 1-3a (primary object, zeta set, bracket rule)
+    establishes: >
+      A law-agnostic bracket rule: span both predictions plus
+      max(25 % of the law span, 4*tau_lambda) each side.
+    used_here_as: >
+      A CROSS-CHECK on a rule this task re-derived independently, never as
+      design authority. The file is not modified; check_predecessor.py and
+      preflight P15 verify it byte for byte.
+    verifier: lead

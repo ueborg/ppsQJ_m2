@@ -1,0 +1,1350 @@
+# RED TEAM — TASK-2026-09-06-NC-ZETA-MOCKPROD. Charter section 7 Stage 8.
+# SCHEMA VERSION 2. One review per candidate, nine mandated attacks each.
+#
+# Scope set by the researcher's brief section 14: a small adversarial
+# IMPLEMENTATION review -- bracket coverage, duplication, runtime/memory,
+# analysis correctness. No theory investigation, no literature review, no
+# reopening of the strict certification question. All work read-only, T0
+# analysis compute only; no simulation was run and nothing was submitted.
+#
+# Everything below was reconstructed from the raw package, the frozen
+# investigator report, canonical state and this reviewer's own execution of the
+# shipped code. No lead summary, synthesis, A-H assessment or recommendation was
+# read. ASSESSMENT_AH.md, VALIDATION.md, RECOMMENDATION.md and RESEARCH_MEMO.md
+# appeared in the task directory DURING this review and were deliberately NOT
+# opened.
+schema_version: 2
+
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+reviewer: red-team (opus), Stage 8, independent of the proposer
+date: '2026-09-05'
+
+inputs_seen:
+  claims:
+    - CB-PHI-HALF-001
+    - CB-PHI-LINEAR-001
+    - DISP-PHI-001
+    - OBS-CMI-001
+    - DEC-MASTER-METRIC-001
+    - EV-DATA-BOUNDARYCSV-001
+  evidence:
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/CHARTER.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/CANDIDATES.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/COST_MODEL.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/ANALYSIS_SPEC.yaml
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/LAMBDA_GRID_DECISION.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/SEED_LEDGER.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/CONDITIONAL_SUBMISSION.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/HUMAN_SUBMISSION.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/FALSIFICATION_PLAN.md
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/TASK_MANIFEST.yaml
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/analysis/mockprod_analysis.py
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/tools/cost_model.py
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/tools/build_arms.py
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/tools/smoke_test.py
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/shared/preflight.py
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/shared/run_pack.py
+    - research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/agent_reports/numerics.md
+    - research/tasks/active/TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt
+    - research/tasks/active/TASK-2026-09-05-NC-ZETA-CALIBRATION/FALSIFICATION_RESULTS.md
+  task_verified:
+    - TV-RATE35-001
+    - TV-NC0187-REFUTED-001
+    - TV-RHO-ZETA-001
+    - TV-NOREUSE-001
+    - TV-GRIDCOVER-001
+    - TV-ALAM-CORRECTION-001
+    - TV-ZCRIT-001
+    - TV-PREDECESSOR-INTACT-001
+    - RT-CLASSIFIER-LENIENT-001
+    - RT-RECOMMENDATION-FIRST-STABLE-001
+    - RT-ZCRIT-UNDERCORRECTED-001
+    - RT-1OVERNC-FIT-001
+    - RT-RATEFLAT-MATCHED-001
+    - RT-RHO-CONVEXITY-001
+    - RT-SINGLEROW-PACKS-001
+    - RT-SCRATCH-INGEST-001
+    - EXT-DOUCET-JOHANSEN-2011
+  lead_summary_seen: false
+
+candidate_reviews:
+
+  # =========================================================================
+  C1:
+    statement: >
+      "Measure the full N_c ladder {128, 256, 512, 1024, 2048} at zeta in
+      {0.10, 0.20, 0.70}, L in {32, 48, 64}, T = L, nine lambda per zeta,
+      R = 16 matched everywhere, dtau_mult = 6; hold zeta = 0.70, N_c = 2048
+      behind an interlock; add a two-leg dtau control at zeta = 0.10."
+      Reviewed as it ships -- arms, seeds, cost model, SLURM, frozen
+      ANALYSIS_SPEC.yaml, the interlock, and analysis/mockprod_analysis.py,
+      which is the file that turns 6 080 populations into the deliverable.
+    verdict: killed
+    reason: >
+      The MEASUREMENT half of C1 survived every attack I could mount: the
+      lambda grids bracket both DISP-PHI-001 positions with the stated margins
+      (I re-derived all six predictions and both phi windows by hand and they
+      are right), the seed block is genuinely free (6 512 distinct seeds, zero
+      collisions against 54 external manifests and 5 176 stored populations),
+      no design cell duplicates any of the 134 stored cells, --time is >= 2.24x
+      the model estimate everywhere, --mem is >= 1.76x a 1.45x-inflated model,
+      and the refutation of rate ~ N_c^0.1871 SURVIVED my attempt to break it
+      on the sample-size and lambda confound it appeared to have
+      (RT-RATEFLAT-MATCHED-001).
+      The ANALYSIS half does not survive. Two defects in
+      analysis/mockprod_analysis.py, both demonstrated by executing the shipped
+      code, combine into a deliverable that is wrong in a systematic and
+      predictable direction:
+      (1) the headline "smallest N_c that LOOKS adequate" row has NO rule in
+      the frozen ANALYSIS_SPEC.yaml at all, and is implemented (lines 475-492)
+      as the FIRST rung classifying ROUGHLY_STABLE, never revised by a higher
+      rung classifying STILL_CHANGING. With a uniform, real, monotone 3-4 %
+      per-rung drift injected at the corpus-measured noise level, the shipped
+      analysis prints "0.10 | 128 | low" while its own rung table two screens
+      above reads "256 -> 512 STILL_CHANGING" (RT-RECOMMENDATION-FIRST-STABLE-001).
+      (2) the INCONCLUSIVE gate, whose stated purpose in ANALYSIS_SPEC.yaml is
+      that "a noisy rung can never be reported as stable by default", is coded
+      as min(rel_sem_L48, rel_sem_L64) > 0.05 on the HIGHER-N_c curve only
+      (lines 237, 254). The same English "or" is a MAXIMUM in the
+      STILL_CHANGING rule and a MINIMUM here. A rung whose L=64 relative SEM is
+      0.30 -- six times the threshold -- classifies ROUGHLY_STABLE and yields a
+      recommendation (RT-CLASSIFIER-LENIENT-001).
+      These are not interpretation problems, which is what C1 field 10 claims
+      ("the objections bite on interpretation... answered by a pre-registered
+      wording limit"). They are the product. And they are directional: because
+      the across-population SEM at fixed R falls monotonically with N_c
+      (measured: 0.097 / 0.030 / 0.024 / 0.019 / 0.016 / 0.011 / 0.006 at
+      N_c = 64..8192), the LOWEST rung is always the one most likely to read
+      "stable" for want of resolution, and defect (1) converts that into the
+      cheapest possible recommendation. The same classifier is load-bearing for
+      a mid-campaign compute decision: CONDITIONAL_SUBMISSION.md releases or
+      holds 861.6 core-hours on classify_rung's verdict for the zeta = 0.70
+      512 -> 1024 rung.
+      C1 is killed AS BUILT. Nothing in the 6 080 populations, the seeds, the
+      grids, the cost model or the SLURM needs to change; the repairs are
+      pre-data, cost no compute, and are listed in
+      overall_task_assessment.recommendation_basis.
+    surviving_scope: >
+      not applicable (killed); see recommendation_basis for what survived
+      intact and what must be repaired before resubmission as C1'.
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: >
+          Yes, in a stronger form, and using this project's own data. The
+          package's founding premise -- repeated in CHARTER.md section 5, in
+          ANALYSIS_SPEC.yaml `does_not_mean`, and in the NOT_CONVERGENCE string
+          printed beside every verdict -- is "the N_c -> infinity target is
+          unknown, so the movement measured here is DRIFT, never bias." At the
+          one cell where that premise can be tested it is false: at
+          zeta = 0.35, L = 64, lambda = 0.3032 the stored corpus fits
+          CMI(N_c) = c0 + c1/N_c across ALL SIX rungs N_c = 64..8192 with
+          chi2/dof = 0.92 and c0 = 0.34542 +- 0.00114 (RT-1OVERNC-FIT-001).
+          A one-parameter extrapolation of exactly the ladder this task will
+          collect returns the limit to 0.3 % and, with it, the per-rung
+          DISTANCE FROM THE LIMIT -- which is the quantity a production planner
+          actually needs -- in place of a four-valued qualitative label. The
+          O(1/N) bias of an SMC estimator is standard, but I could not verify
+          that in a primary source (EXT-DOUCET-JOHANSEN-2011 is registered
+          not_inspected and carries nothing here), so this finding rests
+          entirely on my own fit to this repository's data.
+          Weakest claim the evidence supports: at one cell, one L, one lambda,
+          one zeta, the N_c -> infinity target is estimable and the frozen
+          analysis discards that. I am NOT claiming the 1/N_c form holds at
+          other zeta, in the CMI tails, or for the crossing location. Nor may
+          the fit be added to this task: ANALYSIS_SPEC.yaml is frozen and a
+          post-hoc estimator is a child task.
+        evidence: [RT-1OVERNC-FIT-001, EXT-DOUCET-JOHANSEN-2011, OBS-CMI-001]
+        severity: material
+        unresolved: >
+          Whether c0 + c1/N_c holds at zeta = 0.10 / 0.20 / 0.70 and across the
+          nine-lambda grid. Only the survey's own data can answer it, which is
+          an argument for a child task, not against the campaign.
+        effect_on_candidate: narrow_scope
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: >
+          Partly, and in the damaging direction. Given the corpus-measured
+          relative SEMs at R = 16 and the amended z_crit = 3.451, the modal
+          outcome of the classifier is determined more by the noise floor than
+          by the data: the minimum resolvable coherent drift is about 1.15
+          per-point sigma (the max-of-18 statistic gains roughly 2.3 under a
+          uniform offset -- confirmed by injection and consistent with the
+          sizing note in tools/smoke_test.py S2), i.e. about 6.7 % of CMI at
+          the 128 -> 256 rung against about 2.9 % at 1024 -> 2048. So the
+          classifier's power is a monotone function of N_c, and "the low rungs
+          look more stable than the high rungs" is partly an assumption of the
+          design rather than a finding about the physics. The survey does have
+          real power -- an injected 10 % per-rung drift is detected at every
+          rung -- so this is not a triviality result, but the ORDERING of the
+          verdicts across the ladder is partly built in.
+        evidence: [RT-RECOMMENDATION-FIRST-STABLE-001, RT-ZCRIT-UNDERCORRECTED-001]
+        severity: material
+        unresolved: >
+          There is no minimum-detectable-effect column anywhere in the package.
+          Adding one per rung, pre-data, would make this attack visible in the
+          output instead of only in a review.
+        effect_on_candidate: narrow_scope
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: >
+          No unfair baseline found; one advantaged comparison found and it is
+          correctly fenced. The zeta = 0.35 reference row (0.23691, N_c = 1024,
+          R = 24, 17-point grid) is quoted in the same SUMMARY TABLE as the
+          measured rows, which invites a visual comparison the text forbids;
+          but ANALYSIS_SPEC.yaml `comparisons` explicitly records R and the
+          lambda grid as NOT MATCHED, the code labels the row REFERENCE, and it
+          is never pooled or differenced. I verified the value and its
+          INTERIOR outcome class exist at
+          TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt:279.
+          I also checked the direction of the cost model's conservatism and
+          found it real but doubly counted: RATE35_MAX is a MAXIMUM over
+          populations attained at the LOWEST lambda in the corpus (0.1932 at
+          L = 32, 48, 64), and f_lam then multiplies again relative to
+          LAM_REF(0.35) = 0.3017. That inflates absolute core-hours by roughly
+          25 % on top of the max-not-median convention -- conservative for
+          --time, and harmless to the cost RATIOS on which C2, C3 and C4 were
+          killed.
+        evidence: [TV-RATE35-001, TV-GRIDCOVER-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: >
+          No. The design imports no external information: TV-NOREUSE-001 is
+          correct and I re-derived it independently -- 407 design cells against
+          134 stored cells, zero overlap on
+          (zeta, L, N_c, lambda, dtau_mult). The one cross-arm reuse (the
+          dtau_mult = 6 leg of the discretisation control living in
+          M_z010_nc512) is a genuine economy, not a hidden resource: the three
+          legs sit in different seed blocks (37 200 000+ against 38 500 000+),
+          so the three-way comparison remains across independent populations,
+          and preflight P13 enforces that the control arm carries only
+          dtau_mult in {3, 12}. I confirmed the required cell exists in
+          M_z010_nc512's manifest.
+        evidence: [TV-NOREUSE-001, DEC-MASTER-METRIC-001]
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: >
+          Yes, at three boundaries.
+          (a) The XV1 crossing-validity rule has three conditions and
+          fraction_exactly_one is not among them. classify_crossing computes
+          the bootstrap CI from ONLY those draws that produced exactly one sign
+          change, so a crossing that replicates in 20 % of draws can still be
+          reported INTERIOR with a quoted location and a tight-looking CI. The
+          quantity that would catch it is computed and printed and never binds.
+          (b) The outcome class NONE is effectively unreachable: the code
+          returns it only when no finite D exists anywhere, so every
+          no-sign-change curve is labelled ABOVE_GRID or BELOW_GRID purely by
+          which end has the smaller |D|, with no test of the "bootstrap mass
+          piling at that end" the spec requires. A curve nowhere near zero
+          acquires a directional statement it has not earned.
+          (c) Provenance boundary: the loader accepted fabricated populations
+          from the task's own scratch/ directory as measurements, and preflight
+          P14 reported 27 false duplicates from the same files. Both were
+          patched with a /scratch/ path exclusion DURING this review. The
+          residual hole is unpatched: load() still accepts any JSON anywhere
+          under the task tree with the right fields, does not deduplicate by
+          seed, and would silently treat a duplicated file as a second
+          independent population, deflating the SEM that every verdict rests on
+          (RT-SCRATCH-INGEST-001).
+        evidence: [RT-SCRATCH-INGEST-001, OBS-CMI-001, DEC-MASTER-METRIC-001]
+        severity: material
+        unresolved: >
+          Whether XV1 should carry a fraction_exactly_one floor is a change to a
+          frozen spec and therefore a child-task question, not a repair.
+        effect_on_candidate: downgrade_status
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: >
+          Yes, and this is the fatal one. The stated phenomenon is "how much do
+          the CMI(lambda) curves and their rough crossing locations still move"
+          as N_c rises. What is delivered is a four-valued label plus a headline
+          row, and the mapping from the phenomenon to that row is broken twice
+          over, demonstrated by executing the shipped code:
+          the "smallest N_c that LOOKS adequate" row is defined nowhere in the
+          frozen ANALYSIS_SPEC.yaml and is implemented as first-ROUGHLY_STABLE-
+          wins, so at a uniform 3-4 % per-rung drift it prints 128 while the
+          256 -> 512 rung on the same page reads STILL_CHANGING
+          (RT-RECOMMENDATION-FIRST-STABLE-001); and the INCONCLUSIVE guard that
+          is supposed to stop a noisy rung reading as stable is coded as a
+          minimum over the two L, on the higher-N_c curve only, so a rung with a
+          wholly unusable L = 64 (relative SEM 0.30) reads ROUGHLY_STABLE and
+          produces a recommendation (RT-CLASSIFIER-LENIENT-001). A shipped
+          product whose headline contradicts its own table is not a
+          resolution-limited measurement of the phenomenon; it is a proxy that
+          fails. The wording guards do hold in the text output -- NOT_CONVERGENCE
+          is printed beside every ROUGHLY_STABLE -- but they are absent from the
+          machine-readable deliverable: MOCKPROD_RESULTS.json's `recommendation`
+          rows carry smallest_nc, confidence and caveat and no convergence
+          guard at all.
+        evidence: [RT-RECOMMENDATION-FIRST-STABLE-001, RT-CLASSIFIER-LENIENT-001, OBS-CMI-001]
+        severity: fatal
+        unresolved: none
+        effect_on_candidate: kill
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: >
+          The measurement does not disappear, but one stated mitigation does.
+          CANDIDATES.md C1 field 5 and shared/run_pack.py both rest on "packs
+          are idempotent so a timeout costs only the unfinished rows". In the
+          two arms holding 74 % of the design's core-hours that guarantee is
+          empty: packs.csv shows conditional/M_z070_nc2048 is 432 packs of
+          exactly ONE row (slowest 17 745 s) and M_z070_nc1024 is 384 single-row
+          packs of 408, so a --time overrun loses the whole row on every
+          requeue and the row can never complete (RT-SINGLEROW-PACKS-001).
+          Whether that can happen turns on rho(0.70) = 2.372, which is the only
+          zeta-resolved timing that exists anywhere and is a LOCAL,
+          intercept-fitted, tiny-n_steps probe at N_c <= 500. I confirmed there
+          is no wall_s or n_steps field on any stored population off
+          zeta = 0.35, so no independent check is possible. I did find that
+          COST_MODEL.md section 4's claim that rho "errs upward" is not true of
+          one component: rate(zeta) is CONVEX in log-log, so the chord used to
+          interpolate the zeta = 0.35 denominator over-estimates it and
+          under-states rho(0.70) by 7-9 % (RT-RHO-CONVEXITY-001). Small against
+          the 2.43x --time margin, and it errs the wrong way.
+          By contrast the f_lam risk that the package names as its own weakest
+          input is smaller than advertised: because K*rate grows like lambda^0.5,
+          the binding pack in every zeta = 0.10 arm is at lambda = 0.160 where
+          f_lam = 1.004 and no extrapolation is used, and the extrapolated
+          lambda = 0.040 cells sit in short packs with >= 4.5x headroom against
+          a --time set by the arm's slowest pack.
+          Memory: modelled peak 1 743 MB at L = 64, N_c = 2048 against a 3G
+          request (1.76x) on top of a 1.45x inflation. Defensible; still no
+          Ruche MaxRSS anywhere, and an OOM kill costs a whole single-row pack
+          in the same arms.
+        evidence: [RT-SINGLEROW-PACKS-001, RT-RHO-CONVEXITY-001, TV-RHO-ZETA-001]
+        severity: material
+        unresolved: >
+          rho(0.70) has no production-regime validation and cannot get one from
+          this repository. The single cheapest fix is the one sacct line
+          RUCHE_RUNBOOK.md section 5 already asks for, plus a first-arm timing
+          readback before M_z070_nc1024 is submitted.
+        effect_on_candidate: narrow_scope
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: >
+          I pressed the "R = 16 cannot resolve anything" kill hard and it did
+          NOT land. Sizing the classifier against the real corpus rather than
+          against the smoke test's 19x-cleaner noise: the minimum resolvable
+          coherent drift is about 6.7 % of CMI at 128 -> 256 and about 2.9 % at
+          1024 -> 2048, against drifts actually measured at zeta = 0.35 of
+          -20.9 % (64 -> 256), -11.1 % (256 -> 1024) and -0.1 % (1024 -> 2048).
+          An injected 10 % per-rung drift is detected at all four rungs, 4 % at
+          one or two. So the survey can see the kind of movement that is really
+          there, and C1's own declared kill criterion is not met.
+          What IS negligible is the declared kill criterion itself. It requires
+          every rung at every zeta to return INCONCLUSIVE, but INCONCLUSIVE
+          fires only when the median SEM/|CMI| exceeds 0.05, and the corpus says
+          that ratio is 0.030 or better at every N_c >= 256 at R = 16 -- and the
+          gate reads the HIGHER rung of each pair and takes a minimum over the
+          two L. On the best available prior the kill criterion cannot fire
+          anywhere, so the task has pre-registered a falsifier it is nearly
+          certain to pass. Separately, z_crit = 3.451 is the Sidak point for the
+          maximum of 18 STANDARD NORMALS while the statistic divides by SEMs
+          estimated from R = 16: the true null exceedance is 3.04 %, not the
+          stated 1 % (RT-ZCRIT-UNDERCORRECTED-001), and it is uncorrected across
+          the 12 rung classifications, so under complete stability expect about
+          0.4 spurious STILL_CHANGING verdicts -- one of which could release the
+          861.6-core-hour conditional arm.
+        evidence: [RT-ZCRIT-UNDERCORRECTED-001, RT-RECOMMENDATION-FIRST-STABLE-001, DEC-MASTER-METRIC-001]
+        severity: material
+        unresolved: >
+          The kill criterion should be restated pre-data as something reachable
+          (e.g. "no rung anywhere resolves a drift smaller than X % of CMI"),
+          but that is a change to a frozen artifact and belongs at the human
+          gate, not to me.
+        effect_on_candidate: downgrade_status
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: >
+          Yes, for the outputs this design will most likely produce. If every
+          rung comes back ROUGHLY_STABLE, the simplest explanation is not that
+          the ladder has converged but that the classifier's threshold sits
+          above the residual drift -- and nothing in the shipped output lets a
+          reader distinguish the two, because no minimum-detectable-effect is
+          reported next to any verdict. The same evidence would be explained
+          more economically, and quantitatively, by the one-parameter
+          c0 + c1/N_c fit of A1, which turns "the curves look stable" into "the
+          remaining distance to the limit is x +- y". I am not proposing that
+          fit for this task -- the spec is frozen -- only recording that the
+          simpler explanation of a ROUGHLY_STABLE verdict is a resolution
+          statement, and the package's own wording guard says exactly that
+          while its recommendation row quietly does not.
+        evidence: [RT-1OVERNC-FIT-001, RT-RECOMMENDATION-FIRST-STABLE-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: downgrade_status
+    extensions:
+      X1_window_chosen_after_seeing_the_answer:
+        attempted: true
+        finding: >
+          No answer-driven window found, and one post-freeze threshold change
+          examined closely and cleared on motive. The lambda grids, the N_c
+          ladder, the L set and R are the brief's and were frozen at
+          stage_1_problem (2026-09-05T17:57:50Z) before any investigator ran;
+          preflight P9 tests the grid SPAN against both DISP-PHI-001 positions
+          rather than a centre against a law, which is the specific error that
+          halted TASK-2026-09-05-NC-ZETA-CALIBRATION. The z_crit amendment was
+          made after ANALYSIS_SPEC.yaml froze at stage_3_candidates, but the
+          amendment mechanism is sanctioned (research/tools/task_phase.py amend;
+          validate_task.py M7 requires only a reason and an authoriser, both
+          present), no datum existed, and I independently confirmed its stated
+          justification: the superseded threshold of 2 has a null exceedance of
+          63.7 % for the max of 18 comparisons at R = 16, so the old rule truly
+          could not return its own null. The change was necessary and its
+          direction is right. It is under-corrected by 3x against its own stated
+          alpha, and its 12-rung family-wise multiplicity is uncorrected.
+        severity: minor
+      X2_parameterization_stated_and_comparisons_matched:
+        attempted: true
+        finding: >
+          Stated and matched. lambda = alpha/(alpha+w), OBS-CMI-001, region
+          convention and the L % 4 guard are all in ANALYSIS_SPEC.yaml; R = 16
+          is matched at every compared cell and preflight P1 fails otherwise;
+          OBS-BL-001 is retired and unused. The one unmatched comparison, the
+          zeta = 0.35 reference row, is labelled NOT MATCHED on R and lambda
+          grid in both the spec and the code and is never pooled. Truncation to
+          R = 16 is `pops[:R]` after sorting by seed, and seed order is the
+          manifest order fixed by build_arms.py before any run, so it cannot be
+          value-selective; with the design's exactly-16 populations per cell it
+          is a no-op in any case.
+        severity: none
+      X3_single_cell_single_L_or_single_pair:
+        attempted: true
+        finding: >
+          Flagged in both directions. The package's own single-cell exposures
+          are declared and fenced: the dtau control is one cell and says so
+          three times, the primary crossing pair is fixed in advance, and the
+          rho table is one local dataset. But my own quantitative attacks are
+          equally single-cell and I will not overstate them: the relative-SEM
+          ladder, the minimum-detectable-effect figures and the c0 + c1/N_c fit
+          all come from zeta = 0.35, L = 64, lambda = 0.3032. They establish
+          what the classifier does at ONE cell's noise level, not at zeta = 0.10
+          or 0.70. The defects in the recommendation table and the INCONCLUSIVE
+          gate, by contrast, are code-level and hold at every cell.
+        severity: material
+      X4_alternative_observable_or_estimator_disagrees:
+        attempted: true
+        finding: >
+          An alternative estimator on the same data gives a strictly more
+          informative answer than the frozen one (the c0 + c1/N_c fit,
+          RT-1OVERNC-FIT-001), which is the substance of A1 and A9. Separately,
+          every stored population carries cmi_unweighted_mean alongside
+          cmi_weighted_mean and the package uses only the weighted field; a
+          weighted-versus-unweighted comparison is free, would probe exactly the
+          weight degeneracy that finite N_c is supposed to cause, and is nowhere
+          in the spec. Neither is a defect in what the analysis computes; both
+          are things it does not compute.
+        severity: material
+      X5_cited_path_actually_exists:
+        attempted: true
+        finding: >
+          Every path I could check exists. Confirmed by stat or by opening:
+          results/boundary_aggregate.csv,
+          TASK-2026-08-11-ARCH/results/neff_L32_z070.json (and it carries no
+          wall_s or n_steps, so it cannot serve as a timing cross-check),
+          TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json,
+          TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt (line
+          279 carries 0.23691; INTERIOR at line 274), and the six state files.
+          SEED_LEDGER.md's "69 other manifests, 24 216 existing seeds" looked
+          wrong against my count of 54 external manifests and 18 136 seeds; it
+          reconciles exactly once the 15 sibling committed arms and their 6 080
+          seeds are added, which is what preflight P7 does per arm. The one
+          number cited without a path is CANDIDATES.md C2 field 7's "R around
+          51-65"; I located it at
+          TASK-2026-09-05-NC-ZETA-CALIBRATION/FALSIFICATION_RESULTS.md:56-57,
+          where it is a TOST certification requirement at tau_lambda = 0.004
+          from a task halted at Gate A -- a different and much stricter
+          precision target than this survey's, and worth labelling as such
+          wherever it is used to dismiss an R.
+        severity: minor
+      X6_depends_on_a_claim_that_has_moved:
+        attempted: true
+        finding: >
+          No dependency on a moved claim, one dependency on a non-canonical
+          number, and one direction of anchor drift the package does not
+          consider. CB-PHI-HALF-001 and CB-PHI-LINEAR-001 are both provisional
+          and contested and are used only as bracket endpoints; DISP-PHI-001 is
+          not moved and ANALYSIS_SPEC.yaml forbids any phi output.
+          The anchor lambda_x = 0.23691 lives in a predecessor's execution
+          plane, i.e. provenance, not canonical support; it is fenced as
+          task-verified (TV-GRIDCOVER-001) and used only for sizing, which is
+          acceptable. But it is treated as EXACT in the phi-window arithmetic,
+          and the three crossings from that predecessor rise monotonically with
+          L (0.2005 for L32-L48, 0.23145 for L32-L64, 0.23691 for L48-L64). If
+          the L -> infinity locator is above 0.23691, the zeta = 0.70 window's
+          upper margin is consumed: an anchor revision of +9.7 %, to 0.260,
+          puts the phi = 1 prediction exactly on the grid end 0.520. The
+          package's own residual-exposure section considers phi > 1.13 but not
+          anchor drift, and the two compound.
+        severity: material
+      X7_ignores_a_recorded_negative_result:
+        attempted: true
+        finding: >
+          No recorded negative result is ignored; one is imported at the wrong
+          strength and one is left on the table. The P9 centre-versus-span
+          failure that halted NC-ZETA-CALIBRATION is addressed head-on and
+          exercised by negative control N8. The "R, not N_c, is the binding
+          budget" finding at zeta = 0.35 is carried into the interlock's
+          INCONCLUSIVE branch, correctly. The R_req = 51-65 figure is imported
+          from a certification-grade TOST calculation into a survey that
+          disclaims that precision (see X5). And DISP-PHI-001's own list of
+          discriminating tests names "L-extrapolated crossings with a
+          window-stability check -- has NEVER been done on current data and
+          needs no new compute": this campaign will produce three-L crossings at
+          three new zeta and ANALYSIS_SPEC.yaml pre-registers that output away.
+          Defensible for scope, but it is the highest-value by-product of 1 160
+          core-hours and it should be parked explicitly as a child task rather
+          than only prohibited.
+        severity: minor
+
+  # =========================================================================
+  C2:
+    statement: >
+      "Run the same design at R = 24, the zeta = 0.35 campaigns' value, lowering
+      every SEM by 1.22x." Recorded by the affirmative side as KILLED on cost.
+    verdict: killed
+    reason: >
+      I attacked the kill and it holds, though not for quite the reason given.
+      The cost argument is a ratio (+50 %, 3 029 against 2 019 core-hours) and
+      is therefore immune to the roughly 25 % absolute inflation I found in the
+      cost model (A3 under C1), so the affordability reasoning stands. The
+      stronger reason is the one C2 field 7 states and then under-uses: a 1.22x
+      SEM reduction moves the minimum resolvable coherent drift from about 2.9 %
+      to about 2.4 % of CMI at the top rung, which changes no verdict I could
+      construct by injection. Meanwhile the defects that actually determine this
+      survey's answer -- the first-stable-rung recommendation and the min()
+      INCONCLUSIVE gate -- are entirely insensitive to R. Spending 1 010
+      core-hours to sharpen an estimator whose decision rule is broken is the
+      wrong purchase, and that is a better kill than affordability.
+      Minor arithmetic: C2 quotes the full design as 2 019 core-hours where
+      COST_MODEL.md section 7 gives 2 021.9.
+    surviving_scope: >
+      not applicable (killed).
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: >
+          Not applicable as a novelty question -- R = 24 is the predecessor
+          campaigns' own value and nothing is claimed new. As a substantive
+          question: the R that would actually settle a rung comparison at
+          certification precision was already computed elsewhere
+          (R_req = 51-65, TASK-2026-09-05-NC-ZETA-CALIBRATION/
+          FALSIFICATION_RESULTS.md:56-57), and 24 is not in that range, so this
+          candidate is a partial repeat of a question already answered against
+          it.
+        evidence: [RT-ZCRIT-UNDERCORRECTED-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: >
+          Yes: the entire benefit follows from sqrt(24/16) = 1.22 and needs no
+          data. Nothing about the classifier, the crossing rule or the
+          recommendation table changes with R, so the candidate is a scalar
+          multiplier on one input of a decision procedure whose defects lie
+          elsewhere. That is exactly why it cannot rescue the design.
+        evidence: [RT-RECOMMENDATION-FIRST-STABLE-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: >
+          No. R = 24 is compared against R = 16 on the same grids, the same
+          ladder and the same cost model, and the comparison is a pure ratio.
+          If anything the baseline is flattered: because the cost model is
+          inflated by roughly 25 % in absolute terms, both figures are high
+          together and the +1 010 core-hour increment is itself overstated.
+        evidence: [TV-RATE35-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: >
+          The gain IS extra resources, by construction: 50 % more compute for
+          22 % less noise, with no new information. That is the whole candidate
+          and it is honestly stated.
+        evidence: [TV-RATE35-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: >
+          R = 24 would slightly improve one boundary case and not fix it: the
+          normal-versus-t discrepancy in z_crit shrinks with R (the true null
+          exceedance of 3.451 falls from 3.04 % at R = 16 toward the nominal
+          1 % as the SEM estimate stabilises), so more populations would make
+          the stated alpha nearer true. It does not touch the min()/max()
+          inconsistency in the INCONCLUSIVE gate, the missing
+          fraction_exactly_one condition in XV1, or the unreachable NONE class.
+        evidence: [RT-ZCRIT-UNDERCORRECTED-001, RT-CLASSIFIER-LENIENT-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: >
+          Same proxy as C1, at 1.5x the price: the deliverable is still the
+          four-valued label and the first-stable-rung recommendation row. R does
+          not enter either rule.
+        evidence: [RT-RECOMMENDATION-FIRST-STABLE-001, RT-CLASSIFIER-LENIENT-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: >
+          Yes. Under realistic scheduling the increment lands where the design
+          is already worst: at R = 24 the zeta = 0.70 arms would carry 648
+          single-row packs at N_c = 2048 rather than 432, on the same
+          unvalidated rho(0.70), with the same absence of partial credit on a
+          timeout (RT-SINGLEROW-PACKS-001). The added statistical benefit is
+          uniform; the added operational exposure is concentrated.
+        evidence: [RT-SINGLEROW-PACKS-001, RT-RHO-CONVEXITY-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: >
+          The decisive attack. Sized against the real corpus, R = 24 moves the
+          minimum resolvable coherent drift from about 6.7 % to about 5.5 % of
+          CMI at 128 -> 256 and from about 2.9 % to about 2.4 % at
+          1024 -> 2048. Against the drifts actually measured at zeta = 0.35
+          (-20.9 %, -11.1 %, -0.1 % across the ladder), no verdict I could
+          construct by injection flips on that difference, while the cost rises
+          by 1 010 core-hours. A 1.22x noise reduction that changes no
+          classification is a practically negligible gain.
+        evidence: [RT-ZCRIT-UNDERCORRECTED-001, RT-RECOMMENDATION-FIRST-STABLE-001]
+        severity: fatal
+        unresolved: >
+          If the survey does come back INCONCLUSIVE or marginal anywhere, the
+          right response is R = 48 or more at the one marginal rung, as a child
+          task. Raising R uniformly and in advance remains wrong.
+        effect_on_candidate: kill
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: >
+          Yes: the simpler account of why the zeta = 0.35 anchor was R-limited
+          is that certification at tau_lambda = 0.004 needs R around 51-65, not
+          that R = 16 is a little short. Under that account R = 24 is neither a
+          survey improvement worth 50 % nor a step toward certification, which
+          is the same conclusion the affirmative side reached by a cost route.
+        evidence: [RT-ZCRIT-UNDERCORRECTED-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+    extensions:
+      X1_window_chosen_after_seeing_the_answer:
+        attempted: true
+        finding: >
+          No. R = 16 versus 24 was fixed by the brief before any datum existed,
+          and R is not a window over the data.
+        severity: none
+      X2_parameterization_stated_and_comparisons_matched:
+        attempted: true
+        finding: >
+          R = 24 would match the predecessor campaigns' R exactly, which is
+          this candidate's one real methodological attraction and is correctly
+          credited in its field 2. It does not outweigh the cost, and the
+          reference row is fenced as unmatched either way.
+        severity: none
+      X3_single_cell_single_L_or_single_pair:
+        attempted: true
+        finding: >
+          The sizing evidence against R = 24 is single-cell (zeta = 0.35,
+          L = 64, lambda = 0.3032). At zeta = 0.10, where the tilt argument
+          suggests the sampler works hardest, R = 24 might matter more than my
+          figures imply. Stated as a limitation of my attack, not as support
+          for the candidate.
+        severity: material
+      X4_alternative_observable_or_estimator_disagrees:
+        attempted: true
+        finding: >
+          Under the c0 + c1/N_c estimator of RT-1OVERNC-FIT-001 the value of R
+          changes character: R enters the fit's parameter errors directly, and
+          more populations at the TOP rung buy more there than a uniform R
+          increase across the ladder. Another reason a uniform R = 24 is the
+          wrong shape of purchase.
+        severity: minor
+      X5_cited_path_actually_exists:
+        attempted: true
+        finding: >
+          C2's core-hour figures reproduce from tools/cost_model.py to within
+          rounding, except that its "2 019" for the full design should be
+          2 021.9 (COST_MODEL.md section 7). Its "R around 51-65" traces to
+          TASK-2026-09-05-NC-ZETA-CALIBRATION/FALSIFICATION_RESULTS.md:56-57
+          but is quoted without that path and without the tau_lambda = 0.004
+          qualifier that gives it its meaning.
+        severity: minor
+      X6_depends_on_a_claim_that_has_moved:
+        attempted: true
+        finding: >
+          No. It depends only on the cost model and on sqrt(R) scaling, neither
+          of which is a canonical claim.
+        severity: none
+      X7_ignores_a_recorded_negative_result:
+        attempted: true
+        finding: >
+          No -- it cites the R-limited finding and correctly concludes that
+          R = 24 does not reach it. Its own field 11 (raise R only at the one
+          marginal rung, as a child task) is the right disposition and should
+          survive the kill.
+        severity: none
+
+  # =========================================================================
+  C3:
+    statement: >
+      "zeta = 0.70 is 84 % of the cost. Drop it and run 0.10 and 0.20 at R = 48,
+      or add more zeta below 0.35, for the same money." Recorded by the
+      affirmative side as KILLED, with its content preserved as the conditional
+      interlock.
+    verdict: killed
+    reason: >
+      The kill is right and my independent checks strengthen it rather than
+      weaken it. The candidate's affirmative case rests on the inference that
+      the (1-zeta)^2 tilt prefactor makes high zeta statistically easy, i.e. on
+      assuming the answer to the question the survey exists to ask; and the
+      cost asymmetry it exploits is, if anything, understated, because
+      rho(0.70) is biased 7-9 % LOW by convex log-log interpolation of the
+      zeta = 0.35 denominator (RT-RHO-CONVEXITY-001) -- so zeta = 0.70 is even
+      more dominant than 84 % of the budget suggests, and even less safe to
+      assume about. Removing the only high-zeta point leaves a two-point
+      low-zeta survey that cannot answer the brief's low-to-high question.
+      The interlock that preserves its content is the correct disposition, with
+      one caveat I record under A5: the interlock's release rule runs on
+      classify_rung, which is the function C1 was killed for.
+    surviving_scope: >
+      not applicable (killed); its content survives as the
+      CONDITIONAL_SUBMISSION.md interlock, which is part of C1.
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: >
+          Partly, and against the candidate. NC-ZETA-CALIBRATION already
+          established that the tilt prefactor is not the whole zeta dependence
+          -- accumulated weight variance is constant to 30 % over a 14x range in
+          zeta against 14-21x for the prefactor alone -- so the "high zeta is
+          easy" premise has already been tested elsewhere and did not hold.
+        evidence: [TV-RHO-ZETA-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: >
+          Yes, fatally. The candidate's entire justification is an inference
+          from a prefactor to a conclusion about statistical difficulty at high
+          zeta, which is precisely the proposition the survey was commissioned
+          to measure. Dropping the cell to save money because you believe you
+          know what it would have said is assuming the answer, and the belief in
+          question has already been contradicted once.
+        evidence: [TV-RHO-ZETA-001]
+        severity: fatal
+        unresolved: none
+        effect_on_candidate: kill
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: >
+          The candidate would disadvantage the only comparison that gives the
+          survey a range: with 0.70 removed there is no point above the
+          zeta = 0.35 anchor, so every statement about zeta dependence becomes
+          an interpolation among 0.10, 0.20 and a reference row that is not
+          matched on R or lambda grid.
+        evidence: [TV-GRIDCOVER-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: >
+          The gain is purely a reallocation of resources, not new information.
+          I verified the magnitude independently: zeta = 0.70 is 1 699 of
+          2 021.9 core-hours in tools/cost_model.py's own output, so the
+          candidate's 84 % is correct.
+        evidence: [TV-RATE35-001, RT-RHO-CONVEXITY-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: >
+          The candidate fails at the boundary of its own logic: the zeta = 0.70
+          grid is the narrowest phi window in the design ([0.08, 1.13], which I
+          re-derived and confirmed) and therefore the cell most likely to return
+          ABOVE_GRID rather than a crossing. That is an argument for watching
+          zeta = 0.70 carefully, not for deleting it. I also note that the
+          surviving interlock inherits C1's defect: the release decision for
+          861.6 core-hours is taken on classify_rung's verdict for the
+          512 -> 1024 rung, and classify_rung's INCONCLUSIVE guard does not fire
+          when one of the two primary-pair L is unusable
+          (RT-CLASSIFIER-LENIENT-001).
+        evidence: [RT-CLASSIFIER-LENIENT-001, TV-GRIDCOVER-001, DISP-PHI-001]
+        severity: material
+        unresolved: >
+          The interlock's four branches are sound as written; they are only as
+          good as the classifier they call.
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: >
+          Yes. A two-point low-zeta survey is a proxy for the commissioned
+          low-to-high zeta comparison, and a poor one: the brief's question is
+          how the behaviour changes between low and high zeta.
+        evidence: [OBS-CMI-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: >
+          The claimed saving is real under realistic conditions -- it is the
+          largest available anywhere in the design -- and is not the reason the
+          candidate dies. Under realistic conditions the saving would also be
+          largest exactly where the operational risk is largest
+          (RT-SINGLEROW-PACKS-001), which is a genuine argument in the
+          candidate's favour and is answered by holding the top rung rather
+          than by deleting the zeta.
+        evidence: [RT-SINGLEROW-PACKS-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: >
+          The re-spend the candidate proposes (R = 48 at 0.10 and 0.20) would be
+          statistically substantial -- a 1.73x SEM reduction, unlike C2's 1.22x
+          -- so this is not a negligible-gain kill. It dies on scope, not on
+          size. Recording that distinction because it means the R = 48 idea
+          should not be discarded with the candidate.
+        evidence: [RT-ZCRIT-UNDERCORRECTED-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: >
+          A simpler explanation of why zeta = 0.70 looks expensive-and-boring is
+          arithmetic, not physics: cost runs as rho(zeta) times K(lambda), both
+          rising steeply with zeta, while the tilt argument runs the other way.
+          That asymmetry makes the cell expensive; it says nothing about what it
+          would show. The candidate reads a cost fact as an information fact.
+        evidence: [TV-RHO-ZETA-001, RT-RHO-CONVEXITY-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+    extensions:
+      X1_window_chosen_after_seeing_the_answer:
+        attempted: true
+        finding: >
+          No data existed when the zeta set was fixed; the set is the brief's.
+          The candidate proposes changing it on a cost argument, not on a
+          result.
+        severity: none
+      X2_parameterization_stated_and_comparisons_matched:
+        attempted: true
+        finding: >
+          The proposed re-spend at R = 48 would break R-matching against the
+          rest of the design, so any comparison between the re-spent zeta and
+          the reference row or a future high-zeta run would be unmatched. The
+          candidate does not address this.
+        severity: material
+      X3_single_cell_single_L_or_single_pair:
+        attempted: true
+        finding: >
+          Dropping zeta = 0.70 leaves the high-zeta end represented by nothing
+          at all -- not even a single diagnostic cell, which is what
+          NC-ZETA-CALIBRATION did and which the candidate cites as precedent.
+          The candidate is strictly weaker than its own cited precedent.
+        severity: material
+      X4_alternative_observable_or_estimator_disagrees:
+        attempted: true
+        finding: >
+          Under a c0 + c1/N_c reading (RT-1OVERNC-FIT-001) the high-zeta point
+          is the one where the fit's leverage is least known, since no rung
+          data off zeta = 0.35 exists at all. Removing it removes the only test
+          of whether the 1/N_c form is zeta-independent.
+        severity: minor
+      X5_cited_path_actually_exists:
+        attempted: true
+        finding: >
+          The cost shares quoted (84.0 %, 1 699 core-hours, 42.6 % for the top
+          rung) reproduce from tools/cost_model.py and analysis/campaign_cost.json.
+          The NC-ZETA-CALIBRATION precedent for diagnostic high-zeta cells is
+          real.
+        severity: none
+      X6_depends_on_a_claim_that_has_moved:
+        attempted: true
+        finding: >
+          It depends on the (1-zeta)^2 tilt prefactor as a proxy for statistical
+          difficulty, which is a mechanism argument that a recorded measurement
+          has already partly contradicted. That is a claim that has moved, and
+          the candidate leans on the pre-movement version.
+        severity: material
+      X7_ignores_a_recorded_negative_result:
+        attempted: true
+        finding: >
+          Yes: the recorded finding that accumulated weight variance is nearly
+          zeta-independent is exactly the negative result against this
+          candidate's premise, and the candidate's own field 5 concedes it. The
+          affirmative side did not ignore it; the candidate does.
+        severity: material
+
+  # =========================================================================
+  C4:
+    statement: >
+      "The primary crossing pair is L48-L64. L = 32 is 5.9 % of the cost and is
+      not in the primary pair." Recorded by the affirmative side as KILLED.
+    verdict: killed
+    reason: >
+      The kill holds, and I found an additional mechanical reason the
+      affirmative side did not state. Beyond the diagnostic argument (with two
+      L there is one crossing and no way to separate a locator from an artifact
+      of the pair chosen; at zeta = 0.35 the L32-L48 pair came out
+      STILL_BOUNDARY while L32-L64 and L48-L64 came out INTERIOR, which is only
+      visible with three L -- I confirmed all three outcome classes at
+      TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt:255-310),
+      the shipped classifier depends on L = 32 structurally: classify_rung's
+      `missing` test iterates over LS = [32, 48, 64], so a design without L = 32
+      would mark every rung INCONCLUSIVE unless the code were changed too. The
+      saving, 119 core-hours, is the smallest available per unit of information
+      lost.
+    surviving_scope: >
+      not applicable (killed).
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: >
+          Not applicable as novelty; nothing is claimed new. As substance, the
+          question "does dropping the smallest L cost you a diagnostic" was
+          already answered inside this programme: NC-PLATEAU-CALIBRATION ran
+          L = 32 arms deliberately as supporting information, and the
+          pair-disagreement at zeta = 0.35 is the recorded answer.
+        evidence: [TV-GRIDCOVER-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: >
+          The candidate assumes the primary pair is sufficient because it is
+          primary. That is circular: L = 32's stated role is to test whether
+          the primary pair's crossing is a locator or an artifact, so it cannot
+          be dismissed on the ground that it is not the primary pair.
+        evidence: [OBS-CMI-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: >
+          No baseline is disadvantaged; the candidate removes a control rather
+          than handicapping a comparator. Removing a control is the more
+          damaging move, and it is what the kill turns on.
+        evidence: none
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: >
+          The gain is 119 core-hours of released resource, no new information.
+          I confirmed the share from analysis/campaign_cost.json; L = 32 is
+          indeed the cheapest L in every arm.
+        evidence: [TV-RATE35-001]
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: >
+          Yes, decisively, and at two levels. Scientifically: with two L there
+          is exactly one difference curve, so neither interiority
+          cross-checking nor pair disagreement is available, and the
+          zeta = 0.35 case shows those two diagnostics disagreeing in practice.
+          Mechanically: analysis/mockprod_analysis.py's classify_rung tests for
+          missing populations across all of LS = [32, 48, 64], so under this
+          candidate every rung would classify INCONCLUSIVE for missing data --
+          the design and the frozen analysis would be inconsistent.
+        evidence: [RT-CLASSIFIER-LENIENT-001, OBS-CMI-001]
+        severity: fatal
+        unresolved: none
+        effect_on_candidate: kill
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: >
+          Under this candidate the single L48-L64 crossing becomes a proxy for
+          "the crossing", with no way to detect small-L drift or a pair
+          artifact. The brief asks for L = 32 explicitly as supporting
+          information on crossing quality, so the candidate substitutes a proxy
+          for a commissioned observable.
+        evidence: [OBS-CMI-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: >
+          The saving largely disappears under realistic scheduling. L = 32 rows
+          are the cheapest in every arm and are exactly the rows that pack
+          efficiently to the 600 s floor; removing them raises the mean cost per
+          array task and does not shorten the arms that matter, since --time is
+          set by the slowest pack, which is always an L = 64 row.
+        evidence: [RT-SINGLEROW-PACKS-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: >
+          The saving is practically negligible: 119 core-hours is 5.9 % of the
+          full design and about 10 % of the committed campaign, against the loss
+          of the only diagnostic for small-L drift. It is the worst
+          information-per-core-hour trade available in the design.
+        evidence: [TV-RATE35-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: >
+          The simpler explanation of the candidate's appeal is that L = 32 has
+          no line in the headline table, not that it carries no information.
+          Cheapness plus invisibility is not an argument for removal.
+        evidence: none
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+    extensions:
+      X1_window_chosen_after_seeing_the_answer:
+        attempted: true
+        finding: >
+          No. The L set is the brief's and was frozen at stage_1_problem. The
+          candidate proposes narrowing it on cost, before any datum.
+        severity: none
+      X2_parameterization_stated_and_comparisons_matched:
+        attempted: true
+        finding: >
+          ANALYSIS_SPEC.yaml fixes L48-L64 as primary at every zeta and every
+          N_c in advance and forbids a supporting pair from being reported as
+          the primary locator. That rule is what makes keeping L = 32 safe
+          rather than an invitation to pair-shopping, and it is correctly
+          stated.
+        severity: none
+      X3_single_cell_single_L_or_single_pair:
+        attempted: true
+        finding: >
+          This candidate is precisely the single-pair failure mode this
+          extension exists to catch: it reduces the design to one L pair and
+          therefore to one crossing per (zeta, N_c), with no internal check.
+        severity: material
+      X4_alternative_observable_or_estimator_disagrees:
+        attempted: true
+        finding: >
+          Three L are the minimum for any finite-size reading of the crossing,
+          including the L-extrapolated crossing that DISP-PHI-001 names as a
+          discriminating test. Dropping to two forecloses that permanently for
+          this data, at three new zeta.
+        severity: material
+      X5_cited_path_actually_exists:
+        attempted: true
+        finding: >
+          The cited zeta = 0.35 pair outcomes exist and are as described:
+          STILL_BOUNDARY for L32-L48 at line 255, INTERIOR for L32-L64 and
+          L48-L64 at lines 274 and 293 of
+          TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt.
+        severity: none
+      X6_depends_on_a_claim_that_has_moved:
+        attempted: true
+        finding: >
+          No canonical claim is involved. The candidate rests only on a cost
+          share, which I reproduced.
+        severity: none
+      X7_ignores_a_recorded_negative_result:
+        attempted: true
+        finding: >
+          Yes: it ignores the recorded pair disagreement at zeta = 0.35, which
+          is the direct negative result about two-L crossing quality.
+        severity: material
+
+  # =========================================================================
+  C5:
+    statement: >
+      "Rather than measuring N_c = 128 and 256 fresh, use existing historical
+      scans at these zeta as the low-N_c end of each ladder." Recorded by the
+      affirmative side as KILLED on metadata incompatibility.
+    verdict: killed
+    reason: >
+      The kill is correct and I verified it independently rather than accepting
+      it. My own repository-wide scan of stored populations gives 134 distinct
+      (zeta, L, N_c, lambda, dtau_mult) cells against this design's 407, with
+      ZERO overlap; every stored zeta off 0.35 is an architecture benchmark
+      without a resample_scheme, and the one zeta = 0.70 file
+      (TASK-2026-08-11-ARCH/results/neff_L32_z070.json) is L = 32 at N_c = 500
+      on an off-grid lambda and carries neither wall_s nor n_steps.
+      results/boundary_aggregate.csv exists and carries zeta = 0.1/0.2/0.7 rows,
+      and it has no N_c, T, dtau_mult or resampling column at all. Putting an
+      unknown-N_c row at the bottom of a ladder whose only purpose is to vary
+      N_c with everything else fixed would make the rung difference
+      uninterpretable in exactly the way the ladder exists to avoid.
+    surviving_scope: >
+      not applicable (killed).
+    attacks:
+      A1_already_solved_elsewhere:
+        attempted: true
+        finding: >
+          The reuse question was already faced and refused inside this
+          programme (MOCK-LOWLAMBDA-EXTENSION, for its N_c = 2048 arm), on the
+          same grounds. This candidate re-proposes a shortcut whose answer is on
+          record.
+        evidence: [TV-NOREUSE-001, EV-DATA-BOUNDARYCSV-001]
+        severity: minor
+        unresolved: none
+        effect_on_candidate: none
+      A2_follows_trivially_from_assumptions:
+        attempted: true
+        finding: >
+          It assumes the missing metadata is recoverable or immaterial. Neither
+          is established: EV-DATA-BOUNDARYCSV-001 records the reproducibility of
+          that file's metadata as unknown, and the lambda grids do not coincide
+          at a single point with this design's, so even a metadata recovery
+          would not produce a matched cell.
+        evidence: [EV-DATA-BOUNDARYCSV-001, TV-NOREUSE-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A3_baseline_disadvantaged:
+        attempted: true
+        finding: >
+          Worse than a disadvantaged baseline: it would make the low-N_c end of
+          every ladder a different measurement from the rungs above it, so the
+          128 -> 256 difference would confound N_c with discretisation and
+          resampling scheme. The comparison would be structurally
+          uninterpretable rather than merely unfair.
+        evidence: [TV-NOREUSE-001, DEC-MASTER-METRIC-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A4_gain_from_extra_information_or_resources:
+        attempted: true
+        finding: >
+          The saving (227 core-hours, 11.3 % of the design) is entirely a gain
+          from importing outside data, and the imported data is missing the four
+          fields that would make it comparable. That is a gain from resources
+          that are not actually there, which is the decisive objection.
+        evidence: [TV-NOREUSE-001, EV-DATA-BOUNDARYCSV-001]
+        severity: fatal
+        unresolved: none
+        effect_on_candidate: kill
+      A5_fails_under_dependence_causality_or_boundary_cases:
+        attempted: true
+        finding: >
+          It fails at the specific boundary that matters here: the 128 -> 256
+          rung is the noisiest and the least resolvable in the whole design
+          (measured relative SEM about 0.05 at R = 16 and N_c = 128), so it is
+          the rung least able to absorb an additional unmodelled difference.
+          Contaminating the least-powered rung is the worst place to do it.
+        evidence: [RT-CLASSIFIER-LENIENT-001, TV-NOREUSE-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A6_measures_a_proxy_not_the_phenomenon:
+        attempted: true
+        finding: >
+          Yes. A historical row of unknown N_c is a proxy for an N_c = 128
+          population, in a study whose entire measurement is the difference
+          between N_c values. The proxy replaces the independent variable.
+        evidence: [TV-NOREUSE-001, OBS-CMI-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A7_disappears_under_realistic_conditions:
+        attempted: true
+        finding: >
+          The saving is real and would not disappear -- it is the second largest
+          available in the design and the candidate is honest about that. It
+          dies on correctness, not on practicality.
+        evidence: [TV-NOREUSE-001]
+        severity: none
+        unresolved: none
+        effect_on_candidate: none
+      A8_statistically_or_practically_negligible:
+        attempted: true
+        finding: >
+          Not negligible in cost terms (227 core-hours), which is why the
+          candidate is worth writing down. What would be negligible is the value
+          of the resulting rung: an unmatched bottom rung produces a difference
+          that no verdict may rest on, so 227 core-hours would be saved in
+          exchange for two unusable rungs.
+        evidence: [TV-NOREUSE-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+      A9_simpler_explanation_accounts_for_evidence:
+        attempted: true
+        finding: >
+          The simplest account of why the historical corpus looks reusable is
+          that it has the right zeta column and nothing else; matching on one
+          field is not matching. My scan confirms it: overlap on the full
+          five-field key is exactly zero.
+        evidence: [TV-NOREUSE-001]
+        severity: material
+        unresolved: none
+        effect_on_candidate: none
+    extensions:
+      X1_window_chosen_after_seeing_the_answer:
+        attempted: true
+        finding: >
+          Not applicable to a reuse proposal; no window over the new data is
+          involved. Note that the historical corpus is centred on
+          0.51*sqrt(zeta), so importing it would import a sqrt(zeta) centring
+          into a design that must not assume one -- a window question in a
+          different guise, and one LAMBDA_GRID_DECISION.md section 5 handles
+          correctly by using the corpus only as descriptive context.
+        severity: minor
+      X2_parameterization_stated_and_comparisons_matched:
+        attempted: true
+        finding: >
+          This is the whole kill. Matching requires
+          (zeta, L, T, N_c, lambda, dtau_mult, resample_scheme); the historical
+          rows supply at most three of the seven. Zero of 407 design cells
+          match any of 134 stored cells.
+        severity: material
+      X3_single_cell_single_L_or_single_pair:
+        attempted: true
+        finding: >
+          The single zeta = 0.70 raw population in the repository is one cell at
+          one L (32) at N_c = 500 on an off-grid lambda. It could not stand in
+          for a rung even if its metadata were complete.
+        severity: material
+      X4_alternative_observable_or_estimator_disagrees:
+        attempted: true
+        finding: >
+          boundary_aggregate.csv's observable provenance is not established
+          against OBS-CMI-001 in the way the design's own rows are (the
+          package's matched-observable check is applied only to the zeta = 0.35
+          reference row). Another reason it cannot be pooled.
+        severity: material
+      X5_cited_path_actually_exists:
+        attempted: true
+        finding: >
+          Both cited artifacts exist and are as described: I stat'ed and opened
+          results/boundary_aggregate.csv and
+          TASK-2026-08-11-ARCH/results/neff_L32_z070.json, and confirmed
+          EV-DATA-BOUNDARYCSV-001 in canonical state. tools/inventory_existing.py
+          runs and reproduces the "none" answer.
+        severity: none
+      X6_depends_on_a_claim_that_has_moved:
+        attempted: true
+        finding: >
+          The historical corpus is bound up with the sqrt(zeta) construction
+          that DISP-PHI-001 leaves contested. Using it as a measurement, rather
+          than as context, would import a contested centring; the package
+          explicitly refuses to, and its field 10 says so.
+        severity: minor
+      X7_ignores_a_recorded_negative_result:
+        attempted: true
+        finding: >
+          It ignores the recorded refusal of the same shortcut by
+          MOCK-LOWLAMBDA-EXTENSION and the recorded metadata gap in
+          EV-DATA-BOUNDARYCSV-001. The affirmative side cites both; the
+          candidate is killed on them.
+        severity: material
+
+# ===========================================================================
+overall_task_assessment:
+  surviving_candidates: []
+  killed_candidates: [C1, C2, C3, C4, C5]
+  recommendation_basis: >
+    No design option survives as written, but the reasons are not the same and
+    the consequence for the researcher is narrow, not broad.
+    C2, C3, C4 and C5 are killed for the reasons the affirmative side gave; I
+    attacked all four independently and each kill held, three of them on
+    stronger grounds than stated (C3 because rho(0.70) is biased LOW by 7-9 %,
+    making the high-zeta cell even more dominant and less safe to assume about;
+    C4 because the shipped classify_rung structurally requires L = 32 present;
+    C5 because my own scan gives zero overlap on the full five-field cell key).
+    C1 is killed AS BUILT, and only on the analysis half. Everything that would
+    be submitted survived attack: 6 512 seeds distinct with zero collisions
+    against 54 external manifests and 5 176 stored populations; zero duplication
+    of any stored cell; both DISP-PHI-001 positions strictly interior to every
+    grid with the stated margins, arithmetic re-derived by hand; --time >= 2.24x
+    the model and --mem >= 1.76x a 1.45x-inflated model everywhere; 18-20
+    preflight checks passing on all 16 arms; and the refutation of
+    rate ~ N_c^0.1871 surviving a deliberate attempt to break it on its
+    sample-size and lambda confound (lambda-matched medians at L = 64 are
+    4.67/4.78/4.91/4.72/4.60/4.75 ms over N_c = 64..8192).
+    Four pre-data repairs, none of which touches a single population, would let
+    C1 return as C1':
+      R1. Define "smallest N_c that LOOKS adequate" and implement it as the
+          smallest N_c such that THAT RUNG AND EVERY HIGHER RUNG classify
+          ROUGHLY_STABLE. Today it is first-stable-wins and it will print 128
+          while the table above it says STILL_CHANGING.
+      R2. Make the INCONCLUSIVE gate a MAXIMUM over L = 48 and L = 64, as the
+          spec's own "or" reads and as the STILL_CHANGING rule already does,
+          and evaluate the relative SEM on BOTH rungs of the pair, not only the
+          higher one.
+      R3. Print a minimum-detectable-effect beside every verdict (per rung, in
+          per cent of CMI). Without it, ROUGHLY_STABLE and "we could not have
+          seen it" are indistinguishable in the output, which is the single
+          thing this survey most needs to keep apart.
+      R4. State z_crit's actual size: at R = 16 the true null exceedance of
+          3.451 is 3.04 %, not 1 %, and there is no correction across the 12
+          rung classifications. Either use the simulated critical value or label
+          the alpha honestly; the interlock spends 861.6 core-hours on this
+          statistic.
+    R1 and R2 are bug fixes to a script against its own frozen spec and do not
+    need an amendment. R3 and R4 change reported quantities and belong at the
+    human gate.
+    Two operational items for the researcher, independent of the above:
+    the "idempotency limits a timeout to the unfinished rows" mitigation is
+    empty in conditional/M_z070_nc2048 (432 packs of one row) and
+    M_z070_nc1024 (384 of 408), where a --time overrun is unrecoverable on
+    every requeue; and rho(0.70) has no production-regime validation anywhere in
+    this repository, so a timing readback from the first zeta = 0.70 arm should
+    gate the two large ones.
+    Nothing in this review reopens the certification question, moves
+    DISP-PHI-001, or licenses any statement about lambda_c(zeta).
+  proposed_status: >
+    none - nothing survived. C1 should return as C1' after repairs R1-R4, at
+    which point the measurement package is, on this review's evidence, ready for
+    human submission unchanged. C2, C3, C4 and C5 stay killed and their records
+    stand; C2's field 11 (raise R only at a marginal rung, as a child task) and
+    C3's interlock should survive their candidates.
+  cross_candidate_notes: >
+    Three findings bear on more than one candidate at once.
+    (1) The classifier is common to all five. C2 changes R, C3 changes the zeta
+    set, C4 changes the L set and C5 changes the bottom rung's provenance --
+    none of them touches classify_rung or the recommendation loop, so the defect
+    that kills C1 would have been inherited by every variant. This is why the
+    repairs are worth more than any of the design alternatives that were
+    considered.
+    (2) The cost model is systematically inflated (RATE35_MAX is a maximum over
+    populations attained at the corpus's LOWEST lambda, and f_lam then corrects
+    for lambda a second time), by roughly 25 % beyond the max-not-median
+    convention. Every absolute core-hour figure in the package is therefore
+    high, and every RATIO -- which is what C2, C3 and C4 were killed on -- is
+    unaffected. The kills are safe; the budget headline is conservative.
+    (3) A process observation, recorded because it affects what a reader can
+    conclude from this file. Three shipped artifacts changed during the
+    red-team stage: analysis/mockprod_analysis.py and shared/preflight.py were
+    patched at 2026-09-05T20:39 to exclude scratch/ from their globs, in direct
+    response to this reviewer's synthetic files being ingested as measurements
+    (RT-SCRATCH-INGEST-001 -- a real latent defect that only surfaced because
+    the red team happened to write files where the loader could see them), and
+    CANDIDATES.md was amended at 18:44Z, after redteam_dispatched at 18:30Z, for
+    heading format; I diffed it and the amendment is what it says it is, five
+    heading lines, 203 lines before and after, every substantive figure intact.
+    Synthesis artifacts (ASSESSMENT_AH.md, VALIDATION.md, RECOMMENDATION.md,
+    RESEARCH_MEMO.md) appeared in the task directory during the review and were
+    deliberately not opened; lead_summary_seen is false and no affirmative
+    narrative entered this report.

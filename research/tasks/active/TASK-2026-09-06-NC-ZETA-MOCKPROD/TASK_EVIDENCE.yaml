@@ -1,0 +1,501 @@
+schema_version: 1
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+state_fingerprint_changed: false
+schema_note: 'Top-level key is task_verified, which is what research/tools/validate_task.py
+  check E1/E2 reads. Every entry carries tier, source_or_artifact, what_was_verified, verified_by
+  and date. TASK-VERIFIED means inspected during THIS run: admissible in-task including by
+  the red team, and NEVER canonical automatically. research/state/** is unchanged by this
+  task.'
+task_verified:
+- id: TV-RATE35-001
+  what: 'Per-clone-window wall time, ms, measured on Ruche at zeta = 0.35, dtau_mult = 6,
+    from every completed population in the repository. Worst-case per L: 1.951 (L=32), 3.457
+    (L=48), 5.769 (L=64).
+
+    '
+  method: 'Scan of research/tasks/**/results/*.json; rate = wall_s/(N_c*n_steps)*1000. Implemented
+    in tools/cost_model.py::_load_ruche and refitted by preflight P10 on every run, which
+    fails if the literals drift by more than 0.5 %.
+
+    '
+  verified_by:
+  - lead
+  - numerics investigator
+  independence: 'Two derivations from the same raw JSONs by different code. NOT methodologically
+    independent -- one representation, two implementations. See INDEPENDENCE_LEDGER.yaml.
+
+    '
+  promotion_status: not_proposed
+  why_not_proposed: 'It is a runtime property of one cluster at one moment, not a scientific
+    claim. It belongs in a cost model, not in research/state/**.
+
+    '
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: research/tasks/**/results/*.json (5185 stored populations); tools/cost_model.py::_load_ruche
+  what_was_verified: 'Per-clone-window wall time, ms, measured on Ruche at zeta = 0.35, dtau_mult
+    = 6, from every completed population in the repository. Worst-case per L: 1.951 (L=32),
+    3.457 (L=48), 5.769 (L=64).
+
+    '
+- id: TV-NC0187-REFUTED-001
+  what: 'The rate law rate ~ N_c^0.1871, adopted by TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+    and applied above the largest measured rung at every L, is contradicted by rungs that
+    campaign has since returned: L=64 N_c=4096 measured 5.05 ms against 6.57 predicted; N_c=8192
+    measured 5.11 against 7.48; L=128 N_c=2048 measured 22.45 against 31.7.
+
+    '
+  method: same scan as TV-RATE35-001, plus the law applied forward from the smallest measured
+    rung at each L.
+  verified_by:
+  - lead
+  - numerics investigator
+  independence: 'Both routes read the same JSONs. Independent implementations, one representation.
+
+    '
+  promotion_status: not_proposed
+  why_not_proposed: 'The law it contradicts is not itself in research/state/**; it lives in
+    a predecessor task''s COST_MODEL.md, i.e. the execution plane. Correcting an execution-plane
+    number does not require a state change. Recorded here so the correction is not lost.
+
+    '
+  negative_result: true
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: research/tasks/**/results/*.json; TASK-2026-09-03-NC-PLATEAU-CALIBRATION/COST_MODEL.md
+    sections 2-3
+  what_was_verified: 'The rate law rate ~ N_c^0.1871, adopted by TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+    and applied above the largest measured rung at every L, is contradicted by rungs that
+    campaign has since returned: L=64 N_c=4096 measured 5.05 ms against 6.57 predicted; N_c=8192
+    measured 5.11 against 7.48; L=128 N_c=2048 measured 22.45 against 31.7.
+
+    '
+- id: TV-RHO-ZETA-001
+  what: 'Per-clone-window rate ratio to zeta = 0.35 at fixed L, from TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json:
+    0.4486, 0.6391, 2.3720 at zeta = 0.10, 0.20, 0.70 (maximum over the four L).
+
+    '
+  method: log-log interpolation in zeta of sec_per_clone_window, per L, ratio taken at fixed
+    L so the L-confounded N_c cancels.
+  limitation: 'LOCAL measurement, tiny n_steps, intercept-fitted, N_c <= 500 -- a different
+    measurement regime from production. Directional, not exact. lambda co-varies as 0.51*sqrt(zeta)
+    throughout, so the ratio is measured ALONG that line and needs the f_lam correction off
+    it.
+
+    '
+  verified_by:
+  - lead
+  - numerics investigator
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: research/tasks/active/TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json
+  what_was_verified: 'Per-clone-window rate ratio to zeta = 0.35 at fixed L, from TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json:
+    0.4486, 0.6391, 2.3720 at zeta = 0.10, 0.20, 0.70 (maximum over the four L).
+
+    '
+- id: TV-NOREUSE-001
+  what: 'ZERO exact-compatible stored populations exist at zeta in {0.10, 0.20, 0.70} for
+    any cell in this design. 5 185 populations scanned, 136 distinct cells, zeta present in
+    the corpus being {0.05, 0.30, 0.35, 0.70}; everything off 0.35 is an architecture benchmark
+    with no resample_scheme and no dtau_mult.
+
+    '
+  method: tools/inventory_existing.py, on stored RESULTS not manifest rows. Re-checked per
+    arm by preflight P14; negative control N12 proves the check fires.
+  also_found_by_investigator: 'results/boundary_aggregate.csv carries zeta = 0.1/0.2/0.7 rows
+    but has no N_c, T, dtau_mult or resampling column and a different lambda grid. Not poolable.
+    The lead''s own scan did not cover repository-root results/ and would have missed it.
+
+    '
+  verified_by:
+  - lead
+  - numerics investigator
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: research/tasks/**/results/*.json via tools/inventory_existing.py; EXISTING_DATA_INVENTORY.csv
+  what_was_verified: 'ZERO exact-compatible stored populations exist at zeta in {0.10, 0.20,
+    0.70} for any cell in this design. 5 185 populations scanned, 136 distinct cells, zeta
+    present in the corpus being {0.05, 0.30, 0.35, 0.70}; everything off 0.35 is an architecture
+    benchmark with no resample_scheme and no dtau_mult.
+
+    '
+- id: TV-GRIDCOVER-001
+  what: 'Each proposed nine-point lambda grid strictly contains both open positions of DISP-PHI-001
+    anchored on lambda_x(0.35) = 0.23691, with at least two grid points beyond each prediction
+    and a worst margin of 6.9 tau_lambda to the nearer grid END. Every grid is strictly wider
+    than the independently re-derived STAGE1 bracket rule on both sides at all three zeta.
+
+    '
+  method: LAMBDA_GRID_DECISION.md, re-derived from the two canonical claims and the dispute;
+    enforced per arm by preflight P9; negative control N8 shows P9 rejecting a narrowed grid.
+  verified_by:
+  - lead
+  - numerics investigator
+  independence: 'The investigator used the same anchor and the same two claims but computed
+    margins to the nearest grid POINT while the lead computed them to the nearest grid END.
+    Different quantities; the end margin is the coverage one. Reconciled in LAMBDA_GRID_DECISION.md
+    section 3.
+
+    '
+  promotion_status: not_proposed
+  caveat: 'The anchor 0.23691 is a LOCATOR at L <= 64, not lambda_c(0.35) and not L-extrapolated.
+    Both predictions inherit that caveat. This moves DISP-PHI-001 in neither direction.
+
+    '
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: research/state/disputes/DISP-PHI-001.yaml, claims/CB-PHI-{HALF,LINEAR}-001.yaml;
+    TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION/LOWLAMBDA_ANALYSIS.txt section D; shared/preflight.py
+    P9
+  what_was_verified: 'Each proposed nine-point lambda grid strictly contains both open positions
+    of DISP-PHI-001 anchored on lambda_x(0.35) = 0.23691, with at least two grid points beyond
+    each prediction and a worst margin of 6.9 tau_lambda to the nearer grid END. Every grid
+    is strictly wider than the independently re-derived STAGE1 bracket rule on both sides
+    at all three zeta.
+
+    '
+- id: TV-ALAM-CORRECTION-001
+  what: 'The lambda-rate exponent in the draft cost model was chosen in the LESS conservative
+    direction under a comment claiming the opposite. This task''s grids sit below the reference
+    line, so the correction grows as the exponent becomes more negative; -0.35 was the least
+    conservative estimate available, not the most. Corrected to -0.50.
+
+    '
+  method: caught by agent_reports/numerics.md Q2, which derived -0.48 and -0.53 from the endpoints
+    of the same Ruche spans the lead fitted by least squares.
+  verified_by:
+  - numerics investigator
+  promotion_status: not_proposed
+  why_recorded: 'It is a caught error in this task''s own work, and charter 4.4 makes that
+    a first-class output rather than something to quietly fix.
+
+    '
+  negative_result: true
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: agent_reports/numerics.md Q2; tools/cost_model.py A_LAM
+  what_was_verified: 'The lambda-rate exponent in the draft cost model was chosen in the LESS
+    conservative direction under a comment claiming the opposite. This task''s grids sit below
+    the reference line, so the correction grows as the exponent becomes more negative; -0.35
+    was the least conservative estimate available, not the most. Corrected to -0.50.
+
+    '
+- id: TV-ZCRIT-001
+  what: 'The frozen qualitative thresholds max|z| >= 2 / >= 4 were below the null distribution
+    of their own statistic. max|z| is a maximum over ~18 comparisons and reaches 2.5-3.2 under
+    ZERO injected drift, so the rule classified a perfectly stable synthetic rung as STILL_CHANGING
+    and could not return its own null. Replaced by a multiplicity-corrected z_crit = 3.451
+    at n = 18.
+
+    '
+  method: tools/smoke_test.py on synthetic data with a known answer, run before any real datum
+    existed. Recorded as ANALYSIS_SPEC.yaml amendment_1 via research/tools/task_phase.py amend,
+    which records the superseded hash.
+  verified_by:
+  - lead
+  promotion_status: not_proposed
+  negative_result: true
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: tools/smoke_test.py; ANALYSIS_SPEC.yaml amendment_1
+  what_was_verified: 'The frozen qualitative thresholds max|z| >= 2 / >= 4 were below the
+    null distribution of their own statistic. max|z| is a maximum over ~18 comparisons and
+    reaches 2.5-3.2 under ZERO injected drift, so the rule classified a perfectly stable synthetic
+    rung as STILL_CHANGING and could not return its own null. Replaced by a multiplicity-corrected
+    z_crit = 3.451 at n = 18.
+
+    '
+- id: TV-PREDECESSOR-INTACT-001
+  what: 'TASK-2026-09-06-NC-ZETA-STAGE1 is byte-identical to the baseline recorded when this
+    task opened: 22 files verified, none modified, none added.
+
+    '
+  method: frozen_inputs/STAGE1_BASELINE.sha256 plus tools/check_predecessor.py; also run as
+    preflight P15 on every arm.
+  verified_by:
+  - lead
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: frozen_inputs/STAGE1_BASELINE.sha256; tools/check_predecessor.py
+  what_was_verified: 'TASK-2026-09-06-NC-ZETA-STAGE1 is byte-identical to the baseline recorded
+    when this task opened: 22 files verified, none modified, none added.
+
+    '
+- id: RT-CLASSIFIER-LENIENT-001
+  what: 'analysis/mockprod_analysis.py line 254 implements the INCONCLUSIVE gate as `min(rel)
+    > 0.05` over [rel_sem_L48, rel_sem_L64], and rel_sem is computed (line 237) from the HIGHER-N_c
+    curve only. ANALYSIS_SPEC.yaml states the rule as "median SEM/|CMI| over the 9 lambda
+    at L=48 OR L=64 exceeds 0.05". The same English "or" is implemented as a MAXIMUM for STILL_CHANGING
+    and CLEARLY_TOO_SMALL (zmax accumulates over both L, lines 231-235) and as a MINIMUM here.
+    Consequence, demonstrated: a rung whose L=64 relative SEM is 0.30 -- six times the stated
+    threshold, i.e. unusable -- classifies ROUGHLY_STABLE, not INCONCLUSIVE, and the recommendation
+    table reports "smallest N_c that LOOKS adequate = 256".
+
+    '
+  method: 'Executed the shipped analysis on synthetic populations with L=64 relative SEM fixed
+    at 0.30 and L=48 at the corpus-measured values. Script kept OUTSIDE the task tree at <scratchpad>/rt_inject2.py;
+    output rel_sem_L48 0.0181-0.0325, rel_sem_L64 0.2379-0.3505, class ROUGHLY_STABLE at three
+    of four rungs.
+
+    '
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  negative_result: true
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: 'Executed the shipped analysis on synthetic populations with L=64 relative
+    SEM fixed at 0.30 and L=48 at the corpus-measured values. Script kept OUTSIDE the task
+    tree at <scratchpad>/rt_inject2.py; output rel_sem_L48 0.0181-0.0325, rel_sem_L64 0.2379-0.3505,
+    class ROUGHLY_STABLE at three of four rungs.
+
+    '
+  what_was_verified: 'analysis/mockprod_analysis.py line 254 implements the INCONCLUSIVE gate
+    as `min(rel) > 0.05` over [rel_sem_L48, rel_sem_L64], and rel_sem is computed (line 237)
+    from the HIGHER-N_c curve only. ANALYSIS_SPEC.yaml states the rule as "median SEM/|CMI|
+    over the 9 lambda at L=48 OR L=64 exceeds 0.05". The same English "or" is implemented
+    as a MAXIMUM for STILL_CHANGING and CLEARLY_TOO_SMALL (zmax accumulates over both L, lines
+    231-235) and as a MINIMUM here. Consequence, demonstrated: a rung whose L=64 relative
+    SEM is 0.30 -- six times the stated threshold, i.e. unusable -- classifies ROUGHLY_STABLE,
+    not INCONCLUSIVE, and the recommendation table reports "smallest N_c that LOOKS adequate
+    = 256".
+
+    '
+- id: RT-RECOMMENDATION-FIRST-STABLE-001
+  what: 'The headline deliverable -- the "smallest N_c that LOOKS adequate" row -- has NO
+    rule anywhere in the frozen ANALYSIS_SPEC.yaml. As implemented (mockprod_analysis.py lines
+    475-492) it takes the FIRST rung that classifies ROUGHLY_STABLE, in ascending N_c order,
+    and never revises it when a HIGHER rung classifies STILL_CHANGING or CLEARLY_TOO_SMALL.
+    Demonstrated: with a uniform, real, monotone 3-4 % per-rung drift injected, the shipped
+    analysis prints "0.10 | 128 | low" in the recommendation table while its own rung table
+    two screens above reads "256 -> 512 STILL_CHANGING".
+
+    '
+  method: 'Executed the shipped analysis on synthetic populations built with the relative
+    SEMs measured in the zeta = 0.35 corpus at R = 16 (128:0.050, 256:0.030, 512:0.024, 1024:0.019,
+    2048:0.016) and a uniform multiplicative drift per rung. Injector at <scratchpad>/rt_inject.py.
+
+    '
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  negative_result: true
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: 'Executed the shipped analysis on synthetic populations built with the
+    relative SEMs measured in the zeta = 0.35 corpus at R = 16 (128:0.050, 256:0.030, 512:0.024,
+    1024:0.019, 2048:0.016) and a uniform multiplicative drift per rung. Injector at <scratchpad>/rt_inject.py.
+
+    '
+  what_was_verified: 'The headline deliverable -- the "smallest N_c that LOOKS adequate" row
+    -- has NO rule anywhere in the frozen ANALYSIS_SPEC.yaml. As implemented (mockprod_analysis.py
+    lines 475-492) it takes the FIRST rung that classifies ROUGHLY_STABLE, in ascending N_c
+    order, and never revises it when a HIGHER rung classifies STILL_CHANGING or CLEARLY_TOO_SMALL.
+    Demonstrated: with a uniform, real, monotone 3-4 % per-rung drift injected, the shipped
+    analysis prints "0.10 | 128 | low" in the recommendation table while its own rung table
+    two screens above reads "256 -> 512 STILL_CHANGING".
+
+    '
+- id: RT-ZCRIT-UNDERCORRECTED-001
+  what: 'z_crit = Phi^-1((1 + 0.99^(1/n))/2) = 3.451 at n = 18 is the Sidak point for the
+    maximum of n STANDARD NORMAL variables. The statistic actually used divides by SEMs estimated
+    from R = 16 populations. Under the exact null the true exceedance of 3.451 is 3.04 %,
+    not the intended 1 %; the correct 99th percentile is 3.87. The amendment''s own stated
+    motivation is nevertheless confirmed independently: the superseded threshold of 2 has
+    a null exceedance of 63.7 %.
+
+    '
+  method: '2 x 10^5 Monte Carlo replicates of 18 paired two-sample comparisons with R = 16
+    per arm and SEMs estimated from the same draws.
+
+    '
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: '2 x 10^5 Monte Carlo replicates of 18 paired two-sample comparisons
+    with R = 16 per arm and SEMs estimated from the same draws.
+
+    '
+  what_was_verified: 'z_crit = Phi^-1((1 + 0.99^(1/n))/2) = 3.451 at n = 18 is the Sidak point
+    for the maximum of n STANDARD NORMAL variables. The statistic actually used divides by
+    SEMs estimated from R = 16 populations. Under the exact null the true exceedance of 3.451
+    is 3.04 %, not the intended 1 %; the correct 99th percentile is 3.87. The amendment''s
+    own stated motivation is nevertheless confirmed independently: the superseded threshold
+    of 2 has a null exceedance of 63.7 %.
+
+    '
+- id: RT-1OVERNC-FIT-001
+  what: 'At zeta = 0.35, L = 64, lambda = 0.3032 the stored corpus fits CMI(N_c) = c0 + c1/N_c
+    across all six measured rungs N_c = 64..8192 with chi2/dof = 0.92 and c0 = 0.34542 +-
+    0.00114 (and c0 = 0.34492 +- 0.00126 restricted to N_c >= 256). The N_c -> infinity target
+    at this cell is therefore ESTIMABLE from ladder data to about 0.3 %.
+
+    '
+  limitation: 'One cell: one zeta, one L, one lambda, one observable. It does not establish
+    the 1/N_c form at other zeta, at other lambda, in the tails of the CMI curve, or for the
+    crossing location. It is evidence against the premise "the N_c -> infinity target is unknown"
+    AT THIS CELL and nothing wider.
+
+    '
+  method: 'Inverse-variance weighted linear fit of the cell mean against 1/N_c using across-population
+    SEMs, on research/tasks/**/results/*.json.
+
+    '
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: 'Inverse-variance weighted linear fit of the cell mean against 1/N_c
+    using across-population SEMs, on research/tasks/**/results/*.json.
+
+    '
+  what_was_verified: 'At zeta = 0.35, L = 64, lambda = 0.3032 the stored corpus fits CMI(N_c)
+    = c0 + c1/N_c across all six measured rungs N_c = 64..8192 with chi2/dof = 0.92 and c0
+    = 0.34542 +- 0.00114 (and c0 = 0.34492 +- 0.00126 restricted to N_c >= 256). The N_c ->
+    infinity target at this cell is therefore ESTIMABLE from ladder data to about 0.3 %.
+
+    '
+- id: RT-RATEFLAT-MATCHED-001
+  what: 'An attempt to break the refutation of rate ~ N_c^0.1871 FAILED: the refutation holds
+    under a lambda-matched re-derivation. RATE35_MAX takes a MAXIMUM over populations, and
+    the rungs compared have very different population counts (L=64: n=888 at N_c=1024 spanning
+    lambda 0.1932-0.3532 against n=48 at N_c=4096 and 8192 at the single lambda 0.3032), so
+    the published comparison is confounded by both sample size and lambda. At the one lambda
+    all seven rungs share (0.3032) the median rate at L = 64 is 4.67 / 4.78 / 4.91 / 4.72
+    / 4.60 / 4.75 ms at N_c = 64 / 256 / 1024 / 2048 / 4096 / 8192 -- flat over a 128x range.
+
+    '
+  method: per-(L, N_c, lambda) medians and maxima of wall_s/(N_c*n_steps)*1000 over every
+    stored zeta = 0.35, dtau_mult = 6 population.
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: per-(L, N_c, lambda) medians and maxima of wall_s/(N_c*n_steps)*1000
+    over every stored zeta = 0.35, dtau_mult = 6 population.
+  what_was_verified: 'An attempt to break the refutation of rate ~ N_c^0.1871 FAILED: the
+    refutation holds under a lambda-matched re-derivation. RATE35_MAX takes a MAXIMUM over
+    populations, and the rungs compared have very different population counts (L=64: n=888
+    at N_c=1024 spanning lambda 0.1932-0.3532 against n=48 at N_c=4096 and 8192 at the single
+    lambda 0.3032), so the published comparison is confounded by both sample size and lambda.
+    At the one lambda all seven rungs share (0.3032) the median rate at L = 64 is 4.67 / 4.78
+    / 4.91 / 4.72 / 4.60 / 4.75 ms at N_c = 64 / 256 / 1024 / 2048 / 4096 / 8192 -- flat over
+    a 128x range.
+
+    '
+- id: RT-RHO-CONVEXITY-001
+  what: 'COST_MODEL.md section 4 states that rho "errs upward". One component errs DOWNWARD.
+    rho(zeta) = rate(zeta)/rate(0.35) and rate(0.35) is obtained by log-log LINEAR interpolation
+    between the measured zeta = 0.30 and 0.70 points; the ALGRD rate(zeta) curve is CONVEX
+    in log-log (segment slopes 0.42 / 0.64 / 1.22 at L = 32), so that chord OVER-estimates
+    rate(0.35) and therefore UNDER-estimates rho(0.70) by about 7-9 % (2.372 adopted against
+    2.55 from the low-segment slope at L = 64). Small against the 2.43x --time margin, and
+    partly offset by the max-over-L convention.
+
+    '
+  method: log-log segment slopes and two alternative estimates of rate(0.35) from TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json.
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: log-log segment slopes and two alternative estimates of rate(0.35) from
+    TASK-2026-08-11-ALGRD/results/b0_L{32,64,96,128}.json.
+  what_was_verified: 'COST_MODEL.md section 4 states that rho "errs upward". One component
+    errs DOWNWARD. rho(zeta) = rate(zeta)/rate(0.35) and rate(0.35) is obtained by log-log
+    LINEAR interpolation between the measured zeta = 0.30 and 0.70 points; the ALGRD rate(zeta)
+    curve is CONVEX in log-log (segment slopes 0.42 / 0.64 / 1.22 at L = 32), so that chord
+    OVER-estimates rate(0.35) and therefore UNDER-estimates rho(0.70) by about 7-9 % (2.372
+    adopted against 2.55 from the low-segment slope at L = 64). Small against the 2.43x --time
+    margin, and partly offset by the max-over-L convention.
+
+    '
+- id: RT-SINGLEROW-PACKS-001
+  what: '"Packs are idempotent so a timeout costs only the unfinished rows" (CANDIDATES.md
+    C1 field 5, shared/run_pack.py docstring) is true but vacuous in the two arms that hold
+    74 % of the design''s core-hours. packs.csv shows conditional/M_z070_nc2048 is 432 packs
+    of exactly ONE row (slowest 17 745 s) and M_z070_nc1024 is 384 single-row packs of 408.
+    Where a pack is one row, a --time overrun loses the whole row''s work on every requeue
+    and the row can never complete.
+
+    '
+  method: histogram of the `count` column of every arm's packs.csv.
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: histogram of the `count` column of every arm's packs.csv.
+  what_was_verified: '"Packs are idempotent so a timeout costs only the unfinished rows" (CANDIDATES.md
+    C1 field 5, shared/run_pack.py docstring) is true but vacuous in the two arms that hold
+    74 % of the design''s core-hours. packs.csv shows conditional/M_z070_nc2048 is 432 packs
+    of exactly ONE row (slowest 17 745 s) and M_z070_nc1024 is 384 single-row packs of 408.
+    Where a pack is one row, a --time overrun loses the whole row''s work on every requeue
+    and the row can never complete.
+
+    '
+- id: RT-SCRATCH-INGEST-001
+  what: 'During this review the shipped loader analysis/mockprod_analysis.py::load and preflight
+    check P14 both globbed <task>/**/results/*.json with no provenance filter, and ingested
+    the red team''s synthetic populations from the task''s own scratch/ directory as measurements
+    (P14 reported 27 false duplicates). Both files were patched during the review with a path-substring
+    exclusion for /scratch/. The residual gap: the loader still accepts ANY JSON under the
+    task tree carrying the right fields, and does not deduplicate by seed or cross-check a
+    manifest, so a copied, stale or foreign results file elsewhere in the tree would still
+    enter the curves and would count as an independent population.
+
+    '
+  method: direct execution; observed in the patched source at analysis/mockprod_analysis.py::load
+    and shared/preflight.py:343.
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  negative_result: true
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: direct execution; observed in the patched source at analysis/mockprod_analysis.py::load
+    and shared/preflight.py:343.
+  what_was_verified: 'During this review the shipped loader analysis/mockprod_analysis.py::load
+    and preflight check P14 both globbed <task>/**/results/*.json with no provenance filter,
+    and ingested the red team''s synthetic populations from the task''s own scratch/ directory
+    as measurements (P14 reported 27 false duplicates). Both files were patched during the
+    review with a path-substring exclusion for /scratch/. The residual gap: the loader still
+    accepts ANY JSON under the task tree carrying the right fields, and does not deduplicate
+    by seed or cross-check a manifest, so a copied, stale or foreign results file elsewhere
+    in the tree would still enter the curves and would count as an independent population.
+
+    '
+- id: EXT-DOUCET-JOHANSEN-2011
+  what: 'Doucet and Johansen, "A Tutorial on Particle Filtering and Smoothing: Fifteen Years
+    Later" (2011), https://www.stats.ox.ac.uk/~doucet/doucet_johansen_tutorialPF2011.pdf --
+    sought as a primary source for the standard SMC result that the bias of a particle estimator
+    is O(1/N) while the variance is also O(1/N).
+
+    '
+  inspection_level: not_inspected
+  what_it_does_not_establish: 'NOTHING is claimed from it. The PDF was fetched but the relevant
+    statement could not be located in the extracted text, so it is DISCOVERY only and carries
+    no claim here. The 1/N_c attack in REDTEAM.yaml rests on RT-1OVERNC-FIT-001, which is
+    this reviewer''s own fit to this project''s own data, and not on any literature result.
+
+    '
+  found_by: red-team WebSearch, then WebFetch of the author's copy
+  verified_by:
+  - red-team
+  promotion_status: not_proposed
+  tier: task-verified
+  date: '2026-09-05'
+  source_or_artifact: see method
+  what_was_verified: 'Doucet and Johansen, "A Tutorial on Particle Filtering and Smoothing:
+    Fifteen Years Later" (2011), https://www.stats.ox.ac.uk/~doucet/doucet_johansen_tutorialPF2011.pdf
+    -- sought as a primary source for the standard SMC result that the bias of a particle
+    estimator is O(1/N) while the variance is also O(1/N).
+
+    '

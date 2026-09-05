@@ -1,0 +1,130 @@
+# TASK PHASE LEDGER - append-only. Written by research/tools/task_phase.py.
+# Editing a frozen artifact after its stage closed is validate_task.py error M5.
+schema_version: 2
+task_id: TASK-2026-09-06-NC-ZETA-MOCKPROD
+mode: normal
+phases:
+- stage: task_created
+  closed: '2026-09-05T17:53:58Z'
+  frozen: {}
+- stage: stage_1_problem
+  closed: '2026-09-05T17:57:50Z'
+  frozen:
+    CHARTER.md: sha256:2193440f295beea603ea4d5650d20ccb4ccb9684424784d78ae7f876b49b167b
+    PROBLEM_MEMO.md: sha256:fbae3dfbbfad54e8661b6cebfa16667e30a6972e8ffaa7305a6824a69602f86a
+    SOURCE_REGISTER.md: sha256:1cdef0f50b690e87426379e64d5430121dc3a4afce0941fc2b389da0f323ccd8
+  note: Scope frozen before any investigator ran. Grids, ladder, L set and R default are the brief's;
+    the design work is coverage verification, cost re-derivation and the package.
+- stage: investigators_dispatched
+  closed: '2026-09-05T17:57:54Z'
+  frozen: {}
+  workers:
+  - role: numerics
+    model: sonnet
+  workers_skipped:
+  - literature
+  - theory
+- stage: first_pass_frozen
+  closed: '2026-09-05T18:04:43Z'
+  frozen:
+    agent_reports/numerics.md: sha256:f9833e3bef23cfafa76ee63657a76222c9720a9515848aa9e8bec118ab58fd28
+  note: 'One investigator (numerics, sonnet). It caught a real error in the lead''s draft cost model:
+    the lambda-rate exponent was chosen in the LESS conservative direction under a comment claiming the
+    opposite.'
+- stage: collaboration_opened
+  closed: null
+  frozen: {}
+- stage: collaboration_closed
+  closed: null
+  frozen: {}
+- stage: stage_3_candidates
+  closed: '2026-09-05T18:18:44Z'
+  frozen:
+    CANDIDATES.md: sha256:c4f082b5882f3a2e214ac0bd407fd6e835f92869e3fba5ffc0d9562dde072d19
+    FALSIFICATION_PLAN.md: sha256:d2466a50045848299a23fc88943e584efa979f976d6e26d16bda57cb00fae564
+    ANALYSIS_SPEC.yaml: sha256:8275396a9a1f243375be188f3ab8b6f6de24ac14394919b3c999024d5b369b87
+    NOVELTY_GATE.md: sha256:690f787326d1ede83b00b445003bc8c2ba1e3890df77247896d9eb64d50bc387
+    FIELD_MAP.md: sha256:3782469d910190d3bafc1810ae2190b537816bb2f5051ef1b9aad71a1f72dfdd
+    NOVELTY_MATRIX.md: sha256:99fad615de336ea96666381e35e313e479a395a2ccee5f6d735397cef611f75e
+- stage: redteam_dispatched
+  closed: '2026-09-05T18:30:44Z'
+  frozen: {}
+  note: 'One red-team worker, opus. Scope per brief section 14: a small adversarial implementation review
+    (bracket coverage, duplication, runtime/memory, analysis correctness). It receives the raw investigator
+    report, the candidate statements and the package; it does NOT receive a lead summary.'
+- stage: synthesis_closed
+  closed: '2026-09-05T21:09:32Z'
+  frozen:
+    REDTEAM.yaml: sha256:c63233d9ee11fb1bd946a68780078f9a1a6a03ecaa5fcf145911e1922b9be9bf
+    RESEARCH_MEMO.md: sha256:3c1b8c7d7012fbb4a7ea0382d9570126e104c9d311947b1b30eef2480bf3a5e6
+    RECOMMENDATION.md: sha256:ae71e08fd5e60a012c1202a554b012aea0124eb6b30458f130e2d48b5df4f0b0
+    FALSIFICATION_RESULTS.md: sha256:d2baef45c7875e0e595391ac1dd0b8cb7c74d09688d2c950905bf6663e3618de
+    ASSESSMENT_AH.md: sha256:5da09f90f3715981ee304a919a74a9616a23ccd3fb2602c5cccb4f03ef9c0c2c
+    SLOP_WARNINGS.md: sha256:7ec4f58aad01b61157f93b171652c2e7c4152161c23b0f32c9a3404fd4afba95
+  note: Red team killed all five candidates; C1 on its analysis half only. Repairs R1-R4 applied and re-verified.
+    Verdict Pursue on the repaired package, with the L=64 top-rung power limit stated at the top of RECOMMENDATION.md.
+amendments:
+- path: ANALYSIS_SPEC.yaml
+  was: sha256:e7d77a94aeac05d29bb24cc504d51f8beae62328178a4fa0f39fef7804cf5fcc
+  now: sha256:ac8c04d179960f807e78a2110915c9e08ff52fe8ac8681c481b733d8f129fed2
+  at: '2026-09-05T18:23:22Z'
+  reason: 'Pre-data threshold recalibration. tools/smoke_test.py showed the frozen max|z| thresholds (2
+    / 4) were below the null distribution of their own statistic: max|z| over ~18 comparisons is 2.5-3.2
+    under ZERO injected drift, so the rule classified a perfectly stable synthetic rung as STILL_CHANGING
+    and could not return its own null. Thresholds are now stated against a multiplicity-corrected z_crit
+    = 3.451 at n=18. Found on synthetic data with a known answer; no real datum exists yet and none influenced
+    this.'
+  authorised_by: lead, TASK-2026-09-06-NC-ZETA-MOCKPROD
+- path: CANDIDATES.md
+  was: sha256:1f5547ca883bc5766a15a5152864207995f0ad5d9d3025a4d70447ea571e8813
+  now: sha256:c4f082b5882f3a2e214ac0bd407fd6e835f92869e3fba5ffc0d9562dde072d19
+  at: '2026-09-05T18:44:24Z'
+  reason: HEADING FORMAT ONLY. validate_task.py check T7 counts candidates by the pattern '## Candidate
+    <id>'; the file used '## C1 - ...'. The diff is exactly five heading lines, verified by diff against
+    a pre-edit copy. No candidate statement, affirmative case, precedent, objection, decisive test, kill
+    criterion, surviving scope or revision was touched, and no verdict changed.
+  authorised_by: lead, TASK-2026-09-06-NC-ZETA-MOCKPROD
+- path: NOVELTY_GATE.md
+  was: sha256:d6c1fcafde52b9a68f58dd9a59f1c47b33dcb783d48f0df82989ca11459a1fd1
+  now: sha256:4189af4a17e5fab2bd2d59a746430e90486aa75d516260146bd20bbaa704a8b4
+  at: '2026-09-05T18:44:24Z'
+  reason: Two validator-required additions, no reclassification. (1) A placeholder-looking literal '<statement>'
+    in the documented command line tripped T2; it now reads '<candidate statement>'. (2) validate_task.py
+    G4 requires that 'no predecessor found' be qualified as meaning 'none found under the searches actually
+    performed' and that the external-search position be recorded. A new section 5 states that NO external
+    search was performed, that external novelty is therefore UNRESOLVED and not favourable, and that the
+    absence of a search is evidence about the search. No predecessor classification was changed and no
+    novelty claim was added.
+  authorised_by: lead, TASK-2026-09-06-NC-ZETA-MOCKPROD
+- path: NOVELTY_GATE.md
+  was: sha256:4189af4a17e5fab2bd2d59a746430e90486aa75d516260146bd20bbaa704a8b4
+  now: sha256:690f787326d1ede83b00b445003bc8c2ba1e3890df77247896d9eb64d50bc387
+  at: '2026-09-05T18:45:14Z'
+  reason: 'SECOND amendment pass on this file, because the lead did not run validate_task.py before the
+    first one. Two remaining validator requirements: G2 requires a closest-predecessor record per CANDIDATE
+    (C1-C5), not per task -- added as section 6, all five classified replication or rediscovery, none
+    ''no predecessor found'', none claimed novel; and G4''s required qualifier ''searches actually performed''
+    had been broken across a line wrap in section 5 and now reads on one line. No classification was weakened
+    and no novelty claim was added by either change.'
+  authorised_by: lead, TASK-2026-09-06-NC-ZETA-MOCKPROD
+- path: ANALYSIS_SPEC.yaml
+  was: sha256:ac8c04d179960f807e78a2110915c9e08ff52fe8ac8681c481b733d8f129fed2
+  now: sha256:8275396a9a1f243375be188f3ab8b6f6de24ac14394919b3c999024d5b369b87
+  at: '2026-09-05T21:05:47Z'
+  reason: 'amendment_2 (R1-R4), recorded in the file itself. The independent red team killed candidate
+    C1 on its ANALYSIS half by executing the shipped script on injected data: the recommendation rule
+    had no rule in this spec at all so the script invented first-stable-wins; the INCONCLUSIVE gate''s
+    ''or'' was implemented as a minimum on one rung; no minimum-detectable-effect was reported; and z_crit
+    was a normal quantile whose true null exceedance at R=16 is 3.05 percent, not 1. R1 SPECIFIES the
+    recommendation rule, R2 states the ''or'' as a maximum over both L and both rungs, R3 requires an
+    MDE beside every verdict, R4 makes z_crit simulated at the actual R and prints the family-wise rate.
+    Reproduced by the lead before changing anything. No datum exists; the four class names, their order,
+    INCONCLUSIVE-first, XV1, the crossing outcome classes, every grid, the ladder, R and every prohibited
+    output are untouched.'
+  authorised_by: lead, TASK-2026-09-06-NC-ZETA-MOCKPROD
+collaboration:
+  rounds: 0
+  decision: COLLABORATION_NOT_NEEDED
+  reason: Only one investigator ran; literature and theory were skipped by design (brief section 14, RESOURCE_POLICY
+    section 5.5). There is no cross-role dependency to open a round on.
+  at: '2026-09-05T18:04:43Z'

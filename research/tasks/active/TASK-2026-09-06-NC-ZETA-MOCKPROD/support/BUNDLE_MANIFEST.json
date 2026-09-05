@@ -1,0 +1,44 @@
+{
+ "schema_version": 1,
+ "task": "TASK-2026-09-06-NC-ZETA-MOCKPROD",
+ "why": "Every Ruche package in this project must run from a tracked-only clean checkout with no dependency on any sibling task directory. instrumented.py originates in an UNTRACKED research-task directory (TASK-2026-08-30-SMCSTAT/analysis) which exists in the developer working tree and in no git clone; the first ARM 1 Ruche job of TASK-2026-09-01-SMCRUCHE-PACKFIX died with ModuleNotFoundError for exactly that reason. Here the bundle carries a second obligation: this task's populations at zeta in {0.10, 0.20, 0.70} are compared rung-to-rung against each other and read alongside a zeta=0.35 reference row produced by this same file. Identical bytes are what licenses treating the N_c ladder as one measurement rather than five.",
+ "closure_method": "Not recomputed. Established by sha256 identity with TASK-2026-09-05-NC-ZETA-CALIBRATION/support/instrumented.py, which inherited it from TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION, TASK-2026-09-02-MOCK-PRODUCTION and ultimately TASK-2026-09-01-SMCRUCHE-PACKFIX, where the import closure was computed by ast.parse of instrumented.py, walking Import/ImportFrom nodes and following any resolving to a sibling module in the untracked SMCSTAT analysis directory. Result: no sibling imports at all. Identical bytes have identical import closure.",
+ "not_bundled_because_tracked": [
+  "pps_qj (the production package, tracked in this repository)"
+ ],
+ "not_bundled_because_external": [
+  "numpy",
+  "dataclasses",
+  "time",
+  "__future__"
+ ],
+ "files": [
+  {
+   "bundled_as": "support/instrumented.py",
+   "original_path": "research/tasks/active/TASK-2026-09-05-NC-ZETA-CALIBRATION/support/instrumented.py",
+   "ultimate_origin": "research/tasks/active/TASK-2026-08-30-SMCSTAT/analysis/instrumented.py (UNTRACKED; never depended on at runtime)",
+   "sha256_source": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "sha256_bundled": "0a33c4034cda70ea635cf715ee0b160d9f29e75ceacde0de89628ff2c533032d",
+   "bytes": 11396,
+   "byte_identical": true,
+   "note": "Copied verbatim with cp(1) and verified with cmp(1). NOT rewritten, NOT reformatted, NOT re-implemented. This is the exact file that produced every zeta=0.35 production population in this programme, validated bitwise against production by TASK-2026-08-30-SMCSTAT."
+  }
+ ],
+ "runners_verbatim_not_integrity_scanned": [
+  {
+   "bundled_as": "shared/run_cell.py",
+   "original_path": "research/tasks/active/TASK-2026-09-05-NC-ZETA-CALIBRATION/shared/run_cell.py",
+   "byte_identical": true,
+   "note": "The certified per-row executor, unmodified. This task adds no argument, changes no default and touches no sampler parameter.",
+   "sha256": "571f7ff42baccf2905f04fed2ade24f13fd1316edb47ac9cb8d7491e75a1f0a8"
+  },
+  {
+   "bundled_as": "shared/run_pack.py",
+   "original_path": "research/tasks/active/TASK-2026-09-05-NC-ZETA-CALIBRATION/shared/run_pack.py",
+   "byte_identical": true,
+   "note": "The packing wrapper, unmodified. It invokes run_cell.py once per row in a fresh process, so packing changes scheduling and never the computation.",
+   "sha256": "660067b6ef58fb4bc0a9f2e7a039a5b0018365a28b5aa691dbf445957ee9e2d1"
+  }
+ ],
+ "integrity_scan_note": "run_cell.py's startup integrity check iterates files[] and resolves each entry against support/ by basename. Only entries that live in support/ may appear there; the two runner scripts live in shared/ and are recorded under runners_verbatim_not_integrity_scanned instead. Their hashes are checked by tools/negative_controls.py N3 rather than at job start, because a runner that had been altered would have altered the check itself."
+}
