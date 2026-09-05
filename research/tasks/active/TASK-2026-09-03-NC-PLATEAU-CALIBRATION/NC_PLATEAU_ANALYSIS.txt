@@ -1,0 +1,387 @@
+==============================================================================
+TASK-2026-09-03-NC-PLATEAU-CALIBRATION — analysis
+==============================================================================
+5176 populations in 127 cells
+      304  TASK-2026-09-01-SMCRUCHE-READY
+      936  TASK-2026-09-02-MOCK-PRODUCTION
+      368  TASK-2026-09-02-SMC-HIGHRUNG-LAMBDA
+      288  TASK-2026-09-03-MOCK-LOWLAMBDA-EXTENSION
+     3280  TASK-2026-09-03-NC-PLATEAU-CALIBRATION
+
+------------------------------------------------------------------------------
+1. THE TWO BUDGETS. N_c controls finite-particle drift; R controls the
+   uncertainty of the finite-N_c population mean. Neither repairs the other.
+------------------------------------------------------------------------------
+   L     lam   dm    N_c    R      mean       sd      SEM R for tau_I  source
+  32  0.1932    6   1024   24   1.02112  0.03082  0.00629         203  09-03-MOCK-LOWLAMBDA-EXTENSION
+  32  0.2032    6   1024   24   0.97379  0.02098  0.00428          94  09-03-MOCK-LOWLAMBDA-EXTENSION
+  32  0.2132    6   1024   24   0.92120  0.02894  0.00591         179  09-03-MOCK-LOWLAMBDA-EXTENSION
+  32  0.2182    6    512   48   0.89873  0.02998  0.00433         192  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2182    6   1024   48   0.89152  0.02190  0.00316         103  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2182    6   2048   48   0.90046  0.01839  0.00265          73  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2232    6    512   48   0.87478  0.03036  0.00438         197  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2232    6   1024   48   0.87261  0.01992  0.00287          85  09-03-MOCK-LOWLAMBDA-EXTENSION+09-03-NC-PLATEAU-CALIBRATION
+  32  0.2232    6   2048   48   0.87001  0.01665  0.00240          60  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2282    6    512   48   0.85046  0.03885  0.00561         323  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2282    6   1024   48   0.83745  0.02220  0.00320         106  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2282    6   2048   48   0.84450  0.01607  0.00232          56  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2332    6    512   48   0.81628  0.03325  0.00480         237  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2332    6   1024   48   0.81887  0.02523  0.00364         136  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  32  0.2332    6   2048   48   0.81183  0.01475  0.00213          47  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2382    6    512   48   0.80092  0.03540  0.00511         268  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2382    6   1024   48   0.78906  0.01947  0.00281          81  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2382    6   2048   48   0.79272  0.01589  0.00229          54  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2432    6    512   48   0.77614  0.03475  0.00502         258  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2432    6   1024   48   0.76470  0.02292  0.00331         113  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  32  0.2432    6   2048   48   0.76634  0.01376  0.00199          41  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2482    6    512   48   0.74521  0.02510  0.00362         135  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2482    6   1024   48   0.74298  0.02197  0.00317         103  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2482    6   2048   48   0.74103  0.01604  0.00232          55  09-03-NC-PLATEAU-CALIBRATION
+  32  0.2532    6   1024   24   0.71279  0.01904  0.00389          78  09-02-MOCK-PRODUCTION
+  32  0.2632    6   1024   24   0.67504  0.02603  0.00531         145  09-02-MOCK-PRODUCTION
+  32  0.2732    6   1024   24   0.62763  0.01344  0.00274          39  09-02-MOCK-PRODUCTION
+  32  0.2832    6   1024   24   0.58889  0.02130  0.00435          97  09-02-MOCK-PRODUCTION
+  32  0.2932    6   1024   24   0.54658  0.01380  0.00282          41  09-02-MOCK-PRODUCTION
+  32  0.3032    6   1024   24   0.51103  0.01447  0.00295          45  09-02-MOCK-PRODUCTION
+  32  0.3132    6   1024   24   0.46966  0.01464  0.00299          46  09-02-MOCK-PRODUCTION
+  32  0.3232    6   1024   24   0.44071  0.01456  0.00297          46  09-02-MOCK-PRODUCTION
+  32  0.3332    6   1024   24   0.41617  0.01095  0.00223          26  09-02-MOCK-PRODUCTION
+  32  0.3432    6   1024   24   0.38227  0.01296  0.00265          36  09-02-MOCK-PRODUCTION
+  32  0.3532    6   1024   24   0.35717  0.01256  0.00256          34  09-02-MOCK-PRODUCTION
+  48  0.1932    6   1024   24   1.03361  0.05383  0.01099         619  09-03-MOCK-LOWLAMBDA-EXTENSION
+  48  0.2032    6   1024   24   0.96917  0.04993  0.01019         533  09-03-MOCK-LOWLAMBDA-EXTENSION
+  48  0.2132    6   1024   24   0.89254  0.04953  0.01011         524  09-03-MOCK-LOWLAMBDA-EXTENSION
+  48  0.2182    6    512   48   0.88093  0.06046  0.00873         781  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2182    6   1024   48   0.86715  0.04562  0.00658         445  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2182    6   2048   48   0.86465  0.03391  0.00489         246  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2232    6    512   48   0.84320  0.05854  0.00845         732  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2232    6   1024   48   0.84538  0.03400  0.00491         247  09-03-MOCK-LOWLAMBDA-EXTENSION+09-03-NC-PLATEAU-CALIBRATION
+  48  0.2232    6   2048   48   0.82906  0.02958  0.00427         187  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2282    6    512   48   0.83256  0.06263  0.00904         838  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2282    6   1024   48   0.81352  0.04337  0.00626         402  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2282    6   2048   48   0.80997  0.02923  0.00422         183  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2332    6    512   48   0.79091  0.05437  0.00785         631  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2332    6   1024   48   0.79274  0.03816  0.00551         311  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  48  0.2332    6   2048   48   0.78937  0.02721  0.00393         159  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2382    6    512   48   0.77481  0.06077  0.00877         789  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2382    6   1024   48   0.76791  0.03633  0.00524         282  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2382    6   2048   48   0.76315  0.02898  0.00418         180  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2432    6    512   48   0.73881  0.05115  0.00738         559  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2432    6   1024   48   0.74179  0.03228  0.00466         223  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  48  0.2432    6   2048   48   0.73694  0.02434  0.00351         127  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2482    6    512   48   0.72236  0.06142  0.00886         805  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2482    6   1024   48   0.70524  0.04048  0.00584         350  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2482    6   2048   48   0.70851  0.02505  0.00362         134  09-03-NC-PLATEAU-CALIBRATION
+  48  0.2532    6   1024   24   0.67860  0.03102  0.00633         206  09-02-MOCK-PRODUCTION
+  48  0.2632    6   1024   24   0.64398  0.02223  0.00454         106  09-02-MOCK-PRODUCTION
+  48  0.2732    6   1024   24   0.60443  0.02890  0.00590         179  09-02-MOCK-PRODUCTION
+  48  0.2832    6   1024   24   0.57046  0.02765  0.00564         164  09-02-MOCK-PRODUCTION
+  48  0.2932    6   1024   24   0.51233  0.02584  0.00527         143  09-02-MOCK-PRODUCTION
+  48  0.3032    6   1024   24   0.46193  0.02033  0.00415          89  09-02-MOCK-PRODUCTION
+  48  0.3132    6   1024   24   0.41622  0.01923  0.00393          79  09-02-MOCK-PRODUCTION
+  48  0.3232    6   1024   24   0.37778  0.02058  0.00420          91  09-02-MOCK-PRODUCTION
+  48  0.3332    6   1024   24   0.32977  0.01895  0.00387          77  09-02-MOCK-PRODUCTION
+  48  0.3432    6   1024   24   0.28359  0.01806  0.00369          70  09-02-MOCK-PRODUCTION
+  48  0.3532    6   1024   24   0.24863  0.01347  0.00275          39  09-02-MOCK-PRODUCTION
+  64  0.1932    6   1024   24   1.09018  0.07995  0.01632        1365  09-03-MOCK-LOWLAMBDA-EXTENSION
+  64  0.2032    6   1024   24   0.99651  0.07818  0.01596        1305  09-03-MOCK-LOWLAMBDA-EXTENSION
+  64  0.2132    6   1024   24   0.95180  0.06742  0.01376         970  09-03-MOCK-LOWLAMBDA-EXTENSION
+  64  0.2182    6    512   48   0.92469  0.10119  0.01461        2186  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2182    6   1024   48   0.89515  0.07881  0.01137        1326  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2182    6   2048   48   0.90362  0.03371  0.00487         243  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2232    6    512   48   0.88308  0.09835  0.01420        2065  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2232    6   1024   48   0.88207  0.06495  0.00937         901  09-03-MOCK-LOWLAMBDA-EXTENSION+09-03-NC-PLATEAU-CALIBRATION
+  64  0.2232    6   2048   48   0.86142  0.04278  0.00617         391  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2282    6    512   48   0.84534  0.08114  0.01171        1406  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2282    6   1024   48   0.84229  0.06645  0.00959         943  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2282    6   2048   48   0.83144  0.04555  0.00657         443  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2332    6    512   48   0.82121  0.08259  0.01192        1456  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2332    6   1024   48   0.81045  0.07580  0.01094        1227  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  64  0.2332    6   2048   48   0.80003  0.04601  0.00664         452  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2382    6    512   48   0.77505  0.08331  0.01203        1482  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2382    6   1024   48   0.77202  0.06117  0.00883         799  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2382    6   2048   48   0.74883  0.04497  0.00649         432  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2432    6    512   48   0.77093  0.07385  0.01066        1165  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2432    6   1024   48   0.71939  0.05512  0.00796         649  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  64  0.2432    6   2048   48   0.71953  0.04021  0.00580         346  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2482    6    512   48   0.69404  0.06695  0.00966         957  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2482    6   1024   48   0.69582  0.05983  0.00864         765  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2482    6   2048   48   0.68226  0.04893  0.00706         511  09-03-NC-PLATEAU-CALIBRATION
+  64  0.2532    6   1024   24   0.64381  0.06096  0.01244         794  09-02-MOCK-PRODUCTION
+  64  0.2632    6   1024   24   0.56730  0.04696  0.00959         471  09-02-MOCK-PRODUCTION
+  64  0.2732    6   1024   24   0.51419  0.03624  0.00740         281  09-02-MOCK-PRODUCTION
+  64  0.2832    6   1024   24   0.44782  0.03663  0.00748         287  09-02-MOCK-PRODUCTION
+  64  0.2932    6   1024   96   0.40307  0.03658  0.00373         286  09-02-SMC-HIGHRUNG-LAMBDA
+  64  0.2932    6   2048   24   0.39330  0.02689  0.00549         155  09-02-MOCK-PRODUCTION
+  64  0.3032    3     64   48   0.48560  0.16119  0.02327        5545  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032    6     64   48   0.47065  0.16005  0.02310        5467  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032   12     64   48   0.46049  0.10480  0.01513        2344  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032    3    256   48   0.37910  0.06741  0.00973         970  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032    6    256   48   0.38540  0.05502  0.00794         647  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032   12    256   48   0.36888  0.05746  0.00829         705  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032    6   1024   96   0.35316  0.02850  0.00291         174  09-02-SMC-HIGHRUNG-LAMBDA
+  64  0.3032    6   2048   48   0.35389  0.02246  0.00324         108  09-02-MOCK-PRODUCTION+09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032    6   4096   48   0.34868  0.01374  0.00198          41  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3032    6   8192   48   0.34510  0.01045  0.00151          24  09-03-NC-PLATEAU-CALIBRATION
+  64  0.3132    6   1024   96   0.31612  0.02598  0.00265         145  09-02-SMC-HIGHRUNG-LAMBDA
+  64  0.3132    6   2048   24   0.31214  0.01748  0.00357          66  09-02-MOCK-PRODUCTION
+  64  0.3232    6   1024   24   0.28098  0.02227  0.00455         106  09-02-MOCK-PRODUCTION
+  64  0.3332    6   1024   24   0.24805  0.01691  0.00345          61  09-02-MOCK-PRODUCTION
+  64  0.3432    6   1024   24   0.21889  0.02109  0.00431          95  09-02-MOCK-PRODUCTION
+  64  0.3532    6   1024   24   0.18579  0.01932  0.00394          80  09-02-MOCK-PRODUCTION
+  96  0.3032    6    128   32   0.38793  0.13303  0.02352        3777  09-01-SMCRUCHE-READY
+  96  0.3032    6    256   32   0.33591  0.10376  0.01834        2298  09-01-SMCRUCHE-READY
+  96  0.3032    6    512   48   0.26631  0.07118  0.01027        1082  09-01-SMCRUCHE-READY
+  96  0.3032    6   1024   24   0.26458  0.07925  0.01618        1341  09-03-NC-PLATEAU-CALIBRATION
+  96  0.3032    6   2048   24   0.24106  0.03359  0.00686         241  09-03-NC-PLATEAU-CALIBRATION
+ 128  0.3032    6     64   64   0.51957  0.19953  0.02494        8497  09-01-SMCRUCHE-READY
+ 128  0.3032    6    128   64   0.42059  0.18834  0.02354        7571  09-01-SMCRUCHE-READY
+ 128  0.3032    6    256   64   0.29932  0.13435  0.01679        3852  09-01-SMCRUCHE-READY
+ 128  0.3032    6    512   48   0.25109  0.14994  0.02164        4799  09-02-SMC-HIGHRUNG-LAMBDA
+ 128  0.3032    6   1024   32   0.19088  0.05080  0.00898         551  09-02-SMC-HIGHRUNG-LAMBDA
+ 128  0.3032    6   2048   16   0.18042  0.06060  0.01515         784  09-03-NC-PLATEAU-CALIBRATION
+
+------------------------------------------------------------------------------
+2. CAMPAIGN A — deep central ladder, L = 64, lambda = 0.3032
+------------------------------------------------------------------------------
+  rungs [64, 256, 1024, 2048, 4096, 8192]
+     1024 -> 2048  Delta = +0.00073 +- 0.00436  95% [-0.00781, +0.00927]  HW/tau_I = 1.42  P1=y P2=n  B_eff = -1.492 +- 8.920  R for P2 = 141
+     2048 -> 4096  Delta = -0.00521 +- 0.00380  95% [-0.01266, +0.00223]  HW/tau_I = 1.24  P1=y P2=n  B_eff = +21.360 +- 15.566  R for P2 = 74
+     4096 -> 8192  Delta = -0.00357 +- 0.00249  95% [-0.00846, +0.00131]  HW/tau_I = 0.81  P1=y P2=n  B_eff = +29.275 +- 20.411  R for P2 = 32
+    criteria {'P1': True, 'P2': False, 'P3': True, 'P4': True, 'P5': False}
+    VERDICT  UNRESOLVED_R_LIMITED   (binding budget: R)
+    1/N fit: I_inf = 0.34542 +- 0.00114, B = +8.892 +- 1.187, chi2 = 3.68 / 4 dof, p = 0.4509
+    free-gamma fit: gamma = 0.850, chi2 = 2.65 / 3 dof
+    B_eff stable on top two steps: True
+    ASYMPTOTIC VERDICT  LOCAL_1_OVER_NC_REGIME_CONSISTENT
+      B = +8.8916 +- 1.1872   LOCAL and CELL-SPECIFIC. Not a law B(L, zeta, lambda). Not transferable to another observable, L, zeta or lambda.
+
+------------------------------------------------------------------------------
+3. CAMPAIGN B — transition-region shape, L = 64
+------------------------------------------------------------------------------
+  N_c=512: 7 of 7 lambdas measured, roughness 0.03937 (3.25 SEM)
+      lam=0.2182  R=48  CMI=0.92469 +- 0.01461  split-half -0.01366 +- 0.02946  LOO spread 0.57 SEM  max|z| 1.99
+      lam=0.2232  R=48  CMI=0.88308 +- 0.01420  split-half -0.00773 +- 0.02868  LOO spread 0.60 SEM  max|z| 2.20
+      lam=0.2282  R=48  CMI=0.84534 +- 0.01171  split-half -0.01052 +- 0.02363  LOO spread 0.60 SEM  max|z| 2.54
+      lam=0.2332  R=48  CMI=0.82121 +- 0.01192  split-half +0.00814 +- 0.02407  LOO spread 0.59 SEM  max|z| 2.06
+      lam=0.2382  R=48  CMI=0.77505 +- 0.01203  split-half +0.02057 +- 0.02412  LOO spread 0.69 SEM  max|z| 2.49
+      lam=0.2432  R=48  CMI=0.77093 +- 0.01066  split-half -0.03536 +- 0.02091  LOO spread 0.61 SEM  max|z| 2.20
+      lam=0.2482  R=48  CMI=0.69404 +- 0.00966  split-half +0.01134 +- 0.01946  LOO spread 0.58 SEM  max|z| 2.46
+  N_c=1024: 7 of 7 lambdas measured, roughness 0.01932 (2.03 SEM)
+      lam=0.2182  R=48  CMI=0.89515 +- 0.01137  split-half +0.02222 +- 0.02276  LOO spread 0.65 SEM  max|z| 2.31
+      lam=0.2232  R=48  CMI=0.88207 +- 0.00937  split-half +0.02770 +- 0.01851  LOO spread 0.84 SEM  max|z| 3.30
+      lam=0.2282  R=48  CMI=0.84229 +- 0.00959  split-half -0.01740 +- 0.01922  LOO spread 0.71 SEM  max|z| 2.82
+      lam=0.2332  R=48  CMI=0.81045 +- 0.01094  split-half +0.00722 +- 0.02209  LOO spread 0.68 SEM  max|z| 2.33
+      lam=0.2382  R=48  CMI=0.77202 +- 0.00883  split-half -0.00724 +- 0.01782  LOO spread 0.61 SEM  max|z| 2.57
+      lam=0.2432  R=48  CMI=0.71939 +- 0.00796  split-half -0.01394 +- 0.01595  LOO spread 0.73 SEM  max|z| 2.74
+      lam=0.2482  R=48  CMI=0.69582 +- 0.00864  split-half +0.01574 +- 0.01730  LOO spread 0.73 SEM  max|z| 2.99
+  N_c=2048: 7 of 7 lambdas measured, roughness 0.01473 (2.36 SEM)
+      lam=0.2182  R=48  CMI=0.90362 +- 0.00487  split-half -0.01431 +- 0.00961  LOO spread 0.72 SEM  max|z| 2.66
+      lam=0.2232  R=48  CMI=0.86142 +- 0.00617  split-half -0.01327 +- 0.01233  LOO spread 0.64 SEM  max|z| 2.20
+      lam=0.2282  R=48  CMI=0.83144 +- 0.00657  split-half -0.01124 +- 0.01319  LOO spread 0.56 SEM  max|z| 1.94
+      lam=0.2332  R=48  CMI=0.80003 +- 0.00664  split-half -0.00426 +- 0.01341  LOO spread 0.70 SEM  max|z| 2.41
+      lam=0.2382  R=48  CMI=0.74883 +- 0.00649  split-half -0.01455 +- 0.01295  LOO spread 0.74 SEM  max|z| 2.80
+      lam=0.2432  R=48  CMI=0.71953 +- 0.00580  split-half +0.00104 +- 0.01173  LOO spread 0.76 SEM  max|z| 3.56
+      lam=0.2482  R=48  CMI=0.68226 +- 0.00706  split-half +0.00492 +- 0.01426  LOO spread 0.60 SEM  max|z| 2.26
+  512->1024:
+    H1 additive constant  -0.01430   chi2 11.84/6 p=0.0657  not rejected
+    H2 multiplicative eps -0.01795   chi2 11.72/6 p=0.0684  not rejected
+    H3 resolved lambda-dependent shape distortion: False
+    -> UNRESOLVED: seven points do not separate an additive displacement from a multiplicative one here.
+  1024->2048:
+    H1 additive constant  -0.01012   chi2 5.74/6 p=0.4525  not rejected
+    H2 multiplicative eps -0.01257   chi2 5.84/6 p=0.4418  not rejected
+    H3 resolved lambda-dependent shape distortion: False
+    -> UNRESOLVED: seven points do not separate an additive displacement from a multiplicative one here.
+
+------------------------------------------------------------------------------
+4. LOCATOR CONVERGENCE — does the CROSSING converge before the absolute level?
+------------------------------------------------------------------------------
+  [matched] L32-L48@Nc1024
+      raw sign changes 0, resolved 0, endpoint-induced False
+      crossing(s) []  bootstrap median 0.22805  95% [0.21822156260417042, 0.23938086154856952]
+      fraction of bootstrap replicates with exactly one crossing 0.001
+  [matched] L32-L48@Nc2048
+      raw sign changes 0, resolved 0, endpoint-induced False
+      crossing(s) []  bootstrap median None  95% None
+      fraction of bootstrap replicates with exactly one crossing 0.000
+  [matched] L32-L48@Nc512
+      raw sign changes 0, resolved 0, endpoint-induced False
+      crossing(s) []  bootstrap median 0.22816  95% [0.21829094600806365, 0.2478673053401672]
+      fraction of bootstrap replicates with exactly one crossing 0.034
+  [matched] L32-L64@Nc1024
+      raw sign changes 1, resolved 0, endpoint-induced False
+      crossing(s) ['0.23002']  bootstrap median 0.2287  95% [0.21871835194067926, 0.23733964645652075]
+      fraction of bootstrap replicates with exactly one crossing 0.499
+  [matched] L32-L64@Nc2048
+      raw sign changes 1, resolved 0, endpoint-induced True
+      crossing(s) ['0.21954']  bootstrap median 0.22055  95% [0.21835940795667144, 0.23338789348338843]
+      fraction of bootstrap replicates with exactly one crossing 0.661
+  [matched] L32-L64@Nc512
+      raw sign changes 3, resolved 0, endpoint-induced False
+      crossing(s) ['0.22629', '0.23075', '0.23400']  bootstrap median 0.2325  95% [0.22088080615487857, 0.24422966727667964]
+      fraction of bootstrap replicates with exactly one crossing 0.293
+  [matched] L48-L64@Nc1024
+      raw sign changes 1, resolved 0, endpoint-induced False
+      crossing(s) ['0.23897']  bootstrap median 0.23908  95% [0.23015831508030654, 0.2478833460186389]
+      fraction of bootstrap replicates with exactly one crossing 0.757
+  [matched] L48-L64@Nc2048
+      raw sign changes 1, resolved 0, endpoint-induced False
+      crossing(s) ['0.23533']  bootstrap median 0.23535  95% [0.23224544158264346, 0.23893352574922852]
+      fraction of bootstrap replicates with exactly one crossing 0.988
+  [matched] L48-L64@Nc512
+      raw sign changes 1, resolved 1, endpoint-induced True
+      crossing(s) ['0.24586']  bootstrap median 0.23963  95% [0.2268487190337585, 0.24712040569617313]
+      fraction of bootstrap replicates with exactly one crossing 0.395
+  [one_sided] L32@1024 - L48@1024
+      raw sign changes 0, resolved 0, endpoint-induced False
+      crossing(s) []  bootstrap median 0.23799  95% [0.22002253056553, 0.2384117192920688]
+      fraction of bootstrap replicates with exactly one crossing 0.000
+  [one_sided] L32@1024 - L48@2048
+      raw sign changes 0, resolved 0, endpoint-induced False
+      crossing(s) []  bootstrap median None  95% None
+      fraction of bootstrap replicates with exactly one crossing 0.000
+  [one_sided] L32@1024 - L48@512
+      raw sign changes 0, resolved 0, endpoint-induced False
+      crossing(s) []  bootstrap median 0.22819  95% [0.21834955338661116, 0.23963834105271642]
+      fraction of bootstrap replicates with exactly one crossing 0.092
+  [one_sided] L32@1024 - L64@1024
+      raw sign changes 1, resolved 0, endpoint-induced False
+      crossing(s) ['0.23002']  bootstrap median 0.22866  95% [0.2187083622123496, 0.23744702060023962]
+      fraction of bootstrap replicates with exactly one crossing 0.501
+  [one_sided] L32@1024 - L64@2048
+      raw sign changes 1, resolved 0, endpoint-induced True
+      crossing(s) ['0.22080']  bootstrap median 0.22132  95% [0.21908612445963724, 0.22997078429631496]
+      fraction of bootstrap replicates with exactly one crossing 0.787
+  [one_sided] L32@1024 - L64@512
+      raw sign changes 3, resolved 0, endpoint-induced True
+      crossing(s) ['0.23392', '0.24166', '0.24376']  bootstrap median 0.23604  95% [0.2218451351683415, 0.2448276191048779]
+      fraction of bootstrap replicates with exactly one crossing 0.208
+  [one_sided] L48@1024 - L64@1024
+      raw sign changes 1, resolved 0, endpoint-induced False
+      crossing(s) ['0.23897']  bootstrap median 0.23916  95% [0.23162569324524862, 0.2478534933027001]
+      fraction of bootstrap replicates with exactly one crossing 0.762
+  [one_sided] L48@1024 - L64@2048
+      raw sign changes 1, resolved 0, endpoint-induced False
+      crossing(s) ['0.23458']  bootstrap median 0.23452  95% [0.2236452274759885, 0.23756578149071048]
+      fraction of bootstrap replicates with exactly one crossing 0.958
+  [one_sided] L48@1024 - L64@512
+      raw sign changes 1, resolved 0, endpoint-induced True
+      crossing(s) ['0.24681']  bootstrap median 0.24545  95% [0.23226359861366425, 0.247915848363314]
+      fraction of bootstrap replicates with exactly one crossing 0.565
+  shift matched: L32-L48@Nc1024 -> L32-L48@Nc512: +0.00011  WITHIN tau_lambda = 0.004
+  shift matched: L32-L48@Nc1024 -> L32-L64@Nc1024: +0.00065  WITHIN tau_lambda = 0.004
+  shift matched: L32-L48@Nc1024 -> L32-L64@Nc2048: -0.00750  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc1024 -> L32-L64@Nc512: +0.00445  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc1024 -> L48-L64@Nc1024: +0.01103  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc1024 -> L48-L64@Nc2048: +0.00730  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc1024 -> L48-L64@Nc512: +0.01157  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc512 -> L32-L64@Nc1024: +0.00054  WITHIN tau_lambda = 0.004
+  shift matched: L32-L48@Nc512 -> L32-L64@Nc2048: -0.00761  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc512 -> L32-L64@Nc512: +0.00434  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc512 -> L48-L64@Nc1024: +0.01092  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc512 -> L48-L64@Nc2048: +0.00719  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L48@Nc512 -> L48-L64@Nc512: +0.01146  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc1024 -> L32-L64@Nc2048: -0.00815  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc1024 -> L32-L64@Nc512: +0.00380  WITHIN tau_lambda = 0.004
+  shift matched: L32-L64@Nc1024 -> L48-L64@Nc1024: +0.01038  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc1024 -> L48-L64@Nc2048: +0.00665  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc1024 -> L48-L64@Nc512: +0.01093  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc2048 -> L32-L64@Nc512: +0.01195  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc2048 -> L48-L64@Nc1024: +0.01853  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc2048 -> L48-L64@Nc2048: +0.01480  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc2048 -> L48-L64@Nc512: +0.01908  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc512 -> L48-L64@Nc1024: +0.00658  OUTSIDE tau_lambda = 0.004
+  shift matched: L32-L64@Nc512 -> L48-L64@Nc2048: +0.00285  WITHIN tau_lambda = 0.004
+  shift matched: L32-L64@Nc512 -> L48-L64@Nc512: +0.00712  OUTSIDE tau_lambda = 0.004
+  shift matched: L48-L64@Nc1024 -> L48-L64@Nc2048: -0.00373  WITHIN tau_lambda = 0.004
+  shift matched: L48-L64@Nc1024 -> L48-L64@Nc512: +0.00055  WITHIN tau_lambda = 0.004
+  shift matched: L48-L64@Nc2048 -> L48-L64@Nc512: +0.00428  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L32@1024 - L48@512: -0.00980  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L32@1024 - L64@1024: -0.00933  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L32@1024 - L64@2048: -0.01667  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L32@1024 - L64@512: -0.00194  WITHIN tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L48@1024 - L64@1024: +0.00117  WITHIN tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L48@1024 - L64@2048: -0.00347  WITHIN tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@1024 -> L48@1024 - L64@512: +0.00746  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@512 -> L32@1024 - L64@1024: +0.00047  WITHIN tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@512 -> L32@1024 - L64@2048: -0.00687  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@512 -> L32@1024 - L64@512: +0.00786  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@512 -> L48@1024 - L64@1024: +0.01097  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@512 -> L48@1024 - L64@2048: +0.00633  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L48@512 -> L48@1024 - L64@512: +0.01726  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@1024 -> L32@1024 - L64@2048: -0.00734  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@1024 -> L32@1024 - L64@512: +0.00739  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@1024 -> L48@1024 - L64@1024: +0.01050  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@1024 -> L48@1024 - L64@2048: +0.00586  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@1024 -> L48@1024 - L64@512: +0.01679  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@2048 -> L32@1024 - L64@512: +0.01473  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@2048 -> L48@1024 - L64@1024: +0.01784  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@2048 -> L48@1024 - L64@2048: +0.01320  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@2048 -> L48@1024 - L64@512: +0.02413  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@512 -> L48@1024 - L64@1024: +0.00312  WITHIN tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@512 -> L48@1024 - L64@2048: -0.00153  WITHIN tau_lambda = 0.004
+  shift one_sided: L32@1024 - L64@512 -> L48@1024 - L64@512: +0.00940  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L48@1024 - L64@1024 -> L48@1024 - L64@2048: -0.00464  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L48@1024 - L64@1024 -> L48@1024 - L64@512: +0.00629  OUTSIDE tau_lambda = 0.004
+  shift one_sided: L48@1024 - L64@2048 -> L48@1024 - L64@512: +0.01093  OUTSIDE tau_lambda = 0.004
+
+------------------------------------------------------------------------------
+5. CAMPAIGNS C and D — L = 96 and L = 128 central ladders
+------------------------------------------------------------------------------
+
+  L = 96
+    rungs [128, 256, 512, 1024, 2048]
+        128 -> 256   Delta = -0.05202 +- 0.02982  95% [-0.11047, +0.00643]  HW/tau_I = 9.74  P1=y P2=n  B_eff = +13.318 +- 7.635  R for P2 = 3038
+        256 -> 512   Delta = -0.06959 +- 0.02102  95% [-0.11080, -0.02839]  HW/tau_I = 6.87  P1=n P2=n  B_eff = +35.632 +- 10.764  R for P2 = 1690
+        512 -> 1024  Delta = -0.00174 +- 0.01916  95% [-0.03930, +0.03583]  HW/tau_I = 6.26  P1=y P2=n  B_eff = +1.777 +- 19.624  R for P2 = 1211
+       1024 -> 2048  Delta = -0.02351 +- 0.01757  95% [-0.05795, +0.01092]  HW/tau_I = 5.74  P1=y P2=n  B_eff = +48.156 +- 35.985  R for P2 = 791
+      criteria {'P1': True, 'P2': False, 'P3': True, 'P4': True, 'P5': False}
+      VERDICT  UNRESOLVED_R_LIMITED   (binding budget: R)
+      1/N fit: I_inf = 0.23172 +- 0.00669, B = +21.320 +- 2.962, chi2 = 2.54 / 3 dof, p = 0.4679
+      free-gamma fit: gamma = 0.898, chi2 = 2.43 / 2 dof
+      B_eff stable on top two steps: True
+      ASYMPTOTIC VERDICT  LOCAL_1_OVER_NC_REGIME_CONSISTENT
+        B = +21.3197 +- 2.9615   LOCAL and CELL-SPECIFIC. Not a law B(L, zeta, lambda). Not transferable to another observable, L, zeta or lambda.
+
+  L = 128
+    rungs [64, 128, 256, 512, 1024, 2048]
+         64 -> 128   Delta = -0.09898 +- 0.03430  95% [-0.16621, -0.03176]  HW/tau_I = 11.20  P1=n P2=n  B_eff = +12.670 +- 4.390  R for P2 = 8034
+        128 -> 256   Delta = -0.12127 +- 0.02892  95% [-0.17795, -0.06459]  HW/tau_I = 9.45  P1=n P2=n  B_eff = +31.045 +- 7.403  R for P2 = 5712
+        256 -> 512   Delta = -0.04822 +- 0.02739  95% [-0.10191, +0.00547]  HW/tau_I = 8.95  P1=y P2=n  B_eff = +24.690 +- 14.026  R for P2 = 4326
+        512 -> 1024  Delta = -0.06021 +- 0.02343  95% [-0.10614, -0.01429]  HW/tau_I = 7.65  P1=n P2=n  B_eff = +61.658 +- 23.994  R for P2 = 2675
+       1024 -> 2048  Delta = -0.01046 +- 0.01761  95% [-0.04498, +0.02406]  HW/tau_I = 5.75  P1=y P2=n  B_eff = +21.426 +- 36.068  R for P2 = 668
+      criteria {'P1': True, 'P2': False, 'P3': True, 'P4': True, 'P5': False}
+      VERDICT  UNRESOLVED_R_LIMITED   (binding budget: R)
+      1/N fit: I_inf = 0.17761 +- 0.00767, B = +24.534 +- 1.622, chi2 = 13.05 / 4 dof, p = 0.0110
+      free-gamma fit: gamma = 0.537, chi2 = 2.81 / 3 dof
+      B_eff stable on top two steps: True
+      ASYMPTOTIC VERDICT  NO_OBSERVED_1_OVER_NC_ASYMPTOTIC_REGIME
+        no coefficient quoted: the 1/N form is rejected by its own chi2
+
+------------------------------------------------------------------------------
+6. CAMPAIGN E — discretisation / continuous-time particle limit
+------------------------------------------------------------------------------
+  N_c=256:  K = [816, 408, 204]  dtau_mult = [3.0, 6.0, 12.0]
+      dtau_mult=3     R=48  CMI = 0.37910 +- 0.00973
+      dtau_mult=6     R=48  CMI = 0.38540 +- 0.00794
+      dtau_mult=12    R=48  CMI = 0.36888 +- 0.00829
+      E2 flat:         chi2 2.09/2  p=0.3515
+      E1 ~ 1/dtau_mult: slope +0.03368 +- 0.05083  chi2 1.65/1  p=0.1986
+      VERDICT E2_DISCRETISATION_STABLE
+  N_c=64:  K = [816, 408, 204]  dtau_mult = [3.0, 6.0, 12.0]
+      dtau_mult=3     R=48  CMI = 0.48560 +- 0.02327
+      dtau_mult=6     R=48  CMI = 0.47065 +- 0.02310
+      dtau_mult=12    R=48  CMI = 0.46049 +- 0.01513
+      E2 flat:         chi2 0.83/2  p=0.6605
+      E1 ~ 1/dtau_mult: slope +0.10074 +- 0.11092  chi2 0.00/1  p=0.9458
+      VERDICT E2_DISCRETISATION_STABLE
+  joint: {'64': 'E2_DISCRETISATION_STABLE', '256': 'E2_DISCRETISATION_STABLE'}  (agree: True)
+  [figures skipped: No module named 'matplotlib']
+
+0 figure(s) written to analysis/figures/
+wrote /gpfs/users/ercetinut/ppsQJ_m2/research/tasks/active/TASK-2026-09-03-NC-PLATEAU-CALIBRATION/NC_PLATEAU_RESULTS.json
+
+Nothing here closes a dispute, promotes a claim, or writes research/state/**.
+Write FALSIFICATION_RESULTS.md against the FROZEN FALSIFICATION_PLAN.md.
+The plan is frozen; the results are a different file. Do not edit the plan to match what happened.
