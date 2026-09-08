@@ -12,7 +12,7 @@ tools/negative_controls.py -- a check that has never been seen to fail is not
 known to be a check.
 """
 from __future__ import annotations
-import csv, glob, hashlib, json, math, os, re, sys
+import csv, glob, hashlib, json, math, os, re, shutil, subprocess, sys, tempfile
 
 ARM = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
 SHARED = os.path.dirname(os.path.abspath(__file__))
@@ -196,23 +196,36 @@ if len(set(seeds)) != len(seeds):
     bad("P7", "duplicate seeds INSIDE this arm")
 else:
     others = set()
-    nfiles = 0
+    nfiles, nself = 0, 0
+    mine_seeds = set(seeds)
     for mf in glob.glob(os.path.join(ROOT, "research/tasks/**/manifest.csv"),
                         recursive=True):
-        if os.path.abspath(mf) == os.path.join(ARM, "manifest.csv"):
+        if os.path.realpath(mf) == os.path.realpath(os.path.join(ARM, "manifest.csv")):
+            continue
+        r2s = list(csv.DictReader(open(mf)))
+        # A manifest that names THIS arm and shares most of its seed block is
+        # this arm's manifest sitting somewhere else -- a staged copy under test,
+        # or the shipped arm when the copy is the one being checked. It is not a
+        # second allocation, and counting it as one would make every seed in the
+        # arm collide with itself. Arm names are NOT unique across the
+        # repository, so the seed block has to agree as well.
+        arms2 = {r2.get("arm") for r2 in r2s}
+        s2 = {int(r2["seed"]) for r2 in r2s if r2.get("seed")}
+        if arms2 == {name} and mine_seeds and \
+                len(s2 & mine_seeds) >= 0.5 * len(mine_seeds):
+            nself += 1
             continue
         nfiles += 1
-        for r2 in csv.DictReader(open(mf)):
-            if r2.get("seed"):
-                others.add(int(r2["seed"]))
+        others |= s2
     clash = sorted(set(seeds) & others)
     if clash:
         bad("P7", "%d seeds collide with another manifest, e.g. %s"
             % (len(clash), clash[:5]))
     else:
         ok("P7", "%d seeds, all distinct, none used by any of the %d other "
-                 "manifests in the repository (%d seeds checked against)"
-           % (len(seeds), nfiles, len(others)))
+                 "manifests in the repository (%d seeds checked against; %d "
+                 "further manifest(s) skipped as another copy of THIS arm)"
+           % (len(seeds), nfiles, len(others), nself))
 
 # P8  zeta = 0.35 is never recomputed -----------------------------------------
 z35 = [r for r in rows if abs(float(r["zeta"]) - 0.35) < 1e-12]
@@ -287,11 +300,29 @@ for fd in man["runners_verbatim_not_integrity_scanned"]:
     p = os.path.join(TASK, fd["bundled_as"])
     if hashlib.sha256(open(p, "rb").read()).hexdigest() != fd["sha256"]:
         b11.append(fd["bundled_as"])
+# A support/ tree is duplicated for any arm that does not sit directly under the
+# task directory, because run_cell.py resolves its bundle as HERE/../support.
+# A duplicate that has drifted would give that arm a DIFFERENT sampler while its
+# manifest rows looked identical, so it is compared against support/ byte for
+# byte rather than against a recorded hash.
+ncopy = 0
+for d in man.get("support_copies", {}).get("dirs", []):
+    for fn in man["support_copies"]["files"]:
+        a = os.path.join(TASK, "support", fn)
+        b = os.path.join(TASK, d, fn)
+        if not os.path.isfile(b):
+            b11.append("%s/%s (missing)" % (d, fn))
+        elif open(a, "rb").read() != open(b, "rb").read():
+            b11.append("%s/%s (differs from support/%s)" % (d, fn, fn))
+        else:
+            ncopy += 1
 if b11:
     bad("P11", "bundled file(s) are not the certified bytes: %s" % ", ".join(b11))
 else:
-    ok("P11", "instrumented.py, run_cell.py and run_pack.py are byte-identical to "
-              "the files that produced the zeta = 0.35 production corpus")
+    ok("P11", "instrumented.py, run_cell.py and run_pack.py are the recorded bytes; "
+              "%d duplicated support file(s) are byte-identical to support/. "
+              "run_pack.py is recorded as REPAIRED on 2026-09-08 and is no longer "
+              "the predecessor's bytes; run_cell.py still is." % ncopy)
 
 # P12  nothing in the package can submit --------------------------------------
 hits = []
@@ -465,6 +496,154 @@ else:
         else:
             ok("P17", "submit.slurm runs %s/run_pack.py, which resolves from this "
                       "arm, and run_cell.py sits beside it" % rel)
+
+# P18  the ARM-LOCAL executor exists and is the frozen bytes -------------------
+#
+# run_cell.py takes no manifest argument and no output argument. It reads
+# manifest.csv out of the directory ITS OWN FILE sits in and writes to results/
+# beside it. Which manifest a row runs is therefore decided by where the
+# EXECUTOR FILE is, not by the working directory -- and the first Ruche
+# submission of this task died on exactly that: run_pack.py invoked
+# shared/run_cell.py from an arm cwd, so all 294 array tasks looked for
+# shared/manifest.csv, raised FileNotFoundError before the sampler, and produced
+# zero result JSONs (../RUCHE_INCIDENT_2026-09-08.md).
+#
+# The repair is packaging-only: run_cell.py is untouched and every arm carries a
+# byte-identical copy of it. P18 proves the copy is there and is the frozen
+# bytes -- not "an executor", THE executor. Negative controls N16 and N17 remove
+# and alter it and require rejection.
+FROZEN_CELL = os.path.join(SHARED, "run_cell.py")
+ARM_CELL = os.path.join(ARM, "run_cell.py")
+_bundle_cell = next((f for f in man["runners_verbatim_not_integrity_scanned"]
+                     if f["bundled_as"].endswith("run_cell.py")), None)
+if not os.path.isfile(FROZEN_CELL):
+    bad("P18", "the frozen executor %s is missing; there is nothing to compare "
+               "the arm-local copy against" % FROZEN_CELL)
+elif not os.path.isfile(ARM_CELL):
+    bad("P18", "this arm has NO arm-local run_cell.py (%s). run_pack.py refuses "
+               "to fall back to %s, because a shared executor reads "
+               "shared/manifest.csv and not this arm's -- that is the failure "
+               "that produced zero result JSONs on Ruche."
+        % (ARM_CELL, FROZEN_CELL))
+else:
+    h_arm = hashlib.sha256(open(ARM_CELL, "rb").read()).hexdigest()
+    h_frz = hashlib.sha256(open(FROZEN_CELL, "rb").read()).hexdigest()
+    if h_arm != h_frz:
+        bad("P18", "the arm-local run_cell.py is NOT the frozen executor.\n"
+                   "          arm    %s\n          frozen %s\n"
+                   "        An arm-local copy that has drifted is a different "
+                   "sampler under an identical manifest." % (h_arm, h_frz))
+    elif _bundle_cell and h_arm != _bundle_cell["sha256"]:
+        bad("P18", "arm and shared executors agree at %s but the bundle manifest "
+                   "records %s as the certified per-row executor"
+            % (h_arm, _bundle_cell["sha256"]))
+    else:
+        ok("P18", "arm-local run_cell.py is present and sha256 %s -- identical to "
+                  "the frozen %s and to the sha256 recorded in "
+                  "support/BUNDLE_MANIFEST.json"
+           % (h_arm[:16] + "...", os.path.relpath(FROZEN_CELL, TASK)))
+
+# P19  run_pack.py RESOLVES the arm-local executor ----------------------------
+#
+# Not read out of the source: run_pack.py is executed, from this arm, in its
+# --resolve mode, and asked which file it would hand to the interpreter. That is
+# the only form of this check that could have caught the bug, because the bug
+# was a resolution, not a spelling.
+RUN_PACK = os.path.join(SHARED, "run_pack.py")
+if not os.path.isfile(RUN_PACK):
+    bad("P19", "shared/run_pack.py is missing")
+else:
+    r19 = subprocess.run([sys.executable, RUN_PACK, "--resolve"], cwd=ARM,
+                         capture_output=True, text=True)
+    kv = dict(l.split(None, 1) for l in r19.stdout.strip().split("\n") if " " in l)
+    got = os.path.realpath(kv.get("RUN_CELL", "").strip())
+    if r19.returncode != 0:
+        bad("P19", "run_pack.py --resolve failed from this arm: %s"
+            % (r19.stderr.strip() or r19.stdout.strip())[:300])
+    elif got != os.path.realpath(ARM_CELL):
+        bad("P19", "run_pack.py run from this arm would execute\n"
+                   "          %s\n        but the arm-local executor is\n"
+                   "          %s\n        A row would then read that other "
+                   "directory's manifest.csv. THIS IS THE OBSERVED RUCHE FAILURE."
+            % (got, os.path.realpath(ARM_CELL)))
+    elif kv.get("EXISTS", "").strip() != "True":
+        bad("P19", "run_pack.py resolves %s but reports it does not exist" % got)
+    else:
+        ok("P19", "run_pack.py executed from this arm resolves its executor to "
+                  "./run_cell.py (%s), and reports it present. Resolution was "
+                  "measured, not read out of the source." % got)
+
+# P20  manifest.csv and the DEFAULT results/ resolve INSIDE the arm -----------
+#
+# The executor is run for real, from an unrelated working directory, with an
+# index past the end of the manifest. Getting as far as IndexError proves, in
+# one shot and without simulating anything, that it found this arm's
+# manifest.csv, that HERE/../support held the bundle, that the bundle passed its
+# own sha256 gate, and that the repository root resolved well enough to import
+# pps_qj. A FileNotFoundError instead of an IndexError is precisely the Ruche
+# failure. The neutral cwd is then checked to be empty, which is what proves the
+# DEFAULT output directory landed in the arm rather than wherever the job
+# happened to be standing.
+#
+# PPSQJ_REPO is taken from this arm's own submit.slurm rather than left to
+# run_cell.py's five-levels-up default, because that is the environment the job
+# will actually run in -- and for the conditional arm, one directory deeper than
+# the rest, the default is wrong.
+m20 = re.search(r'PPSQJ_REPO="\$\{PPSQJ_REPO:-\$\(cd "\$SLURM_SUBMIT_DIR"/(\S+) && pwd\)\}"',
+                slurm)
+env20 = dict(os.environ)
+repo20 = None
+if not m20:
+    bad("P20", "submit.slurm does not derive PPSQJ_REPO from this arm's own depth")
+else:
+    repo20 = os.path.normpath(os.path.join(ARM, m20.group(1)))
+    if not os.path.isfile(os.path.join(repo20, "pps_qj", "__init__.py")):
+        bad("P20", "submit.slurm derives PPSQJ_REPO=%s, which holds no pps_qj "
+                   "package. The job exits 2 before any row." % repo20)
+        repo20 = None
+    else:
+        env20["PPSQJ_REPO"] = repo20
+
+if repo20 and os.path.isfile(ARM_CELL):
+    nrows = len(rows)
+    cwd20 = tempfile.mkdtemp(prefix="preflight_cwd_")
+    try:
+        r20 = subprocess.run([sys.executable, ARM_CELL, str(nrows + 10_000)],
+                             cwd=cwd20, env=env20, capture_output=True, text=True,
+                             timeout=600)
+        out20 = r20.stdout + r20.stderr
+        stray = sorted(os.listdir(cwd20))
+    finally:
+        shutil.rmtree(cwd20, ignore_errors=True)
+    want_manifest = os.path.join(ARM, "manifest.csv")
+    want_results = os.path.join(ARM, "results")
+    if "FileNotFoundError" in out20 or "cannot start" in out20:
+        bad("P20", "the arm-local executor cannot find its own inputs when run "
+                   "from an unrelated directory:\n          %s"
+            % out20.strip().replace("\n", "\n          ")[:900])
+    elif "INTEGRITY FAILURE" in out20:
+        bad("P20", "the arm-local executor's bundle failed its own sha256 gate:\n"
+                   "          %s" % out20.strip()[:400])
+    elif r20.returncode == 0 or "IndexError" not in out20:
+        bad("P20", "expected the executor to reach IndexError on a row past the "
+                   "end of a %d-row manifest; got rc=%d:\n          %s"
+            % (nrows, r20.returncode, out20.strip()[:600]))
+    elif not os.path.isdir(want_results):
+        bad("P20", "%s was not created by the executor's default output path"
+            % want_results)
+    elif stray:
+        bad("P20", "the executor wrote %s into its WORKING directory, not into "
+                   "the arm. The default results/ path does not resolve inside "
+                   "the arm." % ", ".join(stray))
+    else:
+        sup20 = re.search(r"^\[env\] instrumented (.+)$", out20, re.M)
+        ok("P20", "run from an unrelated cwd, the arm-local executor read %s "
+                  "(reached IndexError at row %d of %d), created its default "
+                  "%s, wrote nothing into the working directory, loaded its "
+                  "bundle from %s and imported pps_qj from PPSQJ_REPO=%s"
+           % (os.path.relpath(want_manifest, TASK), nrows + 10_000, nrows,
+              os.path.relpath(want_results, TASK),
+              os.path.relpath(sup20.group(1), TASK) if sup20 else "?", repo20))
 
 # ---------------------------------------------------------------------- report
 for n in notes:

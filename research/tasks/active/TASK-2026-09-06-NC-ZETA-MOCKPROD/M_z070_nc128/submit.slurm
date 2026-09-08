@@ -25,13 +25,28 @@
 # SCALE
 #   432 populations packed into 237 array tasks so that no array task is
 #   shorter than 600 s. packs.csv records the (start, count) of every pack.
-#   run_pack.py invokes the CERTIFIED run_cell.py once per row in a fresh
-#   process: packing changes the scheduling and never the computation, and a row
-#   produced by a packed task is EXACT-COMPATIBLE with one produced unpacked.
-#   The path to it is ../shared, computed per arm rather than hard-coded: the
-#   conditional arm lives one directory deeper and a literal ../shared would not
-#   resolve there. Preflight P17 checks that it resolves; negative control N14
-#   breaks it and requires rejection.
+#   ../shared/run_pack.py invokes ./run_cell.py -- the ARM-LOCAL copy, in this
+#   directory -- once per row in a fresh process: packing changes the scheduling
+#   and never the computation, and a row produced by a packed task is
+#   EXACT-COMPATIBLE with one produced unpacked.
+#
+#   WHY THE EXECUTOR IS HERE AND NOT IN ../shared. run_cell.py takes no manifest
+#   argument: it reads manifest.csv from the directory ITS OWN FILE sits in and
+#   writes to results/ beside it. An executor invoked out of ../shared therefore
+#   reads ../shared/manifest.csv, which does not exist, and every row dies with
+#   FileNotFoundError before the sampler is reached. That is what happened to
+#   this task's first Ruche submission (job IDs 1694328-1694621, zero result
+#   JSONs, arrays cancelled -- see ../RUCHE_INCIDENT_2026-09-08.md). This arm's
+#   run_cell.py is a BYTE-IDENTICAL copy of the frozen ../shared/run_cell.py,
+#   written by tools/build_arms.py and re-verified at job start by run_pack.py.
+#   Preflight P18/P19/P20 prove it; negative controls N15 and N16 break it
+#   and require rejection, and tools/negative_controls.py reproduces the
+#   original failure end to end before showing the repair.
+#
+#   The path to run_pack.py is ../shared, computed per arm rather than hard-coded:
+#   the conditional arm lives one directory deeper and a literal ../shared would
+#   not resolve there. Preflight P17 checks that it resolves; negative control
+#   N14 breaks it and requires rejection.
 #   Idempotent -- a completed row is never recomputed, so a requeued or
 #   timed-out pack costs only what it has left to do.
 #
@@ -72,6 +87,23 @@ export NUMEXPR_NUM_THREADS=1
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs results
 
+# run_cell.py defaults the repository root to five levels above ITS OWN file,
+# which is right for an arm directly under the task directory and wrong for the
+# conditional arm one level deeper. Derive it from this arm's own depth instead
+# of relying on that default, and prove it before the array does any work.
+PPSQJ_REPO="${PPSQJ_REPO:-$(cd "$SLURM_SUBMIT_DIR"/../../../../.. && pwd)}"
+if [ ! -f "$PPSQJ_REPO/pps_qj/__init__.py" ]; then
+    echo "PPSQJ_REPO does not contain the pps_qj package: $PPSQJ_REPO" >&2
+    exit 2
+fi
+export PPSQJ_REPO
+
+if [ ! -f "$SLURM_SUBMIT_DIR/run_cell.py" ]; then
+    echo "no arm-local run_cell.py in $SLURM_SUBMIT_DIR -- rebuild the arms with" >&2
+    echo "  tools/build_arms.py  (see ../RUCHE_INCIDENT_2026-09-08.md)" >&2
+    exit 2
+fi
+
 PPSQJ_PYTHON="${PPSQJ_PYTHON:-/gpfs/workdir/ercetinut/envs/pps_qj/bin/python}"
 if [ ! -x "$PPSQJ_PYTHON" ]; then
     echo "PPSQJ_PYTHON is not executable: $PPSQJ_PYTHON" >&2
@@ -83,6 +115,7 @@ export PATH="$(dirname "$PPSQJ_PYTHON"):$PATH"
 
 echo "[M_z070_nc128] task ${SLURM_ARRAY_TASK_ID} on $(hostname) at $(date -u +%FT%TZ)"
 echo "[M_z070_nc128] partition=${SLURM_JOB_PARTITION:-?}  python=$PPSQJ_PYTHON"
+echo "[M_z070_nc128] repo=$PPSQJ_REPO  executor=$SLURM_SUBMIT_DIR/run_cell.py"
 "$PPSQJ_PYTHON" -c 'import sys,numpy;print("[M_z070_nc128] resolved",sys.executable,"numpy",numpy.__version__)'
 
 "$PPSQJ_PYTHON" ../shared/run_pack.py "${SLURM_ARRAY_TASK_ID}"

@@ -12,7 +12,30 @@ Labels `[E]` `[I]` `[C]` `[J]`.
 
 ---
 
-## 0. Before anything
+## 0. First: this package was repaired on 2026-09-08
+
+`[E]` The first submission of this task — **jobs 1694328 – 1694621** — produced
+**zero result JSONs**. Every array task died before the sampler with
+`FileNotFoundError` on `shared/manifest.csv`; the arrays were cancelled and no
+scientific data from that submission is retained. Cause, repair and the checks
+that now prove it: **`RUCHE_INCIDENT_2026-09-08.md`**.
+
+`[E]` The repair is **packaging only**. `shared/run_cell.py` is unchanged byte
+for byte, and no seed, grid point, manifest row, cost figure or sampler
+parameter moved. What changed: every arm now carries its own byte-identical
+`run_cell.py`, `shared/run_pack.py` invokes it, and each `submit.slurm` derives
+`PPSQJ_REPO` from its own depth.
+
+`[E]` **The cluster copy must be refreshed before anything is submitted.** An
+arm directory on Ruche that predates the repair has no `run_cell.py` in it; the
+job will exit 2 with `no arm-local run_cell.py` rather than fail silently, but
+it will not run. Refresh the whole task directory — the arms, `shared/`,
+`support/` and `conditional/support/` — then re-run the preflight **on Ruche**
+(§1), because the preflight's P18–P20 test the files that are actually there.
+
+---
+
+## 0.1. Before anything
 
 ```bash
 cd <repo>
@@ -30,18 +53,45 @@ cd research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD
 bash shared/run_preflight.sh
 ```
 
-`[E]` 21 checks per production arm, 19 for the control. It must print
+`[E]` 24 checks per production arm, 22 for the control. It must print
 `ALL ARMS PASS PREFLIGHT.` and exit 0. It reads only; it cannot submit.
 
+`[E]` P18, P19 and P20 are the checks added by the 2026-09-08 repair. P19
+*executes* `run_pack.py` from the arm and asks which executor it would run; P20
+*executes* the arm-local executor from an unrelated working directory with an
+index past the end of the manifest, and requires it to reach `IndexError` having
+written nothing outside the arm. Both measure a resolution rather than reading
+one out of the source, because the fault was a resolution.
+
 `[E]` To satisfy yourself the checks are real, run the injected-fault suite —
-14 faults, each into a **copy** of an arm, each required to be rejected with a
-named code:
+16 faults, each into a **copy** of an arm staged at the arm's real depth, each
+required to be rejected with a named code — followed by an end-to-end
+reproduction of the 2026-09-08 failure and of the repair:
 
 ```bash
-.venv/bin/python3 tools/negative_controls.py     # expect: 14 of 14
+.venv/bin/python3 tools/negative_controls.py     # expect: 16 of 16, then 4 reproduction steps ok
 .venv/bin/python3 tools/smoke_test.py            # expect: 13 of 13
 .venv/bin/python3 tools/check_predecessor.py     # expect: predecessor isolation OK
 ```
+
+`[E]` **One-task smoke test before any full array.** After refreshing the
+cluster copy and passing the preflight there, run a single pack by hand on a
+compute-capable node — no scheduler, one row-pack, in the cheapest arm — and
+confirm result JSONs appear **in that arm**:
+
+```bash
+cd research/tasks/active/TASK-2026-09-06-NC-ZETA-MOCKPROD/M_z010_nc128
+export PPSQJ_PYTHON=$WORKDIR/envs/pps_qj/bin/python
+export PPSQJ_REPO=$(cd ../../../../.. && pwd)
+$PPSQJ_PYTHON ../shared/run_pack.py --resolve      # must print RUN_CELL .../M_z010_nc128/run_cell.py
+$PPSQJ_PYTHON ../shared/run_pack.py 0              # pack 0: the cheapest pack in the campaign
+ls results/ | wc -l                                # must be > 0
+```
+
+The `--resolve` line is the whole incident in one command: before the repair it
+printed a path in `shared/`. Delete the smoke-test JSONs afterwards, or leave
+them — they are ordinary rows of pack 0 and the executor is idempotent, so the
+real array will skip them rather than recompute them.
 
 ## 2. Submission order
 

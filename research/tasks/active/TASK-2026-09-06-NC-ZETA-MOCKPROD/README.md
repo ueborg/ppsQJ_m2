@@ -104,8 +104,8 @@ page rather than in a footnote. Full detail: `VALIDATION.md` §4.
 ## Validation
 
 ```
-bash shared/run_preflight.sh                          ALL ARMS PASS (21/21, 19/19 control)
-.venv/bin/python3 tools/negative_controls.py          14 of 14 injected faults rejected
+bash shared/run_preflight.sh                          ALL ARMS PASS (24/24, 22/22 control)
+.venv/bin/python3 tools/negative_controls.py          16 of 16 injected faults rejected, 4/4 repro steps
 .venv/bin/python3 tools/smoke_test.py                 13 of 13 synthetic cases
 .venv/bin/python3 tools/check_predecessor.py          22 files, none modified, none added
 .venv/bin/python3 tools/cost_model.py                 literals within 0.5 % of raw data

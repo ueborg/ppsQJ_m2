@@ -3,17 +3,30 @@
 Per-arm gates. **The researcher submits; no agent does, ever**
 (`research/RESOURCE_POLICY.md` §4). Labels `[E]` `[I]` `[C]` `[J]`.
 
+> **`[E]` 2026-09-08 — this package was repaired and the cluster copy must be
+> refreshed before any arm is submitted again.** The first submission (jobs
+> **1694328 – 1694621**) produced zero result JSONs: every array task died before
+> the sampler with `FileNotFoundError` on `shared/manifest.csv`. Those arrays
+> were cancelled and no scientific data from them is retained. The repair is
+> packaging only — `shared/run_cell.py` is unchanged byte for byte and no seed,
+> grid point, manifest row or cost figure moved. See
+> `RUCHE_INCIDENT_2026-09-08.md`, and `RUCHE_RUNBOOK.md` §0 for the refresh and
+> the one-task smoke test that must pass first.
+>
+> The per-arm gate below now reads **24/24** for a production arm and **22/22**
+> for `E_dtau_z010`: the repair added P18, P19 and P20.
+
 ---
 
 ## Committed arms — 15 arms, 6 080 populations, 2 557 array tasks, 1 160.3 core-hours
 
 | # | arm | gate before submitting | pops | tasks | core-h | `--time` | `--mem` | partition |
 |---:|---|---|---:|---:|---:|---|---|---|
-| 1 | `M_z010_nc128` | preflight 20/20 | 432 | 23 | 4.0 | `00:45:00` | `1G` | cpu_med |
-| 2 | `M_z010_nc256` | preflight 20/20 | 432 | 41 | 7.3 | `00:45:00` | `1G` | cpu_med |
-| 3 | `M_z010_nc512` | preflight 20/20 | 432 | 65 | 12.6 | `00:45:00` | `1G` | cpu_med |
-| 4 | `M_z010_nc1024` | preflight 20/20 | 432 | 110 | 25.3 | `00:45:00` | `2G` | cpu_med |
-| 5 | `M_z010_nc2048` | preflight 20/20 | 432 | 213 | 50.6 | `00:45:00` | `3G` | cpu_med |
+| 1 | `M_z010_nc128` | preflight 24/24 | 432 | 23 | 4.0 | `00:45:00` | `1G` | cpu_med |
+| 2 | `M_z010_nc256` | preflight 24/24 | 432 | 41 | 7.3 | `00:45:00` | `1G` | cpu_med |
+| 3 | `M_z010_nc512` | preflight 24/24 | 432 | 65 | 12.6 | `00:45:00` | `1G` | cpu_med |
+| 4 | `M_z010_nc1024` | preflight 24/24 | 432 | 110 | 25.3 | `00:45:00` | `2G` | cpu_med |
+| 5 | `M_z010_nc2048` | preflight 24/24 | 432 | 213 | 50.6 | `00:45:00` | `3G` | cpu_med |
 | 6 | `M_z020_nc128` | wave 1 returned and analysed | 432 | 47 | 8.7 | `00:45:00` | `1G` | cpu_med |
 | 7 | `M_z020_nc256` | as above | 432 | 84 | 16.1 | `00:45:00` | `1G` | cpu_med |
 | 8 | `M_z020_nc512` | as above | 432 | 124 | 28.0 | `00:45:00` | `1G` | cpu_med |

@@ -19,7 +19,7 @@ conditional — **only if the saved core-hours are reported clearly**. That is t
 number above, and it is repeated in `COST_MODEL.md` §8, `HUMAN_SUBMISSION.md`
 and `RECOMMENDATION.md`.
 
-`[E]` The arm is **complete and preflight-clean** (20/20). It is held by
+`[E]` The arm is **complete and preflight-clean** (24/24). It is held by
 location, not by omission: it lives under `conditional/` so that a
 submit-everything loop over `M_z*` in the task root cannot reach it by accident.
 

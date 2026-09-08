@@ -9,8 +9,8 @@ Labels `[E]` `[I]` `[C]` `[J]`.
 
 | command | expected | status |
 |---|---|---|
-| `bash shared/run_preflight.sh` | `ALL ARMS PASS PREFLIGHT.` — 21/21 per production arm, 19/19 for the control | **PASS** |
-| `.venv/bin/python3 tools/negative_controls.py` | 14 of 14 injected faults rejected, each with the expected code | **PASS** |
+| `bash shared/run_preflight.sh` | `ALL ARMS PASS PREFLIGHT.` — 24/24 per production arm, 22/22 for the control | **PASS** |
+| `.venv/bin/python3 tools/negative_controls.py` | 16 of 16 injected faults rejected, each with the expected code, then 4/4 bug-reproduction steps | **PASS** |
 | `.venv/bin/python3 tools/smoke_test.py` | 13 of 13 synthetic cases classified as constructed | **PASS** |
 | `.venv/bin/python3 tools/check_predecessor.py` | predecessor isolation OK, 22 files | **PASS** |
 | `.venv/bin/python3 tools/cost_model.py` | all literals within 0.5 % of the raw data | **PASS** |
@@ -22,7 +22,7 @@ Labels `[E]` `[I]` `[C]` `[J]`.
 `[E]` The preflight is not a build-time artifact: it **refits the cost-model
 literals from raw stored data on every run** and fails if they have drifted.
 
-## 2. The 21 preflight checks
+## 2. The 24 preflight checks
 
 `P1` matched `R` and cell count · `P2` `T = L` and the `K` the packer costed
 with · `P3` array range matches `packs.csv` · `P3b` packs tile the manifest
@@ -36,9 +36,16 @@ bundle integrity by sha256 · `P12` no executable scheduler call anywhere ·
 `P13` discretisation discipline · `P14` no duplicate of a stored population ·
 `P15` the frozen predecessor is untouched · `P16` no certification language
 where it would be a claim · `P17` the runner path in `submit.slurm` resolves
-from **this** arm.
+from **this** arm · `P18` the arm carries the frozen executor, byte for byte ·
+`P19` `run_pack.py`, executed from the arm, resolves **that** executor · `P20`
+the executor, executed from an unrelated working directory, reads **this** arm's
+`manifest.csv`, creates **this** arm's `results/` and writes nothing outside it.
 
-## 3. The 14 negative controls
+`[E]` `P7` skips a manifest that names this arm and shares its seed block: a
+staged copy of an arm under test is that arm, not a second allocation. Arm names
+are not unique across the repository, so the seed block must agree too.
+
+## 3. The 16 negative controls
 
 `[E]` Each injects one fault into a **copy** of a real arm and requires
 rejection with a named code. Nothing under the task directory is modified.
@@ -50,13 +57,31 @@ unmatched `R` → `P1` · `N7` a `zeta = 0.35` row → `P8` · **`N8` a narrowed
 `lambda` grid → `P9`** · `N9` `dtau_mult = 12` in a production arm → `P13` ·
 `N10` `est_sec` drift → `P4b` · `N11` a dropped pack → `P3b` · `N12` a row
 duplicating a stored population → `P14` · `N13` `T != L` → `P2` · **`N14` a
-runner path that does not resolve → `P17`**.
+runner path that does not resolve → `P17`** · **`N15` no arm-local executor,
+i.e. the exact layout that produced zero result JSONs on Ruche → `P18`** ·
+`N16` an arm-local executor drifted from the frozen bytes → `P18`.
 
-`[J]` `N8` is the one that matters most: it reproduces the failure that stopped
+`[E]` The copy is staged at the arm's **real depth** below the task directory,
+with `shared/`, `support/` and `pps_qj` symlinked, because `P17`–`P20` resolve
+paths relative to the arm. A copy at the wrong depth would fail those checks for
+a reason that has nothing to do with the injected fault, so the harness also
+requires the **uninjected** staged copy to pass clean before any control runs.
+
+`[E]` `tools/negative_controls.py` then **reproduces the 2026-09-08 Ruche
+failure end to end**, in four steps: the pre-fix wrapper (reconstructed from the
+shipped one by undoing the repaired line) resolving an executor outside the arm;
+that executor dying with `FileNotFoundError` on a `manifest.csv` outside the arm
+having written no result JSON; the shipped wrapper resolving the arm-local
+executor; and the shipped wrapper refusing to run at all when the arm-local
+executor is absent, rather than falling back to `shared/`.
+
+`[J]` `N8` reproduces the failure that stopped
 `TASK-2026-09-05-NC-ZETA-CALIBRATION` at Gate A, and shows this package's `P9`
-catching it.
+catching it. `N15` and the reproduction are the ones that matter now: they are
+the only checks in this package that were written **after** a failure was
+observed on the cluster rather than argued for in advance.
 
-## 4. Four things that failed during construction, and what changed
+## 4. Five things that failed — four during construction, one on the cluster
 
 `[E]` **4.1 The `lambda`-rate exponent was chosen in the wrong direction.** The
 draft `COST_MODEL.md` adopted `A_LAM = -0.35` under a comment claiming it was
@@ -93,6 +118,44 @@ scratch population is invisible to the loader. `[J]` This one was found by
 accident, by another agent doing legitimate work in the directory it was told to
 use. It is the strongest argument in this file for running the suite after every
 change rather than once at the end.
+
+### `[E]` **4.6 The executor was invoked from `shared/`, and every Ruche row died.**
+
+`[E]` **Found in production, not here.** `shared/run_pack.py` set `ARM =
+os.getcwd()` but resolved `RUN_CELL = HERE/run_cell.py`, i.e.
+`shared/run_cell.py`. `run_cell.py` takes no manifest argument: it reads
+`manifest.csv` from the directory **its own file** sits in. Every row of the
+first Ruche submission — jobs **1694328 – 1694621** — therefore looked for
+`shared/manifest.csv`, raised `FileNotFoundError` before the sampler, and wrote
+nothing. **Zero result JSONs.** The arrays were cancelled; no scientific data
+from that submission is retained. Full note: `RUCHE_INCIDENT_2026-09-08.md`.
+
+`[J]` This is the fourth path-resolution failure in this programme and the
+second in this task (see §4.5). The pattern is always the same: a path that is
+correct in the layout it was written in and silently wrong in the layout it
+runs in. §4.5's `P17` checked the wrapper's path and passed — it never asked
+what the wrapper would then execute.
+
+`[E]` Repair, packaging only: `shared/run_cell.py` is unchanged byte for byte
+(`571f7ff4…`); every arm carries a byte-identical copy of it, written verbatim
+by `tools/build_arms.py`; `run_pack.py` invokes `ARM/run_cell.py`, re-checks the
+bytes at job start and refuses to fall back to `shared/`. Two latent
+consequences were closed at the same time: `conditional/M_z070_nc2048`, one
+directory deeper, would have resolved `HERE/../support` to a directory that does
+not exist, so its parent now carries a byte-identical `support/`; and every
+`submit.slurm` derives `PPSQJ_REPO` from its own depth instead of relying on
+`run_cell.py`'s five-levels-up default.
+
+`[E]` New checks: **`P18`** (arm-local executor present and the frozen bytes),
+**`P19`** (`run_pack.py` is *executed* from the arm and asked which file it would
+run), **`P20`** (the arm-local executor is *executed* from an unrelated working
+directory and must reach `IndexError` having written nothing outside the arm).
+New negative controls **`N15`** and **`N16`**, plus an end-to-end reproduction
+that shows the pre-fix wrapper resolving outside the arm, that executor dying
+with `FileNotFoundError` having written nothing, the shipped wrapper resolving
+the arm-local executor, and the shipped wrapper refusing to run when it is
+absent. `[I]` P19 and P20 measure a resolution rather than reading one out of
+the source, because the fault was a resolution and not a spelling.
 
 ### `[E]` **4.5 The conditional arm's runner path did not resolve.**
 

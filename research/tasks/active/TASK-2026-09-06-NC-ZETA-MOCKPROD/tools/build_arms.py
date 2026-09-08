@@ -6,6 +6,19 @@ plus SEED_LEDGER.md and analysis/campaign_cost.json. Deterministic: running it
 twice produces byte-identical output. It contains NO scheduler call and cannot
 submit anything.
 
+EVERY ARM CARRIES ITS OWN run_cell.py. The certified executor computes its
+manifest and its default output directory from its own __file__, not from the
+working directory, so an executor that lives in shared/ reads shared/manifest.csv
+no matter where the job chdir'ed to. That destroyed the first Ruche submission of
+this task (../RUCHE_INCIDENT_2026-09-08.md). The repair is packaging-only: this
+builder copies shared/run_cell.py into each arm BYTE FOR BYTE -- it is never
+rewritten, templated or regenerated -- and shared/run_pack.py invokes
+ARM/run_cell.py. An arm whose parent directory is not the task directory (the
+conditional arm is one level deeper) additionally receives a byte-identical copy
+of support/, because run_cell.py resolves its bundle as HERE/../support; and
+every submit.slurm now derives PPSQJ_REPO from its own depth rather than relying
+on run_cell.py's five-levels-up default.
+
 Arm keying is (zeta, N_c), three L inside. Rate and memory depend on (L, N_c)
 and cost depends on lambda, so heterogeneity inside an arm is absorbed by the
 packer, which sizes packs by predicted seconds. Keying this way puts the single
@@ -18,8 +31,30 @@ import csv, json, math, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TASK = os.path.abspath(os.path.join(HERE, os.pardir))
+ROOT = os.path.abspath(os.path.join(TASK, *([os.pardir] * 4)))
+SHARED = os.path.join(TASK, "shared")
+SUPPORT = os.path.join(TASK, "support")
+# The two files run_cell.py resolves as HERE/../support. Copied verbatim for any
+# arm that does not sit directly under the task directory.
+SUPPORT_FILES = ("instrumented.py", "BUNDLE_MANIFEST.json")
 sys.path.insert(0, HERE)
 import cost_model as CM
+
+
+def copy_verbatim(src, dst):
+    """Byte-for-byte copy, written only when the bytes differ.
+
+    Deterministic and idempotent: running the builder twice leaves identical
+    bytes and does not touch the mtime of an already-correct file. The executor
+    is COPIED, never regenerated -- a templated executor would not be the
+    certified one.
+    """
+    b = open(src, "rb").read()
+    if os.path.isfile(dst) and open(dst, "rb").read() == b:
+        return False
+    with open(dst, "wb") as f:
+        f.write(b)
+    return True
 
 GRID = {0.10: [0.040, 0.055, 0.070, 0.085, 0.100, 0.115, 0.130, 0.145, 0.160],
         0.20: [0.080, 0.1025, 0.125, 0.1475, 0.170, 0.1925, 0.215, 0.2375, 0.260],
@@ -120,6 +155,20 @@ def build(name, rows, index, outdir, purpose, extra_notes):
     os.makedirs(os.path.join(outdir, "logs"), exist_ok=True)
     os.makedirs(os.path.join(outdir, "results"), exist_ok=True)
 
+    # The arm-local certified executor. run_pack.py invokes THIS file.
+    copy_verbatim(os.path.join(SHARED, "run_cell.py"),
+                  os.path.join(outdir, "run_cell.py"))
+
+    # run_cell.py resolves its bundle as HERE/../support. For an arm nested one
+    # level deeper that is <parent>/support, which must exist and must be the
+    # same bytes as the task's support/.
+    parent = os.path.dirname(os.path.abspath(outdir))
+    if os.path.abspath(parent) != os.path.abspath(TASK):
+        os.makedirs(os.path.join(parent, "support"), exist_ok=True)
+        for fn in SUPPORT_FILES:
+            copy_verbatim(os.path.join(SUPPORT, fn),
+                          os.path.join(parent, "support", fn))
+
     with open(os.path.join(outdir, "manifest.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow("arm,L,T,N_c,zeta,lam,dtau_mult,resample_scheme,seed".split(","))
@@ -131,9 +180,10 @@ def build(name, rows, index, outdir, purpose, extra_notes):
         for p in packs:
             w.writerow([p[0], p[1], p[2], round(p[3], 1)])
 
-    shared_rel = os.path.relpath(os.path.join(TASK, "shared"), outdir)
+    shared_rel = os.path.relpath(SHARED, outdir)
+    repo_rel = os.path.relpath(ROOT, outdir)
     hdr = SLURM.format(
-        shared=shared_rel,
+        shared=shared_rel, repo=repo_rel,
         name=name, lname=name.lower(), part=part, last=ntask - 1, conc=CONCURRENCY,
         mem=memreq, time=tlimit, purpose=purpose, extra=extra_notes,
         npop=len(rows), ntask=ntask, core_h=core_h, pess=core_h * CM.PESSIMISTIC,
@@ -181,13 +231,28 @@ SLURM = """#!/bin/bash
 # SCALE
 #   {npop} populations packed into {ntask} array tasks so that no array task is
 #   shorter than {packmin} s. packs.csv records the (start, count) of every pack.
-#   run_pack.py invokes the CERTIFIED run_cell.py once per row in a fresh
-#   process: packing changes the scheduling and never the computation, and a row
-#   produced by a packed task is EXACT-COMPATIBLE with one produced unpacked.
-#   The path to it is {shared}, computed per arm rather than hard-coded: the
-#   conditional arm lives one directory deeper and a literal ../shared would not
-#   resolve there. Preflight P17 checks that it resolves; negative control N14
-#   breaks it and requires rejection.
+#   {shared}/run_pack.py invokes ./run_cell.py -- the ARM-LOCAL copy, in this
+#   directory -- once per row in a fresh process: packing changes the scheduling
+#   and never the computation, and a row produced by a packed task is
+#   EXACT-COMPATIBLE with one produced unpacked.
+#
+#   WHY THE EXECUTOR IS HERE AND NOT IN {shared}. run_cell.py takes no manifest
+#   argument: it reads manifest.csv from the directory ITS OWN FILE sits in and
+#   writes to results/ beside it. An executor invoked out of {shared} therefore
+#   reads {shared}/manifest.csv, which does not exist, and every row dies with
+#   FileNotFoundError before the sampler is reached. That is what happened to
+#   this task's first Ruche submission (job IDs 1694328-1694621, zero result
+#   JSONs, arrays cancelled -- see ../RUCHE_INCIDENT_2026-09-08.md). This arm's
+#   run_cell.py is a BYTE-IDENTICAL copy of the frozen {shared}/run_cell.py,
+#   written by tools/build_arms.py and re-verified at job start by run_pack.py.
+#   Preflight P18/P19/P20 prove it; negative controls N15 and N16 break it
+#   and require rejection, and tools/negative_controls.py reproduces the
+#   original failure end to end before showing the repair.
+#
+#   The path to run_pack.py is {shared}, computed per arm rather than hard-coded:
+#   the conditional arm lives one directory deeper and a literal ../shared would
+#   not resolve there. Preflight P17 checks that it resolves; negative control
+#   N14 breaks it and requires rejection.
 #   Idempotent -- a completed row is never recomputed, so a requeued or
 #   timed-out pack costs only what it has left to do.
 #
@@ -228,6 +293,23 @@ export NUMEXPR_NUM_THREADS=1
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs results
 
+# run_cell.py defaults the repository root to five levels above ITS OWN file,
+# which is right for an arm directly under the task directory and wrong for the
+# conditional arm one level deeper. Derive it from this arm's own depth instead
+# of relying on that default, and prove it before the array does any work.
+PPSQJ_REPO="${{PPSQJ_REPO:-$(cd "$SLURM_SUBMIT_DIR"/{repo} && pwd)}}"
+if [ ! -f "$PPSQJ_REPO/pps_qj/__init__.py" ]; then
+    echo "PPSQJ_REPO does not contain the pps_qj package: $PPSQJ_REPO" >&2
+    exit 2
+fi
+export PPSQJ_REPO
+
+if [ ! -f "$SLURM_SUBMIT_DIR/run_cell.py" ]; then
+    echo "no arm-local run_cell.py in $SLURM_SUBMIT_DIR -- rebuild the arms with" >&2
+    echo "  tools/build_arms.py  (see ../RUCHE_INCIDENT_2026-09-08.md)" >&2
+    exit 2
+fi
+
 PPSQJ_PYTHON="${{PPSQJ_PYTHON:-/gpfs/workdir/ercetinut/envs/pps_qj/bin/python}}"
 if [ ! -x "$PPSQJ_PYTHON" ]; then
     echo "PPSQJ_PYTHON is not executable: $PPSQJ_PYTHON" >&2
@@ -239,6 +321,7 @@ export PATH="$(dirname "$PPSQJ_PYTHON"):$PATH"
 
 echo "[{name}] task ${{SLURM_ARRAY_TASK_ID}} on $(hostname) at $(date -u +%FT%TZ)"
 echo "[{name}] partition=${{SLURM_JOB_PARTITION:-?}}  python=$PPSQJ_PYTHON"
+echo "[{name}] repo=$PPSQJ_REPO  executor=$SLURM_SUBMIT_DIR/run_cell.py"
 "$PPSQJ_PYTHON" -c 'import sys,numpy;print("[{name}] resolved",sys.executable,"numpy",numpy.__version__)'
 
 "$PPSQJ_PYTHON" {shared}/run_pack.py "${{SLURM_ARRAY_TASK_ID}}"
